@@ -1,0 +1,56 @@
+<html xmlns:th="http://www.w3.org/1999/xhtml">
+	<head>
+		<title>Vehicle List</title>
+		<link rel="stylesheet" type="text/css" th:href="@{/css/styles.css}">
+	</head>
+
+	<body>
+		<div class="main">
+
+			<h1>Vehicle List</h1>
+
+			<a href="/api1/new/vehicle" class="button">Add Vehicle</a>
+
+			<table>
+				<thead>
+					<tr>
+						<th> ID </th>
+						<th> Name </th>
+						<th> Reg. Plate </th>
+						<th> VIN </th>
+						<th> Deleted </th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr th:if="${vehicles.empty}">
+						<td colspan="4"> No Vehicles Available </td>
+					</tr>
+					<tr th:each="vehicle : ${vehicles}">
+						<td>
+							<span th:text="${vehicle.id}"></span>
+						</td>
+						<td>
+							<span th:text="${vehicle.name}"></span>
+						</td>
+						<td>
+							<span th:text="${vehicle.registrationPlate}"></span>
+						</td>
+						<td>
+							<span th:text="${vehicle.vin}"></span>
+						</td>
+						<td>
+							<span th:text="${vehicle.isDeleted}"></span>
+						</td>
+						<td>
+							<form action="#" th:action="${'/api1/vehicle/' + vehicle.id}" class="form_button" method="get">
+								<p>
+									<input type="submit" value="View"/>
+								</p>
+							</form>
+						</td>
+					</tr>
+				</tbody>
+			</table>
+		</div>
+	</body>
+</html>

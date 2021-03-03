@@ -1,0 +1,38 @@
+<html xmlns:th="http://www.w3.org/1999/xhtml">
+	<head>
+		<title>Organisations List</title>
+		<link rel="stylesheet" type="text/css" th:href="@{/css/styles.css}">
+	</head>
+
+	<body>
+		<div class="main">
+
+			<h1>Organisations List</h1>
+
+			<a href="/api1/new/organisation" class="button">Add Organisation</a>
+
+			<table>
+				<tbody>
+					<tr th:if="${organisations.empty}">
+						<td colspan="1"> No Organisations In Database </td>
+					</tr>
+					<tr th:each="organisation : ${organisations}">
+						<td>
+							<span th:text="${organisation.id}"></span>
+						</td>
+						<td>
+							<span th:text="${organisation.name}"></span>
+						</td>
+						<td>
+							<form action="#" th:action="${'/api1/organisation/' + organisation.id}" class="form_button" method="get">
+								<p>
+									<input type="submit" value="View"/>
+								</p>
+							</form>
+						</td>
+					</tr>
+				</tbody>
+			</table>
+		</div>
+	</body>
+</html>

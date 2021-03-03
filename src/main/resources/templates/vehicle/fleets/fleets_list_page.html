@@ -1,0 +1,52 @@
+<html xmlns:th="http://www.w3.org/1999/xhtml">
+	<head>
+		<title>Fleet List</title>
+		<link rel="stylesheet" type="text/css" th:href="@{/css/styles.css}">
+	</head>
+
+	<body>
+		<div class="main">
+
+			<h1>Fleet List</h1>
+
+			<a href="/api1/new/fleet" class="button">Add Fleet</a>
+
+			<table>
+				<thead>
+					<tr>
+						<th> ID </th>
+						<th> Name </th>
+						<th> Vehicles in Fleet </th>
+						<th> Deleted </th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr th:if="${fleets.empty}">
+						<td colspan="3"> No Fleets Available </td>
+					</tr>
+					<tr th:each="fleet : ${fleets}">
+						<td>
+							<span th:text="${fleet.id}"></span>
+						</td>
+						<td>
+							<span th:text="${fleet.name}"></span>
+						</td>
+						<td>
+							<span th:text="${fleet.vehicles == null ? '0' : #lists.size(fleet.vehicles)}"></span>
+						</td>
+						<td>
+							<span th:text="${fleet.isDeleted}"></span>
+						</td>
+						<td>
+							<form action="#" th:action="${'/api1/fleet/' + fleet.id}" class="form_button" method="get">
+								<p>
+									<input type="submit" value="View"/>
+								</p>
+							</form>
+						</td>
+					</tr>
+				</tbody>
+			</table>
+		</div>
+	</body>
+</html>

@@ -1,0 +1,53 @@
+<html xmlns:th="http://www.w3.org/1999/xhtml">
+	<head>
+		<title>Fleet Details</title>
+		<link rel="stylesheet" type="text/css" th:href="@{/css/styles.css}">
+	</head>
+
+	<body>
+		<div class="main">
+
+			<h1>Fleet Details</h1>
+
+			<table>
+				<tbody th:object="${fleet}">
+					<tr>
+						<td class="alignLeft"> ID </td>
+						<td class="alignLeft"> <span th:text="*{id}"></span> </td>
+					</tr>
+					<tr>
+						<td class="alignLeft"> Name </td>
+						<td class="alignLeft"> <span th:text="*{name}"></span> </td>
+					</tr>
+					<tr>
+						<td class="alignLeft"> Vehicles in Fleet </td>
+						<td class="alignLeft"> <span th:text="${fleet.vehicles == null ? '0' : #lists.size(fleet.vehicles)}"></span> </td>
+					</tr>
+					<tr>
+						<td class="alignLeft"> Deleted </td>
+						<td class="alignLeft"> <span th:text="*{isDeleted}"></span> </td>
+					</tr>
+				</tbody>
+			</table>
+
+			<table>
+				<tr>
+					<th>
+						<form action="#" th:action="${'/api1/edit/fleet/' + fleet.id}" class="form_button" method="get">
+							<p>
+								<input type="submit" value="Edit"/>
+							</p>
+						</form>
+					</th>
+					<th>
+						<form action="#" th:action="${'/api1/delete/fleet/' + fleet.id}" class="form_button" method="post">
+							<p>
+								<input type="submit" value="Delete"/>
+							</p>
+						</form>
+					</th>
+				</tr>
+			</table>
+		</div>
+	</body>
+</html>

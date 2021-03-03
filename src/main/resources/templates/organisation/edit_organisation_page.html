@@ -1,0 +1,42 @@
+<html xmlns:th="http://www.w3.org/1999/xhtml">
+	<head>
+		<title>Edit Organisation Details</title>
+		<link rel="stylesheet" type="text/css" th:href="@{/css/styles.css}">
+	</head>
+
+	<body>
+
+		<div class="main">
+
+			<h1>Edit Organisation Details</h1>
+
+			<p>
+				<span th:text="${error_message_attribute}" class="error_msg"></span>
+			</p>
+
+			<form action="#" th:action="${'/api1/update/organisation/' + organisation.id}" th:object="${organisation}" method="post">
+				<table>
+					<tbody>
+						<tr>
+							<td class="alignLeft"> ID </td>
+							<td> <span th:text="*{id}"></span> </td>
+						</tr>
+						<tr>
+							<td class="alignLeft"> Name </td>
+							<td> <input type="text" th:field="*{name}" /> </td>
+						</tr>
+						<tr>
+							<td class="alignLeft"> Deleted </td>
+							<td> <input type="checkbox" th:field="*{isDeleted}"/> </td>
+						</tr>
+						<tr>
+							<td colspan="1" class="paddingTopSmall">
+								<input type="submit" value="Save"/>
+							</td>
+						</tr>
+					</tbody>
+				</table>
+			</form>
+		</div>
+	</body>
+</html>

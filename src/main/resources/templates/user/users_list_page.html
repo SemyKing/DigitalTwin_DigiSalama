@@ -1,0 +1,44 @@
+<html xmlns:th="http://www.w3.org/1999/xhtml">
+	<head>
+		<title>Users List</title>
+		<link rel="stylesheet" type="text/css" th:href="@{/css/styles.css}">
+	</head>
+
+	<body>
+		<div class="main">
+
+			<h1>Users List</h1>
+
+			<a href="/api1/new/user" class="button">Add User</a>
+
+			<table>
+				<tbody>
+					<tr th:if="${users.empty}">
+						<td colspan="1"> No Users In Database </td>
+					</tr>
+					<tr th:each="user : ${users}">
+						<td>
+							<span th:text="${user.id}"></span>
+						</td>
+						<td>
+							<span th:text="${user.firstName}"></span>
+						</td>
+						<td>
+							<span th:text="${user.lastName}"></span>
+						</td>
+						<td>
+							<span th:text="${user.isDeleted}"></span>
+						</td>
+						<td>
+							<form action="#" th:action="${'/api1/user/' + user.id}" class="form_button" method="get">
+								<p>
+									<input type="submit" value="View"/>
+								</p>
+							</form>
+						</td>
+					</tr>
+				</tbody>
+			</table>
+		</div>
+	</body>
+</html>

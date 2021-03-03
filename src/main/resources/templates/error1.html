@@ -1,0 +1,21 @@
+<html lang="en" xmlns:th="http://www.w3.org/1999/xhtml">
+	<head>
+		<title>Error Occurred</title>
+		<link rel="stylesheet" type="text/css" th:href="@{/css/styles.css}">
+	</head>
+	<body>
+		<div class="main">
+			<h1>Error Occurred!</h1>
+			<b>
+				<span th:text="${error_title_attribute}"></span>
+			</b>
+			<p th:text="${error_message_attribute}"></p>
+
+			<div th:insert="home_page :: buttons_menu"></div>
+		</div>
+
+		<div>
+			<p th:text="${exception_attribute}"></p>
+		</div>
+	</body>
+</html>

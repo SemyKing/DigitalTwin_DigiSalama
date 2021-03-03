@@ -1,0 +1,41 @@
+<html xmlns:th="http://www.w3.org/1999/xhtml">
+	<head>
+		<title>Home Page</title>
+		<link rel="stylesheet" type="text/css" th:href="@{/css/styles.css}">
+	</head>
+
+	<div class="main">
+		<h1><span>Vedia Vehicles API</span></h1>
+		<p>
+			<span th:text="${error_message_attribute}"></span>
+		</p>
+
+		<form th:action="${'/api1/login'}" th:object="${userPassword}" method="post">
+			<table>
+				<tbody>
+					<tr>
+						<td class="alignLeft"> Username </td>
+						<td> <input type="text" th:field="*{username}" /> </td>
+					</tr>
+					<tr>
+						<td class="alignLeft"> Password </td>
+						<td> <input type="password" th:field="*{currentPassword}" /> </td>
+					</tr>
+
+					<tr>
+						<td></td>
+					</tr>
+
+					<tr>
+						<td colspan="2" class="paddingTopSmall">
+							<input type="submit" value="Login"/>
+						</td>
+					</tr>
+
+				</tbody>
+			</table>
+		</form>
+
+	</div>
+	</body>
+</html>

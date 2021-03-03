@@ -1,0 +1,38 @@
+<html xmlns:th="http://www.w3.org/1999/xhtml">
+	<head>
+		<title>New Fleet</title>
+		<link rel="stylesheet" type="text/css" th:href="@{/css/styles.css}">
+	</head>
+
+	<body>
+		<div class="main">
+			<h1>New Fleet</h1>
+
+			<form action="#" th:action="@{/api1/save/fleet}" th:object="${fleet}" method="post">
+				<table>
+					<tbody>
+						<tr>
+							<td class="alignLeft"> Name </td>
+							<td> <input type="text" th:field="*{name}" /> </td>
+						</tr>
+						<tr>
+							<td class="alignLeft"> Deleted </td>
+							<td> <input type="checkbox" th:field="*{isDeleted}" /> </td>
+						</tr>
+						<tr>
+							<td></td>
+						</tr>
+						<tr>
+							<td colspan="4">
+								<div class="paddingTopSmall">
+									<input type="submit" value="Add" />
+									<input type="reset" value="Reset" />
+								</div>
+							</td>
+						</tr>
+					</tbody>
+				</table>
+			</form>
+		</div>
+	</body>
+</html>

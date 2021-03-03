@@ -1,0 +1,83 @@
+<html xmlns:th="http://www.w3.org/1999/xhtml">
+	<head>
+		<title>Edit User Details</title>
+		<link rel="stylesheet" type="text/css" th:href="@{/css/styles.css}">
+	</head>
+
+	<body>
+
+		<div class="main">
+
+			<h1>Edit User Details</h1>
+
+			<p>
+				<span th:text="${error_message_attribute}" class="error_msg"></span>
+			</p>
+
+			<form th:action="${'/api1/update/user/' + user.id}" th:object="${user}" method="post">
+				<table th:object="${user}">
+					<tbody>
+						<tr>
+							<td class="alignLeft"> ID </td>
+							<td> <span th:text="*{id}"></span> </td>
+						</tr>
+						<tr>
+							<td class="alignLeft"> Username </td>
+							<td> <input type="text" th:field="*{username}" /> </td>
+						</tr>
+						<tr>
+							<td class="alignLeft"> First Name </td>
+							<td> <input type="text" th:field="*{firstName}" /> </td>
+						</tr>
+						<tr>
+							<td class="alignLeft"> Last Name </td>
+							<td> <input type="text" th:field="*{lastName}" /> </td>
+						</tr>
+						<tr>
+						</tr>
+						<tr th:object="${organisations}">
+							<td class="alignLeft"> Organisation </td>
+							<td>
+								<select th:field="${user.organisation}">
+									<option th:each="org : ${organisations}"
+											th:value="${org.id}"
+											th:utext="${org.name}">
+									</option>
+								</select>
+							</td>
+						</tr>
+						<tr th:object="${roles}">
+							<td class="alignLeft"> Role </td>
+							<td>
+								<select th:field="${user.role}">
+									<option th:each="role : ${roles}"
+											th:value="${role.id}"
+											th:utext="${role.name}">
+									</option>
+								</select>
+							</td>
+						</tr>
+						<tr>
+							<td class="alignLeft"> Deleted </td>
+							<td> <input type="checkbox" th:field="*{isDeleted}"/> </td>
+						</tr>
+
+						<tr>
+							<td colspan="2" class="paddingTopSmall">
+								<input type="submit" value="Save"/>
+							</td>
+						</tr>
+
+					</tbody>
+				</table>
+			</form>
+
+			<form th:action="${'/api1/user/change_password/' + user.id}" class="form_button" method="post">
+				<p>
+					<input type="submit" value="Change Password"/>
+				</p>
+			</form>
+
+		</div>
+	</body>
+</html>

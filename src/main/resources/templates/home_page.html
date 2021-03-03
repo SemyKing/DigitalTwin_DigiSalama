@@ -1,0 +1,28 @@
+<html xmlns:th="http://www.w3.org/1999/xhtml">
+	<head>
+		<title>Home Page</title>
+		<link rel="stylesheet" type="text/css" th:href="@{/css/styles.css}">
+	</head>
+
+	<body>
+		<div class="main" th:fragment="buttons_menu">
+
+			<p>
+				<a href="/api1/fleets" class="button">List all Vehicle Fleets</a>
+			</p>
+
+			<p>
+				<a href="/api1/vehicles" class="button">List all Vehicles</a>
+			</p>
+
+			<p>
+				<a href="/api1/organisations" class="button">List all organisations</a>
+			</p>
+
+			<p>
+				<a href="/api1/users" class="button">List all users</a>
+			</p>
+
+		</div>
+	</body>
+</html>

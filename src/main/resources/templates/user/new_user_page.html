@@ -1,0 +1,62 @@
+<html xmlns:th="http://www.w3.org/1999/xhtml">
+	<head>
+		<title>New User</title>
+		<link rel="stylesheet" type="text/css" th:href="@{/css/styles.css}">
+	</head>
+
+	<body>
+		<div class="main">
+			<h1>New User</h1>
+
+			<form action="#" th:action="@{/api1/save/user}" th:object="${user}" method="post">
+				<table>
+					<tbody>
+						<tr>
+							<td class="alignLeft"> Username </td>
+							<td> <input type="text" th:field="*{username}" /> </td>
+						</tr>
+						<tr>
+							<td class="alignLeft"> Password </td>
+							<td> <input type="text" th:field="*{hashedPassword}" /> </td>
+						</tr>
+						<tr>
+							<td class="alignLeft"> First Name </td>
+							<td> <input type="text" th:field="*{firstName}" /> </td>
+						</tr>
+						<tr>
+							<td class="alignLeft"> Last Name </td>
+							<td> <input type="text" th:field="*{lastName}" /> </td>
+						</tr>
+						<tr th:object="${organisations}">
+							<td class="alignLeft"> Organisation </td>
+							<td>
+								<select th:field="${user.organisation}">
+									<option value="*{organisation}"></option>
+									<option th:each="org : ${organisations}"
+											th:value="${org}"
+											th:utext="${org.name}">
+									</option>
+								</select>
+							</td>
+						</tr>
+						<tr>
+							<td class="alignLeft"> Deleted </td>
+							<td> <input type="checkbox" th:field="*{isDeleted}" /> </td>
+						</tr>
+						<tr>
+							<td></td>
+						</tr>
+						<tr>
+							<td colspan="4">
+								<div class="paddingTopSmall">
+									<input type="submit" value="Add" />
+									<input type="reset" value="Reset" />
+								</div>
+							</td>
+						</tr>
+					</tbody>
+				</table>
+			</form>
+		</div>
+	</body>
+</html>
