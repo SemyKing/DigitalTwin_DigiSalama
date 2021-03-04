@@ -14,7 +14,7 @@
 				<span th:text="${error_message_attribute}" class="error_msg"></span>
 			</p>
 
-			<form th:action="${'/api1/update/user/' + user.id}" th:object="${user}" method="post">
+			<form th:action="${'/api1/users/' + user.id + '/update'}" th:object="${user}" method="POST">
 				<table th:object="${user}">
 					<tbody>
 						<tr>
@@ -32,6 +32,10 @@
 						<tr>
 							<td class="alignLeft"> Last Name </td>
 							<td> <input type="text" th:field="*{lastName}" /> </td>
+						</tr>
+						<tr>
+							<td class="alignLeft"> Email </td>
+							<td> <input type="text" th:field="*{email}" /> </td>
 						</tr>
 						<tr>
 						</tr>
@@ -72,7 +76,7 @@
 				</table>
 			</form>
 
-			<form th:action="${'/api1/user/change_password/' + user.id}" class="form_button" method="post">
+			<form th:action="${'/api1/users/'+ user.id +'/change_password'}" class="form_button" method="post">
 				<p>
 					<input type="submit" value="Change Password"/>
 				</p>

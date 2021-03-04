@@ -8,7 +8,11 @@
 		<div class="main">
 			<h1>New User</h1>
 
-			<form action="#" th:action="@{/api1/save/user}" th:object="${user}" method="post">
+			<p>
+				<span th:text="${error_message_attribute}" class="error_msg"></span>
+			</p>
+
+			<form action="#" th:action="@{/api1/users}" th:object="${user}" method="POST">
 				<table>
 					<tbody>
 						<tr>
@@ -17,7 +21,11 @@
 						</tr>
 						<tr>
 							<td class="alignLeft"> Password </td>
-							<td> <input type="text" th:field="*{hashedPassword}" /> </td>
+							<td> <input type="text" th:field="*{passwordHash}" /> </td>
+						</tr>
+						<tr>
+							<td class="alignLeft"> Email </td>
+							<td> <input type="text" th:field="*{email}" /> </td>
 						</tr>
 						<tr>
 							<td class="alignLeft"> First Name </td>
@@ -27,18 +35,33 @@
 							<td class="alignLeft"> Last Name </td>
 							<td> <input type="text" th:field="*{lastName}" /> </td>
 						</tr>
+
 						<tr th:object="${organisations}">
 							<td class="alignLeft"> Organisation </td>
 							<td>
 								<select th:field="${user.organisation}">
-									<option value="*{organisation}"></option>
+<!--									<option value="*{organisation}"></option>-->
 									<option th:each="org : ${organisations}"
-											th:value="${org}"
+											th:value="${org.id}"
 											th:utext="${org.name}">
 									</option>
 								</select>
 							</td>
 						</tr>
+
+						<tr th:object="${roles}">
+							<td class="alignLeft"> Role </td>
+							<td>
+								<select th:field="${user.role}">
+<!--									<option value="*{role}"></option>-->
+									<option th:each="r : ${roles}"
+											th:value="${r.id}"
+											th:utext="${r.name}">
+									</option>
+								</select>
+							</td>
+						</tr>
+
 						<tr>
 							<td class="alignLeft"> Deleted </td>
 							<td> <input type="checkbox" th:field="*{isDeleted}" /> </td>

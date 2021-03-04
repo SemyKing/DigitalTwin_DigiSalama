@@ -15,9 +15,11 @@ public class StringUtils {
 	// HAS ALL PRIVILEGES
 	public final static String ROLE_SYSTEM_ADMIN = "ROLE_SYSTEM_ADMIN";
 
+	public final static String LOCAL_HOST = "http://localhost:8080";
 	public final static String FORWARD_SLASH = "/";
 	public final static String UI_API = "/api1";
 	public final static String JSON_API = "/api2";
+	public final static String APPLICATION_JSON = "application/json";
 	public final static String ID = "/{id}";
 	public final static String NEW = "/new";
 	public final static String SAVE = "/save";

@@ -34,15 +34,18 @@ public class DemoApplication {
 	@EventListener(ApplicationReadyEvent.class)
 	public void runAfterStartup() {
 		if (!userService.systemAdminExists()) {
-			Role userRole = createRoleIfNotFound(               StringUtils.ROLE_USER, 1);
-			Role organisationAdminRole = createRoleIfNotFound(  StringUtils.ROLE_ORGANISATION_ADMIN, 2);
-			Role systemAdminRole = createRoleIfNotFound(        StringUtils.ROLE_SYSTEM_ADMIN, 3);
+
+			Role userRole = 				createRoleIfNotFound(StringUtils.ROLE_USER,					1);
+			Role organisationAdminRole = 	createRoleIfNotFound(StringUtils.ROLE_ORGANISATION_ADMIN,	2);
+			Role systemAdminRole = 			createRoleIfNotFound(StringUtils.ROLE_SYSTEM_ADMIN,			3);
 
 			User systemAdmin = new User();
 			systemAdmin.setUsername("system_admin");
 			systemAdmin.setPasswordHash(StringUtils.generateHashFromString("password"));
 			systemAdmin.setRole(systemAdminRole);
 			userService.save(systemAdmin);
+
+
 		}
 	}
 

@@ -37,6 +37,6 @@ tr td {
 }
 
 .error_msg {
-	text-color: red;
+	color: red;
 	font-weight: bold;
 }

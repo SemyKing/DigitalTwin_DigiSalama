@@ -35,11 +35,11 @@ public class User {
 
 	private String apiToken;
 
-	@ManyToOne
+	@OneToOne
 	@JoinColumn(name="organisation_id", referencedColumnName = "id")
 	private Organisation organisation;
 
-	@OneToOne(cascade = CascadeType.ALL)
+	@OneToOne
 	@JoinColumn(name = "role_id", referencedColumnName = "id")
 	private Role role;
 

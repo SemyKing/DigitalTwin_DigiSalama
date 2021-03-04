@@ -24,7 +24,7 @@ public class Organisation {
 	@Column
 	private Boolean isDeleted = false;
 
-	@OneToMany(mappedBy="organisation")
-	private Set<User> users;
+//	@OneToMany(mappedBy="organisation")
+//	private Set<User> users;
 
 }

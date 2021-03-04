@@ -2,6 +2,7 @@ package com.example.demo.database.services;
 
 import com.example.demo.database.models.Vehicle;
 import com.example.demo.database.repositories.VehicleRepository;
+import com.example.demo.utils.ValidationResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -45,4 +46,30 @@ public class VehicleService {
 	public void deleteAll() {
 		repository.deleteAll();
 	}
+
+
+	public ValidationResponse validateVehicle(Vehicle vehicle) {
+
+		if (vehicle.getName() != null) {
+			if (vehicle.getName().length() <= 0) {
+				return new ValidationResponse(null, null, null, vehicle, false, "vehicle name cannot be empty");
+			}
+		}
+
+		if (vehicle.getVin() != null) {
+			if (vehicle.getVin().length() <= 0) {
+				return new ValidationResponse(null, null, null, vehicle, false, "vehicle VIN cannot be empty");
+			}
+		}
+
+		if (vehicle.getRegistrationPlate() != null) {
+			if (vehicle.getRegistrationPlate().length() <= 0) {
+				return new ValidationResponse(null, null, null, vehicle, false, "vehicle registration plate cannot be empty");
+			}
+		}
+
+		return new ValidationResponse(null, null, null, vehicle, true, "validation success");
+	}
+
+
 }

@@ -22,27 +22,15 @@ public class OrganisationRestController {
 	private final String ENTITY =       "organisation";
 	private final String ENTITY_LIST =  "organisations";
 
-	// CREATE
-	private final String POST_ENTITY_URL =  StringUtils.JSON_API + StringUtils.FORWARD_SLASH + ENTITY_LIST;
-
-	// GET
-	private final String GET_ENTITY_URL =   StringUtils.JSON_API + StringUtils.FORWARD_SLASH + ENTITY_LIST;
-
-	// UPDATE/REPLACE
-	private final String PUT_ENTITY_URL =   StringUtils.JSON_API + StringUtils.FORWARD_SLASH + ENTITY_LIST;
-
-	// UPDATE/MODIFY
-	private final String PATCH_ENTITY_URL = StringUtils.JSON_API + StringUtils.FORWARD_SLASH + ENTITY_LIST;
-
-	// DELETE
-	private final String DELETE_ENTITY_URL =StringUtils.JSON_API + StringUtils.FORWARD_SLASH + ENTITY_LIST;
+	private final String ENTITY_URL =  			StringUtils.JSON_API + StringUtils.FORWARD_SLASH + ENTITY_LIST;
+	private final String ENTITY_URL_WITH_ID =	StringUtils.JSON_API + StringUtils.FORWARD_SLASH + ENTITY_LIST + StringUtils.ID;
 
 
 	@Autowired
 	private final OrganisationService service;
 
 
-	@PostMapping(value = POST_ENTITY_URL, consumes = "application/json")
+	@PostMapping(value = ENTITY_URL, consumes = StringUtils.APPLICATION_JSON)
 	public ResponseEntity<Organisation> postEntity(@RequestBody Organisation organisation) {
 		System.out.println(organisation);
 
@@ -51,26 +39,26 @@ public class OrganisationRestController {
 		Organisation organisationFromDatabase = service.save(organisation);
 
 		if (organisationFromDatabase == null) {
-			throw new ResponseStatusException(HttpStatus.EXPECTATION_FAILED, "Failed to save entity");
+			throw new ResponseStatusException(HttpStatus.EXPECTATION_FAILED, "failed to save " + ENTITY + " in database");
 		} else {
 			return ResponseEntity.status(HttpStatus.OK).body(organisationFromDatabase);
 		}
 	}
 
-	@PostMapping(value = POST_ENTITY_URL + StringUtils.ID, consumes = "application/json")
+	@PostMapping(value = ENTITY_URL_WITH_ID, consumes = StringUtils.APPLICATION_JSON)
 	public void postEntityWithID(@RequestBody Organisation organisation, @PathVariable Long id) {
 		Organisation organisationFromDatabase = service.getById(id);
 
 		if (organisationFromDatabase == null) {
-			throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+			throw new ResponseStatusException(HttpStatus.NOT_FOUND, ENTITY + " with ID: '" + id + "' not found");
 		} else {
-			throw new ResponseStatusException(HttpStatus.CONFLICT);
+			throw new ResponseStatusException(HttpStatus.CONFLICT, "resource already exists");
 		}
 	}
 
 
 
-	@GetMapping(value = GET_ENTITY_URL, produces = "application/json")
+	@GetMapping(value = ENTITY_URL, produces = StringUtils.APPLICATION_JSON)
 	public List<Organisation> getEntityList() {
 		List<Organisation> organisations = service.getAll();
 
@@ -80,12 +68,12 @@ public class OrganisationRestController {
 		return organisations;
 	}
 
-	@GetMapping(value = GET_ENTITY_URL + StringUtils.ID, produces = "application/json")
+	@GetMapping(value = ENTITY_URL_WITH_ID, produces = StringUtils.APPLICATION_JSON)
 	public Organisation getEntityWithID(@PathVariable Long id) {
 		Organisation organisationFromDatabase = service.getById(id);
 
 		if (organisationFromDatabase == null) {
-			throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Not found");
+			throw new ResponseStatusException(HttpStatus.NOT_FOUND, ENTITY + " with ID: '" + id + "' not found");
 		}
 
 		return organisationFromDatabase;
@@ -93,12 +81,12 @@ public class OrganisationRestController {
 
 
 
-	@PutMapping(value = PUT_ENTITY_URL, consumes = "application/json")
+	@PutMapping(value = ENTITY_URL, consumes = StringUtils.APPLICATION_JSON)
 	public Organisation updateReplaceEntityList(@RequestBody List<Organisation> organisations) {
-		throw new ResponseStatusException(HttpStatus.METHOD_NOT_ALLOWED, "Method not allowed");
+		throw new ResponseStatusException(HttpStatus.METHOD_NOT_ALLOWED, "method not allowed");
 	}
 
-	@PutMapping(value = PUT_ENTITY_URL + StringUtils.ID, consumes = "application/json")
+	@PutMapping(value = ENTITY_URL_WITH_ID, consumes = StringUtils.APPLICATION_JSON)
 	public ResponseEntity<Organisation> updateReplaceEntity(@RequestBody Organisation organisation, @PathVariable Long id) {
 		System.out.println("PUT ENTITY");
 
@@ -113,7 +101,7 @@ public class OrganisationRestController {
 		Organisation organisationFromDatabase = service.getById(id);
 
 		if (organisationFromDatabase == null) {
-			throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+			throw new ResponseStatusException(HttpStatus.NOT_FOUND, ENTITY + " with ID: '" + id + "' not found");
 		}
 
 		organisation.setId(organisationFromDatabase.getId());
@@ -125,12 +113,12 @@ public class OrganisationRestController {
 
 
 
-	@PatchMapping(value = PATCH_ENTITY_URL, consumes = "application/json")
+	@PatchMapping(value = ENTITY_URL, consumes = StringUtils.APPLICATION_JSON)
 	public void updateModifyEntityList(@RequestBody List<Organisation> organisations) {
-		throw new ResponseStatusException(HttpStatus.METHOD_NOT_ALLOWED);
+		throw new ResponseStatusException(HttpStatus.METHOD_NOT_ALLOWED, "method not allowed");
 	}
 
-	@PatchMapping(value = PATCH_ENTITY_URL + StringUtils.ID, consumes = "application/json")
+	@PatchMapping(value = ENTITY_URL_WITH_ID, consumes = StringUtils.APPLICATION_JSON)
 	public ResponseEntity<Organisation> updateModifyEntity(@RequestBody Organisation organisation, @PathVariable Long id) {
 
 		// VALIDATE ENTITY
@@ -144,7 +132,7 @@ public class OrganisationRestController {
 		Organisation organisationFromDatabase = service.getById(id);
 
 		if (organisationFromDatabase == null) {
-			throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Not found");
+			throw new ResponseStatusException(HttpStatus.NOT_FOUND, ENTITY + " with ID: '" + id + "' not found");
 		}
 
 		organisation.setId(organisationFromDatabase.getId());
@@ -156,17 +144,17 @@ public class OrganisationRestController {
 
 
 
-	@DeleteMapping(value = DELETE_ENTITY_URL, consumes = "application/json")
+	@DeleteMapping(value = ENTITY_URL, consumes = StringUtils.APPLICATION_JSON)
 	public void deleteEntityList(@RequestBody List<Organisation> organisations) {
-		throw new ResponseStatusException(HttpStatus.METHOD_NOT_ALLOWED);
+		throw new ResponseStatusException(HttpStatus.METHOD_NOT_ALLOWED, "method not allowed");
 	}
 
-	@DeleteMapping(value = DELETE_ENTITY_URL + StringUtils.ID, consumes = "application/json")
+	@DeleteMapping(value = ENTITY_URL_WITH_ID, consumes = StringUtils.APPLICATION_JSON)
 	public ResponseEntity<String> deleteEntity(@PathVariable Long id) {
 		Organisation organisationFromDatabase = service.getById(id);
 
 		if (organisationFromDatabase == null) {
-			throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+			throw new ResponseStatusException(HttpStatus.NOT_FOUND, ENTITY + " with ID: '" + id + "' not found");
 		}
 
 		service.delete(organisationFromDatabase);

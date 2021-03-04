@@ -1,19 +1,24 @@
 package com.example.demo.api.controllers;
 
-import com.example.demo.database.models.Organisation;
-import com.example.demo.database.models.UserPassword;
-import com.example.demo.database.models.Role;
-import com.example.demo.database.models.User;
+import com.example.demo.api.controllers.exceptions.RestExceptionsHandler;
+import com.example.demo.database.models.*;
 import com.example.demo.database.repositories.RoleRepository;
-import com.example.demo.database.services.OrganisationService;
-import com.example.demo.database.services.UserService;
 import com.example.demo.utils.StringUtils;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.*;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.web.util.UriComponentsBuilder;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 
@@ -25,16 +30,15 @@ public class UserController {
 	private final String ENTITY =       "user";
 	private final String ENTITY_LIST =  "users";
 
-	private final String GET_ALL_URL =      StringUtils.UI_API + StringUtils.FORWARD_SLASH + ENTITY_LIST;
-	private final String GET_BY_ID_URL =    StringUtils.UI_API + StringUtils.FORWARD_SLASH + ENTITY + StringUtils.ID;
-	private final String NEW_ENTITY_URL =   StringUtils.UI_API + StringUtils.NEW +      StringUtils.FORWARD_SLASH + ENTITY;
-	private final String SAVE_URL =         StringUtils.UI_API + StringUtils.SAVE +     StringUtils.FORWARD_SLASH + ENTITY;
-	private final String EDIT_URL =         StringUtils.UI_API + StringUtils.EDIT +     StringUtils.FORWARD_SLASH + ENTITY + StringUtils.ID;
-	private final String UPDATE_URL =       StringUtils.UI_API + StringUtils.UPDATE +   StringUtils.FORWARD_SLASH + ENTITY + StringUtils.ID;
-	private final String DELETE_URL =       StringUtils.UI_API + StringUtils.DELETE +   StringUtils.FORWARD_SLASH + ENTITY + StringUtils.ID;
+	// CREATE
+	private final String ENTITY_UI_URL =  		StringUtils.UI_API + StringUtils.FORWARD_SLASH + ENTITY_LIST;
+	private final String ENTITY_UI_URL_WITH_ID =StringUtils.UI_API + StringUtils.FORWARD_SLASH + ENTITY_LIST + StringUtils.ID;
+	private final String USER_JSON_URL =  		StringUtils.LOCAL_HOST + StringUtils.JSON_API + "/" + ENTITY_LIST;
+	private final String ORGANISATION_JSON_URL =StringUtils.LOCAL_HOST + StringUtils.JSON_API + "/organisations";
 
-	private final String CHANGE_PASSWORD_URL =       StringUtils.UI_API + StringUtils.FORWARD_SLASH + ENTITY + "/change_password" + StringUtils.ID;
-	private final String UPDATE_PASSWORD_URL =       StringUtils.UI_API + StringUtils.FORWARD_SLASH + ENTITY + "/update_password" + StringUtils.ID;
+
+	private final String CHANGE_PASSWORD_URL = StringUtils.UI_API + StringUtils.FORWARD_SLASH + ENTITY_LIST + StringUtils.ID + "/change_password";
+	private final String UPDATE_PASSWORD_URL = StringUtils.UI_API + StringUtils.FORWARD_SLASH + ENTITY_LIST + StringUtils.ID + "/update_password";
 
 
 	private final String CHANGE_PASSWORD_PAGE = "user/change_password_page";
@@ -45,226 +49,201 @@ public class UserController {
 
 
 	@Autowired
-	private final UserService userService;
-
-	@Autowired
-	private final OrganisationService organisationService;
+	private final RestTemplate restTemplate;
 
 	@Autowired
 	private final RoleRepository roleRepository;
 
 
-	@GetMapping(GET_ALL_URL)
+	@GetMapping(ENTITY_UI_URL)
 	public String getAllUsers(Model model) {
+		ResponseEntity<User[]> response = this.restTemplate.getForEntity(USER_JSON_URL, User[].class);
 
-		System.out.println("GET ALL USERS");
+		List<User> users = new ArrayList<>();
 
-		List<User> users = userService.getAll();
+		if (response.getStatusCode() == HttpStatus.OK) {
+			if (response.getBody() != null) {
+				users.addAll(Arrays.asList(response.getBody()));
+			}
+		}
+
 		users.sort(Comparator.comparing(User::getId));
 
 		model.addAttribute(ENTITY_LIST, users);
 		return ENTITY_LIST_PAGE;
 	}
 
-
-	@GetMapping(GET_BY_ID_URL)
+	@GetMapping(ENTITY_UI_URL_WITH_ID)
 	public String getUserById(@PathVariable Long id, Model model) {
-		User user = userService.getById(id);
+		ResponseEntity<User> response = this.restTemplate.getForEntity(USER_JSON_URL + "/" + id, User.class);
 
-		if (user == null) {
-			model.addAttribute(StringUtils.ERROR_TITLE_ATTRIBUTE, "Invalid ID");
-			model.addAttribute(StringUtils.ERROR_MESSAGE_ATTRIBUTE, ENTITY + " with ID: '" + id + "' not found");
-			return StringUtils.ERROR_PAGE;
+		User user = null;
+
+		if (response.getStatusCode() == HttpStatus.OK) {
+			if (response.getBody() != null) {
+				user = response.getBody();
+			}
 		}
 
-//		boolean changesAllowed = userService.isUserOrganisationOrSystemAdmin(getCurrentUserId());
-
-//		System.out.println("changesAllowed: " + changesAllowed);
-
 		model.addAttribute(ENTITY, user);
-//		model.addAttribute(StringUtils.CHANGES_ALLOWED_ATTRIBUTE, changesAllowed);
-
 		return ENTITY_DETAILS_PAGE;
 	}
 
+	// NEW USER FORM
+	@GetMapping(ENTITY_UI_URL + StringUtils.NEW)
+	public String newUserForm(Model model, boolean userAlreadySet) {
+		ResponseEntity<Organisation[]> response = this.restTemplate.getForEntity(ORGANISATION_JSON_URL, Organisation[].class);
 
-	@GetMapping(NEW_ENTITY_URL)
-	public String newUserForm(Model model) {
+		List<Organisation> organisations = new ArrayList<>();
 
-		System.out.println("NEW USER");
-
-		List<Organisation> organisations = organisationService.getAll();
-		organisations.sort(Comparator.comparing(Organisation::getName));
-
-		model.addAttribute("organisations", organisations);
-		model.addAttribute(ENTITY, new User());
-
-		return NEW_ENTITY_PAGE;
-	}
-
-
-	@PostMapping(SAVE_URL)
-	public String saveUserFromUI(@ModelAttribute User user, Model model) {
-
-		System.out.println("SAVE USER");
-
-		if (user == null) {
-			model.addAttribute(StringUtils.ERROR_TITLE_ATTRIBUTE, ENTITY + " object is null");
-			model.addAttribute(StringUtils.ERROR_MESSAGE_ATTRIBUTE, ENTITY + " object is required");
-			return StringUtils.ERROR_PAGE;
+		if (response.getStatusCode() == HttpStatus.OK) {
+			if (response.getBody() != null) {
+				organisations.addAll(Arrays.asList(response.getBody()));
+			}
 		}
-
-		System.out.println(user);
-
-		userService.save(user);
-
-		return StringUtils.REDIRECT_URL + GET_ALL_URL;
-	}
-
-	@PostMapping(CHANGE_PASSWORD_URL)
-	public String changePassword(@PathVariable Long id, Model model) {
-
-		System.out.println("CHANGE PASSWORD");
-
-		if (id == null) {
-			model.addAttribute(StringUtils.ERROR_TITLE_ATTRIBUTE, "ID object is null");
-			model.addAttribute(StringUtils.ERROR_MESSAGE_ATTRIBUTE, "ID object is required");
-			return StringUtils.ERROR_PAGE;
-		}
-
-		User user = userService.getById(id);
-
-		if (user == null) {
-			model.addAttribute(StringUtils.ERROR_TITLE_ATTRIBUTE, "Invalid ID");
-			model.addAttribute(StringUtils.ERROR_MESSAGE_ATTRIBUTE, ENTITY + "  with ID: '" + id + "' not found");
-			return StringUtils.ERROR_PAGE;
-		}
-
-		System.out.println(user);
-
-		model.addAttribute("password", new UserPassword());
-		model.addAttribute("userId", id);
-
-		return CHANGE_PASSWORD_PAGE;
-	}
-
-
-	@PostMapping(UPDATE_PASSWORD_URL)
-	public String updatePassword(@ModelAttribute UserPassword password, @PathVariable Long id, Model model) {
-
-		model.addAttribute(StringUtils.ERROR_TITLE_ATTRIBUTE, "");
-		model.addAttribute(StringUtils.ERROR_MESSAGE_ATTRIBUTE, "");
-
-		if (password == null) {
-			model.addAttribute(StringUtils.ERROR_TITLE_ATTRIBUTE, "Password object is null");
-			model.addAttribute(StringUtils.ERROR_MESSAGE_ATTRIBUTE, "Password object is required");
-			return CHANGE_PASSWORD_PAGE;
-		}
-
-		if (id == null) {
-			model.addAttribute(StringUtils.ERROR_TITLE_ATTRIBUTE, "ID object is null");
-			model.addAttribute(StringUtils.ERROR_MESSAGE_ATTRIBUTE, "ID object is required");
-			return StringUtils.ERROR_PAGE;
-		}
-
-		User userFromDatabase = userService.getById(id);
-
-		if (userFromDatabase == null) {
-			model.addAttribute(StringUtils.ERROR_TITLE_ATTRIBUTE, "Invalid ID");
-			model.addAttribute(StringUtils.ERROR_MESSAGE_ATTRIBUTE, ENTITY + "  with ID: '" + id + "' not found");
-			return StringUtils.ERROR_PAGE;
-		}
-
-		String currentHashedPassword = StringUtils.generateHashFromString(password.getCurrentPassword());
-		String newHashedPassword = StringUtils.generateHashFromString(password.getNewPassword1());
-
-		if (!currentHashedPassword.equals(userFromDatabase.getPasswordHash())) {
-			model.addAttribute(StringUtils.ERROR_MESSAGE_ATTRIBUTE, "Current Password is incorrect");
-			model.addAttribute("password", password);
-			model.addAttribute("userId", id);
-			return CHANGE_PASSWORD_PAGE;
-		}
-
-		if (!password.getNewPassword1().equals(password.getNewPassword2())) {
-			model.addAttribute(StringUtils.ERROR_MESSAGE_ATTRIBUTE, "Passwords do not match");
-			model.addAttribute("password", password);
-			model.addAttribute("userId", id);
-			return CHANGE_PASSWORD_PAGE;
-		}
-
-		userFromDatabase.setPasswordHash(newHashedPassword);
-
-		userService.save(userFromDatabase);
-
-		return StringUtils.REDIRECT_URL + "/api1/user/" + userFromDatabase.getId();
-	}
-
-
-	@GetMapping(EDIT_URL)
-	public String editUserForm(@PathVariable Long id, Model model) {
-		System.out.println("EDIT USER");
-
-		User user = userService.getById(id);
-
-		if (user == null) {
-			model.addAttribute(StringUtils.ERROR_TITLE_ATTRIBUTE, "Invalid ID");
-			model.addAttribute(StringUtils.ERROR_MESSAGE_ATTRIBUTE, ENTITY + "  with ID: '" + id + "' not found");
-			return StringUtils.ERROR_PAGE;
-		}
-
-		List<Organisation> organisations = organisationService.getAll();
-		organisations.sort(Comparator.comparing(Organisation::getName));
 
 		List<Role> roles = roleRepository.findAll();
 
-		System.out.println(user);
+		if (!userAlreadySet) {
+			model.addAttribute(ENTITY, new User());
+		}
 
-		model.addAttribute(ENTITY, user);
 		model.addAttribute("organisations", organisations);
 		model.addAttribute("roles", roles);
+		return NEW_ENTITY_PAGE;
+	}
+
+	// EDIT USER FORM
+	@GetMapping(ENTITY_UI_URL_WITH_ID + StringUtils.EDIT)
+	public String editUserForm(@PathVariable Long id, Model model, boolean userAlreadySet) {
+
+		if (!userAlreadySet) {
+			ResponseEntity<User> userResponseEntity = this.restTemplate.getForEntity(USER_JSON_URL + "/" + id, User.class);
+
+			User user = null;
+
+			if (userResponseEntity.getStatusCode() == HttpStatus.OK) {
+				if (userResponseEntity.getBody() != null) {
+					user = userResponseEntity.getBody();
+				}
+			} else {
+				System.out.println("GOT STATUS CODE: " + userResponseEntity.getStatusCode());
+			}
+
+			model.addAttribute(ENTITY, user);
+		}
+
+		ResponseEntity<Organisation[]> organisationsResponseEntity = this.restTemplate.getForEntity(ORGANISATION_JSON_URL, Organisation[].class);
+
+		List<Organisation> organisations = new ArrayList<>();
+
+		if (organisationsResponseEntity.getStatusCode() == HttpStatus.OK) {
+			if (organisationsResponseEntity.getBody() != null) {
+				organisations.addAll(Arrays.asList(organisationsResponseEntity.getBody()));
+			}
+		}
+
+		List<Role> roles = roleRepository.findAll();
+
+		model.addAttribute("organisations", organisations);
+		model.addAttribute("roles", roles);
+		return EDIT_ENTITY_PAGE;
+	}
+
+	// PASSWORD CHANGE FORM
+	@GetMapping(CHANGE_PASSWORD_URL)
+	public String changeUserPasswordForm(@PathVariable Long id, Model model, boolean dataAlreadySet) {
+
+		if (!dataAlreadySet) {
+			ResponseEntity<User> userResponseEntity = this.restTemplate.getForEntity(USER_JSON_URL + "/" + id, User.class);
+
+			User user = null;
+
+			if (userResponseEntity.getStatusCode() == HttpStatus.OK) {
+				if (userResponseEntity.getBody() != null) {
+					user = userResponseEntity.getBody();
+				}
+			} else {
+				System.out.println("GOT NON 'OK' STATUS CODE: " + userResponseEntity.getStatusCode());
+			}
+
+			model.addAttribute(ENTITY, user);
+		}
 
 		return EDIT_ENTITY_PAGE;
 	}
 
 
-	@PostMapping(UPDATE_URL)
-	public String updateUserFromUI(@ModelAttribute User user, @PathVariable Long id, Model model) {
-		System.out.println("UPDATE USER");
+	// POST USER
+	@PostMapping(ENTITY_UI_URL)
+	public String postUser(@ModelAttribute User user, Model model) {
+		try {
+			ResponseEntity<User> response = this.restTemplate.postForEntity(USER_JSON_URL, user, User.class);
 
-		if (id == null) {
-			model.addAttribute(StringUtils.ERROR_TITLE_ATTRIBUTE, "ID missing");
-			model.addAttribute(StringUtils.ERROR_MESSAGE_ATTRIBUTE, "ID parameter is required");
-			return StringUtils.ERROR_PAGE;
+			// IF ERROR -> ADD ERROR MESSAGE TO MODEL AND SHOW ERROR PAGE
+		} catch (HttpClientErrorException e) {
+			String responseString = e.getResponseBodyAsString();
+			ObjectMapper mapper = new ObjectMapper()
+					.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+
+			try {
+				RestExceptionsHandler result = mapper.readValue(responseString, RestExceptionsHandler.class);
+
+				// METHOD NOT ALLOWED
+				if (result.getStatus() == 405) {
+					model.addAttribute(ENTITY, user);
+					model.addAttribute(StringUtils.ERROR_MESSAGE_ATTRIBUTE, result.getMessage());
+
+					return newUserForm(model, true);
+				}
+
+			} catch (JsonProcessingException jsonProcessingException) {
+				jsonProcessingException.printStackTrace();
+			}
 		}
 
-		User userFromDatabase = userService.getById(id);
-
-		if (userFromDatabase == null) {
-			model.addAttribute(StringUtils.ERROR_TITLE_ATTRIBUTE, "Invalid ID");
-			model.addAttribute(StringUtils.ERROR_MESSAGE_ATTRIBUTE, ENTITY + " with ID: '" + id + "' not found");
-			return StringUtils.ERROR_PAGE;
-		}
-
-		System.out.println(user);
-
-		userService.save(user);
-
-		return StringUtils.REDIRECT_URL + GET_ALL_URL;
+		// -> IF OK
+		return StringUtils.REDIRECT_URL + ENTITY_UI_URL; // -> USERS LIST VIEW
 	}
 
+	// UPDATE USER
+	@PostMapping(ENTITY_UI_URL_WITH_ID + StringUtils.UPDATE)
+	public String putUser(@ModelAttribute User user, Model model) {
+		try {
+			UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(USER_JSON_URL + "/" + user.getId());
 
-	@PostMapping(DELETE_URL)
-	public String deleteUserFromUI(@PathVariable Long id, Model model) {
-		User userFromDatabase = userService.getById(id);
+			HttpEntity<User> entity = new HttpEntity<>(user);
 
-		if (userFromDatabase == null) {
-			model.addAttribute(StringUtils.ERROR_TITLE_ATTRIBUTE, "Invalid ID");
-			model.addAttribute(StringUtils.ERROR_MESSAGE_ATTRIBUTE, ENTITY + " with ID: '" + id + "' not found");
-			return StringUtils.ERROR_PAGE;
+			ResponseEntity<User> response = restTemplate.exchange(
+					builder.toUriString(),
+					HttpMethod.PUT,
+					entity,
+					User.class);
+
+			System.out.println(response.getStatusCode());
+
+		} catch (HttpClientErrorException e) {
+			String responseString = e.getResponseBodyAsString();
+			ObjectMapper mapper = new ObjectMapper()
+					.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+
+			try {
+				RestExceptionsHandler result = mapper.readValue(responseString, RestExceptionsHandler.class);
+
+				// METHOD NOT ALLOWED
+				if (result.getStatus() == 405) {
+					model.addAttribute(ENTITY, user);
+					model.addAttribute(StringUtils.ERROR_MESSAGE_ATTRIBUTE, result.getMessage());
+
+					return editUserForm(user.getId(), model, true);
+				}
+
+			} catch (JsonProcessingException jsonProcessingException) {
+				jsonProcessingException.printStackTrace();
+			}
 		}
 
-		userService.delete(userFromDatabase);
-
-		return StringUtils.REDIRECT_URL + GET_ALL_URL;
+		return StringUtils.REDIRECT_URL + ENTITY_UI_URL; // -> USERS LIST VIEW
 	}
+
 }

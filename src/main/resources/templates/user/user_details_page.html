@@ -32,6 +32,10 @@
 						<td class="alignLeft"> <span th:text="*{lastName}"></span> </td>
 					</tr>
 					<tr>
+						<td class="alignLeft"> Email </td>
+						<td class="alignLeft"> <span th:text="*{email}"></span> </td>
+					</tr>
+					<tr>
 						<td class="alignLeft"> Organisation </td>
 						<td class="alignLeft"> <span th:text="${user.organisation} ? ${user.organisation.name} : 'NOT SELECTED'"></span> </td>
 					</tr>
@@ -48,15 +52,18 @@
 
 			<table>
 				<tr>
-					<th th:if="${changes_allowed}">
-						<form action="#" th:action="${'/api1/edit/user/' + user.id}" class="form_button" method="get">
+<!--				<th th:if="${changes_allowed}">-->
+					<th>
+						<form action="#" th:action="${'/api1/users/' + user.id + '/edit'}" class="form_button" method="GET">
 							<p>
 								<input type="submit" value="Edit"/>
 							</p>
 						</form>
 					</th>
+<!--				</th>-->
+
 					<th>
-						<form action="#" th:action="${'/api1/delete/user/' + user.id}" class="form_button" method="post">
+						<form action="#" th:action="${'/api1/users/' + user.id}" class="form_button" method="DELETE">
 							<p>
 								<input type="submit" value="Delete"/>
 							</p>

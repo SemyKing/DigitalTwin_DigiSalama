@@ -41,7 +41,7 @@ public class VehicleFleetRestController {
 
 
 
-	@PostMapping(value = POST_ENTITY_URL, consumes = "application/json")
+	@PostMapping(value = POST_ENTITY_URL, consumes = StringUtils.APPLICATION_JSON)
 	public ResponseEntity<VehicleFleet> postEntity(@RequestBody VehicleFleet vehicleFleet) {
 
 		// VALIDATE ENTITY
@@ -68,7 +68,7 @@ public class VehicleFleetRestController {
 
 
 
-	@GetMapping(value = GET_ENTITY_URL, produces = "application/json")
+	@GetMapping(value = GET_ENTITY_URL, produces = StringUtils.APPLICATION_JSON)
 	public List<VehicleFleet> getEntityList() {
 		List<VehicleFleet> vehicleFleets = vehicleFleetService.getAll();
 
@@ -78,7 +78,7 @@ public class VehicleFleetRestController {
 		return vehicleFleets;
 	}
 
-	@GetMapping(value = GET_ENTITY_URL + StringUtils.ID, produces = "application/json")
+	@GetMapping(value = GET_ENTITY_URL + StringUtils.ID, produces = StringUtils.APPLICATION_JSON)
 	public VehicleFleet getEntityWithID(@PathVariable Long id) {
 		VehicleFleet vehicleFleetFromDatabase = vehicleFleetService.getById(id);
 
@@ -91,12 +91,12 @@ public class VehicleFleetRestController {
 
 
 
-	@PutMapping(value = PUT_ENTITY_URL, consumes = "application/json")
+	@PutMapping(value = PUT_ENTITY_URL, consumes = StringUtils.APPLICATION_JSON)
 	public VehicleFleet updateReplaceEntityList(@RequestBody List<VehicleFleet> vehicleFleets) {
 		throw new ResponseStatusException(HttpStatus.METHOD_NOT_ALLOWED, "Method not allowed");
 	}
 
-	@PutMapping(value = PUT_ENTITY_URL + StringUtils.ID, consumes = "application/json")
+	@PutMapping(value = PUT_ENTITY_URL + StringUtils.ID, consumes = StringUtils.APPLICATION_JSON)
 	public ResponseEntity<VehicleFleet> updateReplaceEntity(@RequestBody VehicleFleet vehicleFleet, @PathVariable Long id) {
 		System.out.println("PUT ENTITY");
 
@@ -123,12 +123,12 @@ public class VehicleFleetRestController {
 
 
 
-	@PatchMapping(value = PATCH_ENTITY_URL, consumes = "application/json")
+	@PatchMapping(value = PATCH_ENTITY_URL, consumes = StringUtils.APPLICATION_JSON)
 	public void updateModifyEntityList(@RequestBody List<VehicleFleet> vehicleFleets) {
 		throw new ResponseStatusException(HttpStatus.METHOD_NOT_ALLOWED);
 	}
 
-	@PatchMapping(value = PATCH_ENTITY_URL + StringUtils.ID, consumes = "application/json")
+	@PatchMapping(value = PATCH_ENTITY_URL + StringUtils.ID, consumes = StringUtils.APPLICATION_JSON)
 	public ResponseEntity<VehicleFleet> updateModifyEntity(@RequestBody VehicleFleet vehicleFleet, @PathVariable Long id) {
 
 		// VALIDATE ENTITY
@@ -154,12 +154,12 @@ public class VehicleFleetRestController {
 
 
 
-	@DeleteMapping(value = DELETE_ENTITY_URL, consumes = "application/json")
+	@DeleteMapping(value = DELETE_ENTITY_URL, consumes = StringUtils.APPLICATION_JSON)
 	public void deleteEntityList(@RequestBody List<VehicleFleet> vehicleFleets) {
 		throw new ResponseStatusException(HttpStatus.METHOD_NOT_ALLOWED);
 	}
 
-	@DeleteMapping(value = DELETE_ENTITY_URL + StringUtils.ID, consumes = "application/json")
+	@DeleteMapping(value = DELETE_ENTITY_URL + StringUtils.ID, consumes = StringUtils.APPLICATION_JSON)
 	public ResponseEntity<String> deleteEntity(@PathVariable Long id) {
 		VehicleFleet vehicleFleetFromDatabase = vehicleFleetService.getById(id);
 

@@ -1,9 +1,9 @@
 package com.example.demo.api.rest_controllers;
 
-import com.example.demo.database.models.User;
 import com.example.demo.database.models.Vehicle;
 import com.example.demo.database.services.VehicleService;
 import com.example.demo.utils.StringUtils;
+import com.example.demo.utils.ValidationResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -13,7 +13,6 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Comparator;
 import java.util.List;
-import java.util.Optional;
 
 @RestController
 @RequiredArgsConstructor
@@ -43,15 +42,19 @@ public class VehicleRestController {
 
 
 
-	@PostMapping(value = POST_ENTITY_URL, consumes = "application/json")
+	@PostMapping(value = POST_ENTITY_URL, consumes = StringUtils.APPLICATION_JSON, produces = StringUtils.APPLICATION_JSON)
 	public ResponseEntity<Vehicle> postEntity(@RequestBody Vehicle vehicle) {
 
-		// VALIDATE ENTITY
+		ValidationResponse response = vehicleService.validateVehicle(vehicle);
+
+		if (!response.isValid()) {
+			throw new ResponseStatusException(HttpStatus.METHOD_NOT_ALLOWED, response.getMessage());
+		}
 
 		Vehicle vehicleFromDatabase = vehicleService.save(vehicle);
 
 		if (vehicleFromDatabase == null) {
-			throw new ResponseStatusException(HttpStatus.EXPECTATION_FAILED, "Failed to save entity");
+			throw new ResponseStatusException(HttpStatus.EXPECTATION_FAILED, "failed to save " + ENTITY + " in database");
 		} else {
 			return ResponseEntity.status(HttpStatus.OK).body(vehicleFromDatabase);
 		}
@@ -59,20 +62,20 @@ public class VehicleRestController {
 //		return ResponseEntity.status(HttpStatus.OK).body(vehicleService.save(vehicle));
 	}
 
-	@PostMapping(value = POST_ENTITY_URL + StringUtils.ID, consumes = "application/json")
+	@PostMapping(value = POST_ENTITY_URL + StringUtils.ID, consumes = StringUtils.APPLICATION_JSON)
 	public void postEntityWithID(@RequestBody Vehicle vehicle, @PathVariable Long id) {
 		Vehicle vehicleFromDatabase = vehicleService.getById(id);
 
 		if (vehicleFromDatabase == null) {
-			throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+			throw new ResponseStatusException(HttpStatus.NOT_FOUND, ENTITY + " with ID: '" + id + "' not found");
 		} else {
-			throw new ResponseStatusException(HttpStatus.CONFLICT);
+			throw new ResponseStatusException(HttpStatus.CONFLICT, "resource already exists");
 		}
 	}
 
 
 
-	@GetMapping(value = GET_ENTITY_URL, produces = "application/json")
+	@GetMapping(value = GET_ENTITY_URL, produces = StringUtils.APPLICATION_JSON)
 	public List<Vehicle> getEntityList() {
 		List<Vehicle> vehicles = vehicleService.getAll();
 
@@ -82,12 +85,12 @@ public class VehicleRestController {
 		return vehicles;
 	}
 
-	@GetMapping(value = GET_ENTITY_URL + StringUtils.ID, produces = "application/json")
+	@GetMapping(value = GET_ENTITY_URL + StringUtils.ID, produces = StringUtils.APPLICATION_JSON)
 	public Vehicle getEntityWithID(@PathVariable Long id) {
 		Vehicle vehicleFromDatabase = vehicleService.getById(id);
 
 		if (vehicleFromDatabase == null) {
-			throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Not found");
+			throw new ResponseStatusException(HttpStatus.NOT_FOUND, ENTITY + " with ID: '" + id + "' not found");
 		}
 
 		return vehicleFromDatabase;
@@ -95,27 +98,29 @@ public class VehicleRestController {
 
 
 
-	@PutMapping(value = PUT_ENTITY_URL, consumes = "application/json")
-	public Vehicle updateReplaceEntityList(@RequestBody List<Vehicle> vehicles) {
-		throw new ResponseStatusException(HttpStatus.METHOD_NOT_ALLOWED, "Method not allowed");
+	@PutMapping(value = PUT_ENTITY_URL, consumes = StringUtils.APPLICATION_JSON)
+	public void updateReplaceEntityList(@RequestBody List<Vehicle> vehicles) {
+		throw new ResponseStatusException(HttpStatus.METHOD_NOT_ALLOWED, "method not allowed"); // UNLESS UPDATE EVERY RESOURCE
 	}
 
-	@PutMapping(value = PUT_ENTITY_URL + StringUtils.ID, consumes = "application/json")
+	@PutMapping(value = PUT_ENTITY_URL + StringUtils.ID, consumes = StringUtils.APPLICATION_JSON, produces = StringUtils.APPLICATION_JSON)
 	public ResponseEntity<Vehicle> updateReplaceEntity(@RequestBody Vehicle vehicle, @PathVariable Long id) {
-		System.out.println("PUT ENTITY");
-
-		// VALIDATE ENTITY
-		System.out.println(vehicle);
 
 		// EMPTY BODY
 		if (vehicle == null) {
-			throw new ResponseStatusException(HttpStatus.NO_CONTENT);
+			throw new ResponseStatusException(HttpStatus.NO_CONTENT, "no content was provided");
+		}
+
+		ValidationResponse response = vehicleService.validateVehicle(vehicle);
+
+		if (!response.isValid()) {
+			throw new ResponseStatusException(HttpStatus.METHOD_NOT_ALLOWED, response.getMessage());
 		}
 
 		Vehicle vehicleFromDatabase = vehicleService.getById(id);
 
 		if (vehicleFromDatabase == null) {
-			throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+			throw new ResponseStatusException(HttpStatus.NOT_FOUND, ENTITY + " with ID: '" + id + "' not found");
 		}
 
 		vehicle.setId(vehicleFromDatabase.getId());
@@ -127,26 +132,30 @@ public class VehicleRestController {
 
 
 
-	@PatchMapping(value = PATCH_ENTITY_URL, consumes = "application/json")
+	@PatchMapping(value = PATCH_ENTITY_URL, consumes = StringUtils.APPLICATION_JSON)
 	public void updateModifyEntityList(@RequestBody List<Vehicle> vehicles) {
 		throw new ResponseStatusException(HttpStatus.METHOD_NOT_ALLOWED);
 	}
 
-	@PatchMapping(value = PATCH_ENTITY_URL + StringUtils.ID, consumes = "application/json")
+	@PatchMapping(value = PATCH_ENTITY_URL + StringUtils.ID, consumes = StringUtils.APPLICATION_JSON)
 	public ResponseEntity<Vehicle> updateModifyEntity(@RequestBody Vehicle vehicle, @PathVariable Long id) {
-
-		// VALIDATE ENTITY
-		System.out.println(vehicle);
 
 		// EMPTY BODY
 		if (vehicle == null) {
-			throw new ResponseStatusException(HttpStatus.NO_CONTENT, "No content");
+			throw new ResponseStatusException(HttpStatus.NO_CONTENT, "no content was provided");
 		}
+
+		ValidationResponse response = vehicleService.validateVehicle(vehicle);
+
+		if (!response.isValid()) {
+			throw new ResponseStatusException(HttpStatus.METHOD_NOT_ALLOWED, response.getMessage());
+		}
+
 
 		Vehicle vehicleFromDatabase = vehicleService.getById(id);
 
 		if (vehicleFromDatabase == null) {
-			throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Not found");
+			throw new ResponseStatusException(HttpStatus.NOT_FOUND, ENTITY + " with ID: '" + id + "' not found");
 		}
 
 		vehicle.setId(vehicleFromDatabase.getId());
@@ -158,17 +167,17 @@ public class VehicleRestController {
 
 
 
-	@DeleteMapping(value = DELETE_ENTITY_URL, consumes = "application/json")
+	@DeleteMapping(value = DELETE_ENTITY_URL, consumes = StringUtils.APPLICATION_JSON)
 	public void deleteEntityList(@RequestBody List<Vehicle> vehicles) {
 		throw new ResponseStatusException(HttpStatus.METHOD_NOT_ALLOWED);
 	}
 
-	@DeleteMapping(value = DELETE_ENTITY_URL + StringUtils.ID, consumes = "application/json")
+	@DeleteMapping(value = DELETE_ENTITY_URL + StringUtils.ID, consumes = StringUtils.APPLICATION_JSON)
 	public ResponseEntity<String> deleteEntity(@PathVariable Long id) {
 		Vehicle vehicleFromDatabase = vehicleService.getById(id);
 
 		if (vehicleFromDatabase == null) {
-			throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+			throw new ResponseStatusException(HttpStatus.NOT_FOUND, ENTITY + " with ID: '" + id + "' not found");
 		}
 
 		vehicleService.delete(vehicleFromDatabase);
@@ -178,7 +187,7 @@ public class VehicleRestController {
 
 
 
-
+	// FOR TESTING
 	@PostMapping(StringUtils.JSON_API + StringUtils.FORWARD_SLASH + ENTITY_LIST + "/populate_with_test_data")
 	public void populateWithTestData() {
 		for (int i = 1; i < 11; i++) {
@@ -190,6 +199,7 @@ public class VehicleRestController {
 		}
 	}
 
+	// FOR TESTING
 	@PostMapping(StringUtils.JSON_API + StringUtils.FORWARD_SLASH + ENTITY_LIST + "/delete_all")
 	public void deleteAll() {
 		vehicleService.deleteAll();

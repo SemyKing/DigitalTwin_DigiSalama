@@ -9,16 +9,34 @@
 
 			<h1>Users List</h1>
 
-			<a href="/api1/new/user" class="button">Add User</a>
+			<form action="#" th:action="${'/api1/users/new'}" class="form_button" method="get">
+				<p>
+					<input type="submit" value="Add User"/>
+				</p>
+			</form>
 
 			<table>
+				<thead>
+				<tr>
+					<th> ID </th>
+					<th> Username </th>
+					<th> First Name </th>
+					<th> Last Name </th>
+					<th> Organisation </th>
+					<th> Role </th>
+					<th> Deleted </th>
+				</tr>
+				</thead>
 				<tbody>
 					<tr th:if="${users.empty}">
-						<td colspan="1"> No Users In Database </td>
+						<td colspan="7"> No Users In Database </td>
 					</tr>
 					<tr th:each="user : ${users}">
 						<td>
 							<span th:text="${user.id}"></span>
+						</td>
+						<td>
+							<span th:text="${user.username}"></span>
 						</td>
 						<td>
 							<span th:text="${user.firstName}"></span>
@@ -27,10 +45,16 @@
 							<span th:text="${user.lastName}"></span>
 						</td>
 						<td>
+							<span th:text="${user.organisation} ? ${user.organisation.name} : 'NOT SELECTED'"></span>
+						</td>
+						<td>
+							<span th:text="${user.role} ? ${user.role.name} : 'NOT SELECTED'"></span>
+						</td>
+						<td>
 							<span th:text="${user.isDeleted}"></span>
 						</td>
 						<td>
-							<form action="#" th:action="${'/api1/user/' + user.id}" class="form_button" method="get">
+							<form action="#" th:action="${'/api1/users/' + user.id}" class="form_button" method="get">
 								<p>
 									<input type="submit" value="View"/>
 								</p>
