@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.server.ResponseStatusException;
 
 import javax.servlet.http.HttpServletResponse;
@@ -35,6 +36,8 @@ public class OrganisationRestController {
 		System.out.println(organisation);
 
 		// VALIDATE ENTITY
+
+
 
 		Organisation organisationFromDatabase = service.save(organisation);
 
@@ -149,7 +152,7 @@ public class OrganisationRestController {
 		throw new ResponseStatusException(HttpStatus.METHOD_NOT_ALLOWED, "method not allowed");
 	}
 
-	@DeleteMapping(value = ENTITY_URL_WITH_ID, consumes = StringUtils.APPLICATION_JSON)
+	@DeleteMapping(value = ENTITY_URL_WITH_ID)
 	public ResponseEntity<String> deleteEntity(@PathVariable Long id) {
 		Organisation organisationFromDatabase = service.getById(id);
 
@@ -157,7 +160,11 @@ public class OrganisationRestController {
 			throw new ResponseStatusException(HttpStatus.NOT_FOUND, ENTITY + " with ID: '" + id + "' not found");
 		}
 
-		service.delete(organisationFromDatabase);
+		try {
+			service.delete(organisationFromDatabase);
+		} catch (Exception e) {
+			throw new ResponseStatusException(HttpStatus.METHOD_NOT_ALLOWED, "method not allowed");
+		}
 
 		return ResponseEntity.status(HttpStatus.OK).build();
 	}

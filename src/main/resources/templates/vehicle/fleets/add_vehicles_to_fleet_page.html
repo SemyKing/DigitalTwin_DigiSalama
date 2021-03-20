@@ -1,0 +1,54 @@
+<html xmlns:th="http://www.w3.org/1999/xhtml">
+	<head>
+		<title>Vehicle List</title>
+		<link rel="stylesheet"
+			  href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css"
+			  integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO"
+			  crossorigin="anonymous">
+	</head>
+
+	<body>
+
+	<div class="container pt-2">
+
+			<h1 th:text="${'Select Vehicles For Fleet(' + fleet.name + ')'}"></h1>
+
+			<form action="#" th:action="${'/api1/fleets/' + fleet.id + '/add_vehicles'}" th:object="${vehicleList}" class="" method="POST">
+				<table class="table table-hover">
+					<thead>
+						<tr>
+							<th> ID </th>
+							<th> Name </th>
+							<th> Registration Number </th>
+							<th> Add </th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr th:each="vehicle, itemStat : *{vehicles}">
+							<td>
+								<input th:field="*{vehicles[__${itemStat.index}__].id}" readonly/>
+							</td>
+							<td>
+								<input th:field="*{vehicles[__${itemStat.index}__].name}" readonly/>
+							</td>
+							<td>
+								<input th:field="*{vehicles[__${itemStat.index}__].registrationNumber}" readonly/>
+							</td>
+							<td>
+								<input type="checkbox" th:field="*{vehicles[__${itemStat.index}__].isSelected}" />
+							</td>
+							<td>
+								<input type="hidden" th:field="*{vehicles[__${itemStat.index}__].vin}" id="vinId">
+							</td>
+							<td>
+								<input type="hidden" th:field="*{vehicles[__${itemStat.index}__].fleet}" id="fleetId">
+							</td>
+						</tr>
+					</tbody>
+				</table>
+
+				<button type="submit" class="btn btn-primary mb-0">Save</button>
+			</form>
+		</div>
+	</body>
+</html>

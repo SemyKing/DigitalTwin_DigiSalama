@@ -1,76 +1,73 @@
 <html xmlns:th="http://www.w3.org/1999/xhtml">
 	<head>
 		<title>User Details</title>
-		<link rel="stylesheet" type="text/css" th:href="@{/css/styles.css}">
+		<link rel="stylesheet"
+			  href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css"
+			  integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO"
+			  crossorigin="anonymous">
 	</head>
 
 	<body>
-		<div class="main">
+
+	<form action="#" th:action="${'/api1/'}" class="mb-0 mx-2 mt-2" method="GET">
+		<button type="submit" class="btn btn-warning">Home</button>
+	</form>
+
+		<div class="container pt-2">
+
+			<form action="#" th:action="${'/api1/users/'}" method="GET">
+				<button type="submit" class="btn btn-secondary my-4"><-- Users List</button>
+			</form>
 
 			<h1>User Details</h1>
 
-			<table>
-				<tbody th:object="${user}">
+			<table class="table table-hover" th:object="${user}">
+				<tbody>
 					<tr>
-						<td class="alignLeft"> ID </td>
-						<td class="alignLeft"> <span th:text="*{id}"></span> </td>
+						<td> ID </td>
+						<td> <span th:text="*{id}"></span> </td>
 					</tr>
 					<tr>
-						<td class="alignLeft"> Username </td>
-						<td class="alignLeft"> <span th:text="*{username}"></span> </td>
+						<td> Username </td>
+						<td> <span th:text="*{username}"></span> </td>
 					</tr>
 					<tr>
-						<td class="alignLeft"> Password </td>
-						<td class="alignLeft"> <span th:text="*{passwordHash}"></span> </td>
+						<td> First Name </td>
+						<td> <span th:text="*{firstName}"></span> </td>
 					</tr>
 					<tr>
-						<td class="alignLeft"> First Name </td>
-						<td class="alignLeft"> <span th:text="*{firstName}"></span> </td>
+						<td> Last Name </td>
+						<td> <span th:text="*{lastName}"></span> </td>
 					</tr>
 					<tr>
-						<td class="alignLeft"> Last Name </td>
-						<td class="alignLeft"> <span th:text="*{lastName}"></span> </td>
+						<td> Email </td>
+						<td> <span th:text="*{email}"></span> </td>
 					</tr>
 					<tr>
-						<td class="alignLeft"> Email </td>
-						<td class="alignLeft"> <span th:text="*{email}"></span> </td>
+						<td> Organisation </td>
+						<td> <span th:text="${user.organisation} ? ${user.organisation.name} : 'NOT SELECTED'"></span> </td>
 					</tr>
 					<tr>
-						<td class="alignLeft"> Organisation </td>
-						<td class="alignLeft"> <span th:text="${user.organisation} ? ${user.organisation.name} : 'NOT SELECTED'"></span> </td>
+						<td> Role </td>
+						<td> <span th:text="${user.role} ? ${user.role.name} : 'NOT SELECTED'"></span> </td>
 					</tr>
 					<tr>
-						<td class="alignLeft"> Role </td>
-						<td class="alignLeft"> <span th:text="${user.role} ? ${user.role.name} : 'NOT SELECTED'"></span> </td>
-					</tr>
-					<tr>
-						<td class="alignLeft"> Deleted </td>
-						<td class="alignLeft"> <span th:text="*{isDeleted}"></span> </td>
+						<td> Deleted </td>
+						<td> <span th:text="*{isDeleted}"></span> </td>
 					</tr>
 				</tbody>
 			</table>
 
-			<table>
-				<tr>
-<!--				<th th:if="${changes_allowed}">-->
-					<th>
-						<form action="#" th:action="${'/api1/users/' + user.id + '/edit'}" class="form_button" method="GET">
-							<p>
-								<input type="submit" value="Edit"/>
-							</p>
-						</form>
-					</th>
-<!--				</th>-->
+			<div class="row">
+				<form action="#" th:action="${'/api1/users/' + user.id + '/edit'}" class="" method="GET">
+					<button type="submit" class="btn btn-primary">Edit</button>
+				</form>
 
-					<th>
-						<form action="#" th:action="${'/api1/users/' + user.id}" class="form_button" method="DELETE">
-							<p>
-								<input type="submit" value="Delete"/>
-							</p>
-						</form>
-					</th>
-				</tr>
-			</table>
+				<form action="#" th:action="${'/api1/users/' + user.id + '/delete'}" class="ml-auto" method="POST">
+					<button type="submit" class="btn btn-danger">Delete</button>
+				</form>
+			</div>
+
 		</div>
 	</body>
 </html>

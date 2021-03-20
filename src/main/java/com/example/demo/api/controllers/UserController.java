@@ -1,249 +1,379 @@
 package com.example.demo.api.controllers;
 
-import com.example.demo.api.controllers.exceptions.RestExceptionsHandler;
 import com.example.demo.database.models.*;
+import com.example.demo.database.models.user.Role;
+import com.example.demo.database.models.user.User;
+import com.example.demo.database.models.user.UserPassword;
 import com.example.demo.database.repositories.RoleRepository;
+import com.example.demo.database.services.OrganisationService;
+import com.example.demo.database.services.UserService;
+import com.example.demo.utils.Mapping;
 import com.example.demo.utils.StringUtils;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.example.demo.utils.ValidationResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.*;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.client.HttpClientErrorException;
-import org.springframework.web.client.RestTemplate;
-import org.springframework.web.util.UriComponentsBuilder;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
 import java.util.List;
 
 @Controller
 @RequiredArgsConstructor
 @SessionAttributes("user")
+@RequestMapping(StringUtils.UI_API + "/users")
 public class UserController {
 
-	private final String ENTITY =       "user";
-	private final String ENTITY_LIST =  "users";
+	private final String ENTITY = "user";
 
-	// CREATE
-	private final String ENTITY_UI_URL =  		StringUtils.UI_API + StringUtils.FORWARD_SLASH + ENTITY_LIST;
-	private final String ENTITY_UI_URL_WITH_ID =StringUtils.UI_API + StringUtils.FORWARD_SLASH + ENTITY_LIST + StringUtils.ID;
-	private final String USER_JSON_URL =  		StringUtils.LOCAL_HOST + StringUtils.JSON_API + "/" + ENTITY_LIST;
-	private final String ORGANISATION_JSON_URL =StringUtils.LOCAL_HOST + StringUtils.JSON_API + "/organisations";
-
-
-	private final String CHANGE_PASSWORD_URL = StringUtils.UI_API + StringUtils.FORWARD_SLASH + ENTITY_LIST + StringUtils.ID + "/change_password";
-	private final String UPDATE_PASSWORD_URL = StringUtils.UI_API + StringUtils.FORWARD_SLASH + ENTITY_LIST + StringUtils.ID + "/update_password";
-
-
-	private final String CHANGE_PASSWORD_PAGE = "user/change_password_page";
-	private final String EDIT_ENTITY_PAGE =     "user/edit_user_page";
-	private final String NEW_ENTITY_PAGE =      "user/new_user_page";
-	private final String ENTITY_DETAILS_PAGE =  "user/user_details_page";
-	private final String ENTITY_LIST_PAGE =     "user/users_list_page";
-
-
-	@Autowired
-	private final RestTemplate restTemplate;
 
 	@Autowired
 	private final RoleRepository roleRepository;
 
+	@Autowired
+	private final UserService userService;
 
-	@GetMapping(ENTITY_UI_URL)
-	public String getAllUsers(Model model) {
-		ResponseEntity<User[]> response = this.restTemplate.getForEntity(USER_JSON_URL, User[].class);
+	@Autowired
+	private final OrganisationService organisationService;
 
-		List<User> users = new ArrayList<>();
 
-		if (response.getStatusCode() == HttpStatus.OK) {
-			if (response.getBody() != null) {
-				users.addAll(Arrays.asList(response.getBody()));
-			}
-		}
+	@GetMapping({"", "/"})
+	public String getAll(Model model) {
+//		ResponseEntity<User[]> response = this.restTemplate.getForEntity(USER_JSON_URL, User[].class);
+//
+//		List<User> users = new ArrayList<>();
+//
+//		if (response.getStatusCode() == HttpStatus.OK) {
+//			if (response.getBody() != null) {
+//				users.addAll(Arrays.asList(response.getBody()));
+//				users.sort(Comparator.comparing(User::getId));
+//				model.addAttribute(ENTITY_LIST, users);
+//			}
+//		} else {
+//			model.addAttribute(StringUtils.ERROR_TITLE_ATTRIBUTE, response.getStatusCode());
+//			model.addAttribute(StringUtils.ERROR_MESSAGE_ATTRIBUTE, response.getBody());
+//			return StringUtils.ERROR_PAGE;
+//		}
 
-		users.sort(Comparator.comparing(User::getId));
+		List<User> users = userService.getAll();
+		model.addAttribute("users", users);
 
-		model.addAttribute(ENTITY_LIST, users);
-		return ENTITY_LIST_PAGE;
+		return "user/users_list_page";
 	}
 
-	@GetMapping(ENTITY_UI_URL_WITH_ID)
-	public String getUserById(@PathVariable Long id, Model model) {
-		ResponseEntity<User> response = this.restTemplate.getForEntity(USER_JSON_URL + "/" + id, User.class);
 
-		User user = null;
+	@GetMapping("/{id}")
+	public String getById(@PathVariable Long id, Model model) {
+//		ResponseEntity<User> response = this.restTemplate.getForEntity(USER_JSON_URL + "/" + id, User.class);
+//
+//		User user = null;
+//
+//		if (response.getStatusCode() == HttpStatus.OK) {
+//			if (response.getBody() != null) {
+//				user = response.getBody();
+//			}
+//		} else {
+//			model.addAttribute(StringUtils.ERROR_TITLE_ATTRIBUTE, response.getStatusCode());
+//			model.addAttribute(StringUtils.ERROR_MESSAGE_ATTRIBUTE, response.getBody());
+//			return StringUtils.ERROR_PAGE;
+//		}
 
-		if (response.getStatusCode() == HttpStatus.OK) {
-			if (response.getBody() != null) {
-				user = response.getBody();
-			}
+		User userFromDatabase = userService.getById(id);
+
+		if (userFromDatabase == null) {
+			model.addAttribute(StringUtils.ERROR_TITLE_ATTRIBUTE, "No such entity");
+			model.addAttribute(StringUtils.ERROR_MESSAGE_ATTRIBUTE, ENTITY + " with id: " + id + " not found");
+			return StringUtils.ERROR_PAGE;
 		}
 
-		model.addAttribute(ENTITY, user);
-		return ENTITY_DETAILS_PAGE;
+		model.addAttribute(ENTITY, userFromDatabase);
+		return "user/user_details_page";
 	}
+
 
 	// NEW USER FORM
-	@GetMapping(ENTITY_UI_URL + StringUtils.NEW)
-	public String newUserForm(Model model, boolean userAlreadySet) {
-		ResponseEntity<Organisation[]> response = this.restTemplate.getForEntity(ORGANISATION_JSON_URL, Organisation[].class);
+	@GetMapping("/new")
+	public String newForm(Model model, boolean alreadySet) {
+//		ResponseEntity<Organisation[]> response = this.restTemplate.getForEntity(ORGANISATION_JSON_URL, Organisation[].class);
+//
+//		List<Organisation> organisations = new ArrayList<>();
+//
+//		if (response.getStatusCode() == HttpStatus.OK) {
+//			if (response.getBody() != null) {
+//				organisations.addAll(Arrays.asList(response.getBody()));
+//			}
+//		} else {
+//			model.addAttribute(StringUtils.ERROR_TITLE_ATTRIBUTE, response.getStatusCode());
+//			model.addAttribute(StringUtils.ERROR_MESSAGE_ATTRIBUTE, response.getBody());
+//			return StringUtils.ERROR_PAGE;
+//		}
 
-		List<Organisation> organisations = new ArrayList<>();
-
-		if (response.getStatusCode() == HttpStatus.OK) {
-			if (response.getBody() != null) {
-				organisations.addAll(Arrays.asList(response.getBody()));
-			}
-		}
-
-		List<Role> roles = roleRepository.findAll();
-
-		if (!userAlreadySet) {
+		if (!alreadySet) {
 			model.addAttribute(ENTITY, new User());
 		}
 
-		model.addAttribute("organisations", organisations);
+		List<Role> roles = roleRepository.findAll();
 		model.addAttribute("roles", roles);
-		return NEW_ENTITY_PAGE;
+
+		List<Organisation> organisations = organisationService.getAll();
+		model.addAttribute("organisations", organisations);
+
+		return "user/new_user_page";
 	}
+
 
 	// EDIT USER FORM
-	@GetMapping(ENTITY_UI_URL_WITH_ID + StringUtils.EDIT)
-	public String editUserForm(@PathVariable Long id, Model model, boolean userAlreadySet) {
+	@GetMapping("/{id}/edit")
+	public String editForm(@PathVariable Long id, Model model) {
+//		if (!alreadySet) {
+//			ResponseEntity<User> userResponseEntity = this.restTemplate.getForEntity(USER_JSON_URL + "/" + id, User.class);
+//
+//			User user = null;
+//
+//			if (userResponseEntity.getStatusCode() == HttpStatus.OK) {
+//				if (userResponseEntity.getBody() != null) {
+//					user = userResponseEntity.getBody();
+//				}
+//			} else {
+//				model.addAttribute(StringUtils.ERROR_TITLE_ATTRIBUTE, userResponseEntity.getStatusCode());
+//				model.addAttribute(StringUtils.ERROR_MESSAGE_ATTRIBUTE, userResponseEntity.getBody());
+//				return StringUtils.ERROR_PAGE;
+//			}
+//
+//			model.addAttribute(ENTITY, user);
+//		}
+//
+//		ResponseEntity<Organisation[]> organisationsResponseEntity = this.restTemplate.getForEntity(ORGANISATION_JSON_URL, Organisation[].class);
+//
+//		List<Organisation> organisations = new ArrayList<>();
+//
+//		if (organisationsResponseEntity.getStatusCode() == HttpStatus.OK) {
+//			if (organisationsResponseEntity.getBody() != null) {
+//				organisations.addAll(Arrays.asList(organisationsResponseEntity.getBody()));
+//			}
+//		} else {
+//			model.addAttribute(StringUtils.ERROR_TITLE_ATTRIBUTE, organisationsResponseEntity.getStatusCode());
+//			model.addAttribute(StringUtils.ERROR_MESSAGE_ATTRIBUTE, organisationsResponseEntity.getBody());
+//			return StringUtils.ERROR_PAGE;
+//		}
 
-		if (!userAlreadySet) {
-			ResponseEntity<User> userResponseEntity = this.restTemplate.getForEntity(USER_JSON_URL + "/" + id, User.class);
+		User userFromDatabase = userService.getById(id);
 
-			User user = null;
-
-			if (userResponseEntity.getStatusCode() == HttpStatus.OK) {
-				if (userResponseEntity.getBody() != null) {
-					user = userResponseEntity.getBody();
-				}
-			} else {
-				System.out.println("GOT STATUS CODE: " + userResponseEntity.getStatusCode());
-			}
-
-			model.addAttribute(ENTITY, user);
+		if (userFromDatabase == null) {
+			model.addAttribute(StringUtils.ERROR_TITLE_ATTRIBUTE, "No such entity");
+			model.addAttribute(StringUtils.ERROR_MESSAGE_ATTRIBUTE, ENTITY + " with id: " + id + " not found");
+			return StringUtils.ERROR_PAGE;
 		}
 
-		ResponseEntity<Organisation[]> organisationsResponseEntity = this.restTemplate.getForEntity(ORGANISATION_JSON_URL, Organisation[].class);
-
-		List<Organisation> organisations = new ArrayList<>();
-
-		if (organisationsResponseEntity.getStatusCode() == HttpStatus.OK) {
-			if (organisationsResponseEntity.getBody() != null) {
-				organisations.addAll(Arrays.asList(organisationsResponseEntity.getBody()));
-			}
-		}
+		model.addAttribute(ENTITY, userFromDatabase);
 
 		List<Role> roles = roleRepository.findAll();
-
-		model.addAttribute("organisations", organisations);
 		model.addAttribute("roles", roles);
-		return EDIT_ENTITY_PAGE;
+
+		List<Organisation> organisations = organisationService.getAll();
+		model.addAttribute("organisations", organisations);
+
+		return "user/edit_user_page";
 	}
 
+
 	// PASSWORD CHANGE FORM
-	@GetMapping(CHANGE_PASSWORD_URL)
-	public String changeUserPasswordForm(@PathVariable Long id, Model model, boolean dataAlreadySet) {
+	@GetMapping("/{id}/change_password")
+	public String changePasswordForm(@PathVariable Long id, Model model) {
+		model.addAttribute("userId", id);
+		model.addAttribute("password", new UserPassword());
+		return "user/change_password_page";
+	}
 
-		if (!dataAlreadySet) {
-			ResponseEntity<User> userResponseEntity = this.restTemplate.getForEntity(USER_JSON_URL + "/" + id, User.class);
 
-			User user = null;
+	// UPDATE PASSWORD
+	@PostMapping("/{id}/update_password")
+	public String updatePassword(@ModelAttribute UserPassword userPassword, @PathVariable Long id, Model model) {
+//		try {
+//			ResponseEntity<User> response = this.restTemplate.postForEntity(USER_JSON_URL + "/" + +id + "/update_password", userPassword, User.class);
+//
+//		} catch (HttpClientErrorException e) {
+//			String responseString = e.getResponseBodyAsString();
+//			ObjectMapper mapper = new ObjectMapper()
+//					.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+//
+//			try {
+//				RestExceptionsHandler result = mapper.readValue(responseString, RestExceptionsHandler.class);
+//
+//				// METHOD NOT ACCEPTABLE
+//				if (result.getStatus() == 406) {
+//					model.addAttribute("password", userPassword);
+//					model.addAttribute(StringUtils.ERROR_MESSAGE_ATTRIBUTE, result.getMessage());
+//
+//					return changePasswordForm(id, model, true);
+//				} else {
+//					model.addAttribute(StringUtils.ERROR_MESSAGE_ATTRIBUTE, result.getMessage());
+//					return StringUtils.ERROR_PAGE;
+//				}
+//
+//			} catch (JsonProcessingException jsonProcessingException) {
+//				jsonProcessingException.printStackTrace();
+//			}
+//		}
 
-			if (userResponseEntity.getStatusCode() == HttpStatus.OK) {
-				if (userResponseEntity.getBody() != null) {
-					user = userResponseEntity.getBody();
-				}
-			} else {
-				System.out.println("GOT NON 'OK' STATUS CODE: " + userResponseEntity.getStatusCode());
-			}
+		User userFromDatabase = userService.getById(id);
 
-			model.addAttribute(ENTITY, user);
+		if (userFromDatabase == null) {
+			model.addAttribute(StringUtils.ERROR_TITLE_ATTRIBUTE, "No such entity");
+			model.addAttribute(StringUtils.ERROR_MESSAGE_ATTRIBUTE, ENTITY + " with ID: " + id + " not found");
+			return StringUtils.ERROR_PAGE;
 		}
 
-		return EDIT_ENTITY_PAGE;
+		model.addAttribute("userId", id);
+		model.addAttribute("password", userPassword);
+
+		if (!userService.isPasswordCorrect(userFromDatabase, userPassword.getCurrentPassword())) {
+			model.addAttribute(StringUtils.ERROR_MESSAGE_ATTRIBUTE, "Current password invalid");
+			return "user/change_password_page";
+		}
+
+		if (!userPassword.getNewPassword1().equals(userPassword.getNewPassword2())) {
+			model.addAttribute(StringUtils.ERROR_MESSAGE_ATTRIBUTE, "Passwords don't match");
+			return "user/change_password_page";
+		}
+
+		userFromDatabase.setPassword(userService.getBcryptEncoder().encode(userPassword.getNewPassword1()));
+		userService.save(userFromDatabase);
+
+		model.addAttribute(StringUtils.SUCCESS_MESSAGE_ATTRIBUTE, "Password changed");
+
+		return StringUtils.REDIRECT + StringUtils.UI_API + "/users/" + id + "/edit";
 	}
 
 
 	// POST USER
-	@PostMapping(ENTITY_UI_URL)
-	public String postUser(@ModelAttribute User user, Model model) {
-		try {
-			ResponseEntity<User> response = this.restTemplate.postForEntity(USER_JSON_URL, user, User.class);
+	@PostMapping({"", "/"})
+	public String post(@ModelAttribute User user, Model model) {
+//		try {
+//			ResponseEntity<User> response = this.restTemplate.postForEntity(USER_JSON_URL, user, User.class);
+//
+//			// IF ERROR -> ADD ERROR MESSAGE TO MODEL AND SHOW ERROR PAGE
+//		} catch (HttpClientErrorException e) {
+//			String responseString = e.getResponseBodyAsString();
+//			ObjectMapper mapper = new ObjectMapper()
+//					.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+//
+//			try {
+//				RestExceptionsHandler result = mapper.readValue(responseString, RestExceptionsHandler.class);
+//
+//				// METHOD NOT ALLOWED
+//				if (result.getStatus() == 405) {
+//					model.addAttribute(ENTITY, user);
+//					model.addAttribute(StringUtils.ERROR_MESSAGE_ATTRIBUTE, result.getMessage());
+//
+//					return newForm(model, true);
+//				} else {
+//					model.addAttribute(StringUtils.ERROR_MESSAGE_ATTRIBUTE, result.getMessage());
+//					return StringUtils.ERROR_PAGE;
+//				}
+//
+//			} catch (JsonProcessingException jsonProcessingException) {
+//				jsonProcessingException.printStackTrace();
+//			}
+//		}
 
-			// IF ERROR -> ADD ERROR MESSAGE TO MODEL AND SHOW ERROR PAGE
-		} catch (HttpClientErrorException e) {
-			String responseString = e.getResponseBodyAsString();
-			ObjectMapper mapper = new ObjectMapper()
-					.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+		ValidationResponse response = userService.validate(user, Mapping.POST_UI);
 
-			try {
-				RestExceptionsHandler result = mapper.readValue(responseString, RestExceptionsHandler.class);
-
-				// METHOD NOT ALLOWED
-				if (result.getStatus() == 405) {
-					model.addAttribute(ENTITY, user);
-					model.addAttribute(StringUtils.ERROR_MESSAGE_ATTRIBUTE, result.getMessage());
-
-					return newUserForm(model, true);
-				}
-
-			} catch (JsonProcessingException jsonProcessingException) {
-				jsonProcessingException.printStackTrace();
-			}
+		if (!response.isValid()) {
+			model.addAttribute(StringUtils.ERROR_TITLE_ATTRIBUTE, "Validation error");
+			model.addAttribute(StringUtils.ERROR_MESSAGE_ATTRIBUTE, response.getMessage());
+			return StringUtils.ERROR_PAGE;
 		}
 
-		// -> IF OK
-		return StringUtils.REDIRECT_URL + ENTITY_UI_URL; // -> USERS LIST VIEW
+		User userFromDatabase = userService.save(user);
+
+		if (userFromDatabase == null) {
+			model.addAttribute(StringUtils.ERROR_TITLE_ATTRIBUTE, "Database error");
+			model.addAttribute(StringUtils.ERROR_MESSAGE_ATTRIBUTE,"failed to save " + ENTITY + " in database");
+			return StringUtils.ERROR_PAGE;
+		} else {
+			return StringUtils.REDIRECT + StringUtils.UI_API + "/users";
+		}
 	}
+
 
 	// UPDATE USER
-	@PostMapping(ENTITY_UI_URL_WITH_ID + StringUtils.UPDATE)
-	public String putUser(@ModelAttribute User user, Model model) {
-		try {
-			UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(USER_JSON_URL + "/" + user.getId());
+	@PostMapping("/update")
+	public String put(@ModelAttribute User user, Model model) {
+//		try {
+//			UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(USER_JSON_URL + "/" + user.getId());
+//
+//			HttpEntity<User> entity = new HttpEntity<>(user);
+//
+//			ResponseEntity<User> response = restTemplate.exchange(
+//					builder.toUriString(),
+//					HttpMethod.PUT,
+//					entity,
+//					User.class);
+//
+//		} catch (HttpClientErrorException e) {
+//			String responseString = e.getResponseBodyAsString();
+//			ObjectMapper mapper = new ObjectMapper()
+//					.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+//
+//			try {
+//				RestExceptionsHandler result = mapper.readValue(responseString, RestExceptionsHandler.class);
+//
+//				// METHOD NOT ALLOWED
+//				if (result.getStatus() == 405) {
+//					model.addAttribute(ENTITY, user);
+//					model.addAttribute(StringUtils.ERROR_MESSAGE_ATTRIBUTE, result.getMessage());
+//
+//					return editForm(user.getId(), model, true);
+//				} else {
+//					model.addAttribute(StringUtils.ERROR_MESSAGE_ATTRIBUTE, result.getMessage());
+//					return StringUtils.ERROR_PAGE;
+//				}
+//
+//			} catch (JsonProcessingException jsonProcessingException) {
+//				jsonProcessingException.printStackTrace();
+//			}
+//		}
 
-			HttpEntity<User> entity = new HttpEntity<>(user);
-
-			ResponseEntity<User> response = restTemplate.exchange(
-					builder.toUriString(),
-					HttpMethod.PUT,
-					entity,
-					User.class);
-
-			System.out.println(response.getStatusCode());
-
-		} catch (HttpClientErrorException e) {
-			String responseString = e.getResponseBodyAsString();
-			ObjectMapper mapper = new ObjectMapper()
-					.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-
-			try {
-				RestExceptionsHandler result = mapper.readValue(responseString, RestExceptionsHandler.class);
-
-				// METHOD NOT ALLOWED
-				if (result.getStatus() == 405) {
-					model.addAttribute(ENTITY, user);
-					model.addAttribute(StringUtils.ERROR_MESSAGE_ATTRIBUTE, result.getMessage());
-
-					return editUserForm(user.getId(), model, true);
-				}
-
-			} catch (JsonProcessingException jsonProcessingException) {
-				jsonProcessingException.printStackTrace();
-			}
+		if (user.getId() == null) {
+			model.addAttribute(StringUtils.ERROR_TITLE_ATTRIBUTE, "Missing parameter");
+			model.addAttribute(StringUtils.ERROR_MESSAGE_ATTRIBUTE, "ID parameter is required");
+			return StringUtils.ERROR_PAGE;
 		}
 
-		return StringUtils.REDIRECT_URL + ENTITY_UI_URL; // -> USERS LIST VIEW
+		ValidationResponse response = userService.validate(user, Mapping.PUT_UI);
+
+		if (!response.isValid()) {
+			model.addAttribute(StringUtils.ERROR_TITLE_ATTRIBUTE, "Validation error");
+			model.addAttribute(StringUtils.ERROR_MESSAGE_ATTRIBUTE, response.getMessage());
+			return StringUtils.ERROR_PAGE;
+		}
+
+		User userFromDatabase = userService.save(user);
+
+		if (userFromDatabase == null) {
+			model.addAttribute(StringUtils.ERROR_TITLE_ATTRIBUTE, "Database error");
+			model.addAttribute(StringUtils.ERROR_MESSAGE_ATTRIBUTE,"failed to save " + ENTITY + " in database");
+			return StringUtils.ERROR_PAGE;
+		} else {
+			return StringUtils.REDIRECT + StringUtils.UI_API + "/users/" + userFromDatabase.getId();
+		}
 	}
 
+
+	// DELETE USER
+	@PostMapping("/{id}/delete")
+	public String delete(@PathVariable Long id, Model model) {
+		User userFromDatabase = userService.getById(id);
+
+		if (userFromDatabase == null) {
+			model.addAttribute(StringUtils.ERROR_TITLE_ATTRIBUTE, "Not found");
+			model.addAttribute(StringUtils.ERROR_MESSAGE_ATTRIBUTE, ENTITY + " with ID " + id + " not found");
+			return StringUtils.ERROR_PAGE;
+		}
+
+		userService.delete(userFromDatabase);
+
+		return StringUtils.REDIRECT + StringUtils.UI_API + "/users";
+	}
 }

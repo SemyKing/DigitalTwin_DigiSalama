@@ -1,0 +1,58 @@
+<html xmlns:th="http://www.w3.org/1999/xhtml">
+	<head>
+		<title>Edit Image Details</title>
+		<link rel="stylesheet" type="text/css" th:href="@{/css/styles.css}">
+	</head>
+
+	<body>
+
+		<div class="main">
+
+			<h1>Edit Image Details</h1>
+
+			<p>
+				<span th:text="${error_message_attribute}" class="error_msg"></span>
+			</p>
+
+			<form action="#" th:action="${'/api1/fileDBS/' + fileDB.id + '/update'}" th:object="${fileDB}" method="post">
+				<table>
+					<tbody>
+						<tr>
+							<td> ID </td>
+							<td> <span th:text="*{id}"></span> </td>
+						</tr>
+						<tr>
+							<td> Name </td>
+							<td> <input type="text" th:field="*{name}" /> </td>
+						</tr>
+						<tr>
+							<td> Description </td>
+							<td> <input type="text" th:field="*{description}" /> </td>
+						</tr>
+
+						<tr th:object="${vehicles}">
+							<td> Fleet </td>
+							<td>
+								<select th:field="${fileDB.vehicle}">
+									<option th:each="v : ${vehicles}"
+											th:value="${v.id}"
+											th:utext="${v.name}">
+									</option>
+								</select>
+							</td>
+						</tr>
+						<tr>
+							<td> Deleted </td>
+							<td> <input type="checkbox" th:field="*{isDeleted}"/> </td>
+						</tr>
+						<tr>
+							<td colspan="4" class="paddingTopSmall">
+								<input type="submit" value="Save"/>
+							</td>
+						</tr>
+					</tbody>
+				</table>
+			</form>
+		</div>
+	</body>
+</html>

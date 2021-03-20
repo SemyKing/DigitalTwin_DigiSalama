@@ -1,28 +1,72 @@
 <html xmlns:th="http://www.w3.org/1999/xhtml">
 	<head>
 		<title>Home Page</title>
-		<link rel="stylesheet" type="text/css" th:href="@{/css/styles.css}">
+		<link rel="stylesheet"
+			  href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css"
+			  integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO"
+			  crossorigin="anonymous">
 	</head>
 
 	<body>
-		<div class="main" th:fragment="buttons_menu">
+		<div class="container pt-2">
+			<div class="col-md-4 mx-auto">
+				<div class="row">
+					<form action="#" th:action="${'/api1/vehicles/'}" class="btn btn-primary flex-grow-1" method="get">
+						<button type="submit" class="btn btn-primary w-100">Vehicles</button>
+					</form>
+				</div>
 
-			<p>
-				<a href="/api1/fleets" class="button">List all Vehicle Fleets</a>
-			</p>
+				<div class="row">
+					<form action="#" th:action="${'/api1/fleets/'}" class="btn btn-primary flex-grow-1" method="get">
+						<button type="submit" class="btn btn-primary w-100">Fleets</button>
+					</form>
+				</div>
 
-			<p>
-				<a href="/api1/vehicles" class="button">List all Vehicles</a>
-			</p>
+				<div class="row">
+					<form action="#" th:action="${'/api1/equipment/'}" class="btn btn-primary flex-grow-1" method="get">
+						<button type="submit" class="btn btn-primary w-100">Equipment</button>
+					</form>
+				</div>
+				<div class="row">
+					<form action="#" th:action="${'/api1/equipment_types/'}" class="btn btn-primary flex-grow-1" method="get">
+						<button type="submit" class="btn btn-primary w-100">Equipment Types</button>
+					</form>
+				</div>
 
-			<p>
-				<a href="/api1/organisations" class="button">List all organisations</a>
-			</p>
+<!--				<div class="row">-->
+<!--					<form action="#" th:action="${'/api1/trips/'}" class="btn btn-primary flex-grow-1" method="get">-->
+<!--						<button type="submit" class="btn btn-primary w-100">Trips</button>-->
+<!--					</form>-->
+<!--				</div>-->
 
-			<p>
-				<a href="/api1/users" class="button">List all users</a>
-			</p>
+				<div class="row">
+					<form action="#" th:action="${'/api1/files/'}" class="btn btn-primary flex-grow-1" method="get">
+						<button type="submit" class="btn btn-primary w-100">Files</button>
+					</form>
+				</div>
 
+				<div class="row">
+					<form action="#" th:action="${'/api1/users'}" class="btn btn-primary flex-grow-1" method="get">
+						<button type="submit" class="btn btn-primary w-100">Users</button>
+					</form>
+				</div>
+
+				<div class="row">
+					<form action="#" th:action="${'/api1/organisations/'}" class="btn btn-primary flex-grow-1" method="get">
+						<button type="submit" class="btn btn-primary w-100">Organisations</button>
+					</form>
+				</div>
+			</div>
 		</div>
+
+<!--		<script th:inline="javascript">-->
+<!--    		var token = [[${token}]];-->
+
+<!--    		window.onload = function() {-->
+<!--    			if (token != null && token.length > 0) {-->
+<!--    				localStorage.setItem('Authentication', 'Bearer ' + token);-->
+<!--    			}-->
+<!--			};-->
+<!--		</script>-->
 	</body>
 </html>

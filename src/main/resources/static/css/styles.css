@@ -18,6 +18,7 @@
 table {
 	margin: auto;
     margin-top: 10px;
+    border-collapse: collapse;
 }
 
 .form_button {
@@ -32,11 +33,21 @@ table {
 	padding-top: 10px;
 }
 
+tr {
+    border-bottom: 2pt solid black;
+}
+
 tr td {
 	text-align: center;
+	padding-top: 5px;
 }
 
 .error_msg {
 	color: red;
+	font-weight: bold;
+}
+
+.success_msg {
+	color: green;
 	font-weight: bold;
 }

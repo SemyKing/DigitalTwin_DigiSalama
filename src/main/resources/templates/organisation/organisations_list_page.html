@@ -1,20 +1,39 @@
 <html xmlns:th="http://www.w3.org/1999/xhtml">
 	<head>
 		<title>Organisations List</title>
-		<link rel="stylesheet" type="text/css" th:href="@{/css/styles.css}">
+		<link rel="stylesheet"
+			  href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css"
+			  integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO"
+			  crossorigin="anonymous">
 	</head>
 
 	<body>
-		<div class="main">
+
+		<form action="#" th:action="${'/api1/'}" class="mb-0 mx-2 mt-2" method="GET">
+			<button type="submit" class="btn btn-warning">Home</button>
+		</form>
+
+		<div class="container pt-2">
 
 			<h1>Organisations List</h1>
 
-			<a href="/api1/new/organisation" class="button">Add Organisation</a>
+			<div class="row">
+				<form action="#" th:action="${'/api1/organisations/new'}" class="form_button" method="get">
+					<button type="submit" class="btn btn-primary">New User</button>
+				</form>
+			</div>
 
-			<table>
+			<table class="table table-hover table-sm table-bordered">
+				<thead>
+				<tr>
+					<th> ID </th>
+					<th> Name </th>
+					<th> Deleted </th>
+				</tr>
+				</thead>
 				<tbody>
 					<tr th:if="${organisations.empty}">
-						<td colspan="1"> No Organisations In Database </td>
+						<td colspan="3"> No Organisations In Database </td>
 					</tr>
 					<tr th:each="organisation : ${organisations}">
 						<td>
@@ -24,10 +43,11 @@
 							<span th:text="${organisation.name}"></span>
 						</td>
 						<td>
-							<form action="#" th:action="${'/api1/organisation/' + organisation.id}" class="form_button" method="get">
-								<p>
-									<input type="submit" value="View"/>
-								</p>
+							<span th:text="${organisation.isDeleted}"></span>
+						</td>
+						<td>
+							<form action="#" th:action="${'/api1/organisations/' + organisation.id}" class="mb-0" method="get">
+								<button type="submit" class="btn btn-primary w-100">View</button>
 							</form>
 						</td>
 					</tr>

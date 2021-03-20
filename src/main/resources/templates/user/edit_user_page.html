@@ -1,86 +1,91 @@
 <html xmlns:th="http://www.w3.org/1999/xhtml">
 	<head>
 		<title>Edit User Details</title>
-		<link rel="stylesheet" type="text/css" th:href="@{/css/styles.css}">
+		<link rel="stylesheet"
+			  href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css"
+			  integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO"
+			  crossorigin="anonymous">
 	</head>
 
 	<body>
 
-		<div class="main">
+		<div class="container pt-2">
+
+			<form action="#" th:action="${'/api1/users/'}" method="GET">
+				<button type="submit" class="btn btn-secondary my-4"><-- Users List</button>
+			</form>
 
 			<h1>Edit User Details</h1>
 
-			<p>
-				<span th:text="${error_message_attribute}" class="error_msg"></span>
-			</p>
+			<h2 th:text="${error_message_attribute}" class="error_msg"></h2>
 
-			<form th:action="${'/api1/users/' + user.id + '/update'}" th:object="${user}" method="POST">
-				<table th:object="${user}">
-					<tbody>
-						<tr>
-							<td class="alignLeft"> ID </td>
-							<td> <span th:text="*{id}"></span> </td>
-						</tr>
-						<tr>
-							<td class="alignLeft"> Username </td>
-							<td> <input type="text" th:field="*{username}" /> </td>
-						</tr>
-						<tr>
-							<td class="alignLeft"> First Name </td>
-							<td> <input type="text" th:field="*{firstName}" /> </td>
-						</tr>
-						<tr>
-							<td class="alignLeft"> Last Name </td>
-							<td> <input type="text" th:field="*{lastName}" /> </td>
-						</tr>
-						<tr>
-							<td class="alignLeft"> Email </td>
-							<td> <input type="text" th:field="*{email}" /> </td>
-						</tr>
-						<tr>
-						</tr>
-						<tr th:object="${organisations}">
-							<td class="alignLeft"> Organisation </td>
-							<td>
-								<select th:field="${user.organisation}">
-									<option th:each="org : ${organisations}"
-											th:value="${org.id}"
-											th:utext="${org.name}">
-									</option>
-								</select>
-							</td>
-						</tr>
-						<tr th:object="${roles}">
-							<td class="alignLeft"> Role </td>
-							<td>
-								<select th:field="${user.role}">
-									<option th:each="role : ${roles}"
-											th:value="${role.id}"
-											th:utext="${role.name}">
-									</option>
-								</select>
-							</td>
-						</tr>
-						<tr>
-							<td class="alignLeft"> Deleted </td>
-							<td> <input type="checkbox" th:field="*{isDeleted}"/> </td>
-						</tr>
+			<h4 th:text="${success_message_attribute}" class="text-success"></h4>
 
-						<tr>
-							<td colspan="2" class="paddingTopSmall">
-								<input type="submit" value="Save"/>
-							</td>
-						</tr>
+			<form action="#" th:action="${'/api1/users/update'}" th:object="${user}" method="POST">
+				<div class="form-group">
+					<label for="id">ID</label>
+					<input type="text" class="form-control" id="id" readonly th:field="${user.id}">
+				</div>
 
-					</tbody>
-				</table>
+				<div class="form-group">
+					<label for="username">Vehicle Name</label>
+					<input type="text" class="form-control" id="username" placeholder="Username" th:field="${user.username}">
+				</div>
+
+				<div class="form-group">
+					<label for="firstName">Registration Number</label>
+					<input type="text" class="form-control" id="firstName" placeholder="First Name" th:field="${user.firstName}">
+				</div>
+
+				<div class="form-group">
+					<label for="lastName">Registration Number</label>
+					<input type="text" class="form-control" id="lastName" placeholder="Last Name" th:field="${user.lastName}">
+				</div>
+
+				<div class="form-group">
+					<label for="email">Registration Number</label>
+					<input type="email" class="form-control" id="email" placeholder="Email" th:field="${user.email}">
+				</div>
+
+				<div class="form-group" th:object="${organisations}">
+					<label for="organisationSelect">Organisation</label>
+					<select class="form-control" id="organisationSelect" th:field="${user.organisation}">
+						<option th:each="org : ${organisations}"
+								th:value="${org.id}"
+								th:utext="${org.name}">
+						</option>
+					</select>
+				</div>
+
+				<div class="form-group" th:object="${roles}">
+					<label for="roleSelect">Role</label>
+					<select class="form-control" id="roleSelect" th:field="${user.role}">
+						<option th:each="role : ${roles}"
+								th:value="${role.id}"
+								th:utext="${role.name}">
+						</option>
+					</select>
+				</div>
+
+				<div class="form-check">
+					<input class="form-check-input" type="checkbox" id="isDeletedCheck" th:field="${user.isDeleted}">
+					<label class="form-check-label" for="isDeletedCheck">
+						Deleted
+					</label>
+				</div>
+<!--				<button type="submit" class="btn btn-primary mt-4">Save</button>-->
+				<input type="submit" id="submit-form" class="" hidden/>
 			</form>
 
-			<form th:action="${'/api1/users/'+ user.id +'/change_password'}" class="form_button" method="post">
-				<p>
-					<input type="submit" value="Change Password"/>
-				</p>
+			<form action="#" th:action="${'/api1/users/'+ user.id +'/change_password'}" class="" method="GET">
+<!--				<button type="submit" class="btn btn-warning">Change Password</button>-->
+				<input type="submit" id="change-password-form" class="" hidden/>
 			</form>
+
+			<div class="row">
+				<label for="submit-form" tabindex="0" class="btn btn-primary mt-4">Save</label>
+				<label for="change-password-form" tabindex="1" class="btn btn-warning mt-4 ml-auto">Change Password</label>
+			</div>
 
 		</div>
 	</body>

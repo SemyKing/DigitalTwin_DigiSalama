@@ -1,4 +1,4 @@
-package com.example.demo.database.models;
+package com.example.demo.database.models.user;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -15,7 +15,7 @@ import java.util.Set;
 public class Role {
 
 	@Id
-	@GeneratedValue(strategy = GenerationType.AUTO)
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 
 	@Column
@@ -23,4 +23,5 @@ public class Role {
 
 	@Column
 	private Integer level;
+
 }

@@ -1,19 +1,17 @@
 <html lang="en" xmlns:th="http://www.w3.org/1999/xhtml">
 	<head>
 		<title>Error Occurred</title>
-		<link rel="stylesheet" type="text/css" th:href="@{/css/styles.css}">
+		<link rel="stylesheet"
+			  href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css"
+			  integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO"
+			  crossorigin="anonymous">
 	</head>
 	<body>
-		<div class="main">
+		<div class="container pt-2">
 			<h1>Error Occurred!</h1>
-			<b>
-				<span th:text="${error_title_attribute}"></span>
-			</b>
-			<p th:text="${error_message_attribute}"></p>
-
-			<div th:insert="home_page :: buttons_menu"></div>
+			<h3 th:text="${error_title_attribute}" class=""></h3>
+			<h5 th:text="${error_message_attribute}" class=""></h5>
 		</div>
-
 		<div>
 			<p th:text="${exception_attribute}"></p>
 		</div>

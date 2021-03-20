@@ -1,4 +1,4 @@
-package com.example.demo.database.models;
+package com.example.demo.database.models.vehicle;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -10,19 +10,28 @@ import javax.persistence.*;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class Image {
+public class Trip {
 
 	@Id
-	@GeneratedValue(strategy = GenerationType.AUTO)
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 
 	@Column
 	private String name;
 
-	@Column(columnDefinition="TEXT")
-	private String description;
+	@Column
+	private String origin;
+
+	@Column
+	private String destination;
+
+	@Column
+	private Integer kiloMetresDriven;
 
 	@ManyToOne
 	@JoinColumn(name="vehicle_id", referencedColumnName = "id")
 	private Vehicle vehicle;
+
+	@Column
+	private Boolean isDeleted = false;
 }

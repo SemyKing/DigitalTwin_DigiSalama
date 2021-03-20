@@ -1,4 +1,4 @@
-package com.example.demo.database.models;
+package com.example.demo.database.models.user;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -12,17 +12,11 @@ import javax.validation.constraints.Size;
 @NoArgsConstructor
 @AllArgsConstructor
 /**
- * Class is used as a wrapping object for login and changing password
+ * Class is used as a wrapping object for changing password
  */
 public class UserPassword {
 
-	private String username;
-
-	private String email;
-
 	private String currentPassword;
-
 	private String newPassword1;
-
 	private String newPassword2;
 }

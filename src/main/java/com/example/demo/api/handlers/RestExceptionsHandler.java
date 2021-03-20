@@ -1,4 +1,4 @@
-package com.example.demo.api.controllers.exceptions;
+package com.example.demo.api.handlers;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.*;

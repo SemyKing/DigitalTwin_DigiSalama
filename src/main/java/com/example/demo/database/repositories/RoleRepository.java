@@ -1,7 +1,6 @@
 package com.example.demo.database.repositories;
 
-import com.example.demo.database.models.Role;
-import com.example.demo.database.models.Vehicle;
+import com.example.demo.database.models.user.Role;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;

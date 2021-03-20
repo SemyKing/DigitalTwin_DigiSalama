@@ -1,0 +1,51 @@
+<html xmlns:th="http://www.w3.org/1999/xhtml">
+	<head>
+		<title>Equipment Details</title>
+		<link rel="stylesheet"
+			  href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css"
+			  integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO"
+			  crossorigin="anonymous">
+	</head>
+	<body>
+
+	<form action="#" th:action="${'/api1/'}" class="mb-0 mx-2 mt-2" method="GET">
+		<button type="submit" class="btn btn-warning">Home</button>
+	</form>
+
+	<div class="container pt-2">
+			<form action="#" th:action="${'/api1/vehicles/'}" method="GET">
+				<button type="submit" class="btn btn-secondary my-4"><-- Vehicles List</button>
+			</form>
+
+			<h1 th:text="${'Equipment Details for ' + registrationNumber}"></h1>
+
+			<table class="table table-hover">
+				<thead>
+				<tr>
+					<th scope="col">ID</th>
+					<th scope="col">Description</th>
+					<th scope="col">Equipment Type</th>
+					<th scope="col"> </th>
+				</tr>
+				</thead>
+				<tbody>
+				<tr th:if="${equipment.empty}">
+					<td colspan="3"> No Equipment Available </td>
+				</tr>
+
+				<tr th:each="e : ${equipment}">
+					<td>
+						<span th:text="${e.id}"></span>
+					</td>
+					<td>
+						<span th:text="${e.description}"></span>
+					</td>
+					<td>
+						<span th:text="${e.type == null ? 'NOT SELECTED' : e.type.name}"></span>
+					</td>
+				</tr>
+				</tbody>
+			</table>
+		</div>
+	</body>
+</html>

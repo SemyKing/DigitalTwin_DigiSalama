@@ -1,10 +1,14 @@
 package com.example.demo.api.rest_controllers;
 
+import com.example.demo.api.handlers.RestResponseHandler;
 import com.example.demo.database.models.Organisation;
-import com.example.demo.database.models.User;
+import com.example.demo.database.models.user.User;
+import com.example.demo.database.models.user.UserPassword;
+import com.example.demo.database.models.vehicle.Vehicle;
 import com.example.demo.database.repositories.RoleRepository;
 import com.example.demo.database.services.OrganisationService;
 import com.example.demo.database.services.UserService;
+import com.example.demo.utils.Mapping;
 import com.example.demo.utils.StringUtils;
 import com.example.demo.utils.ValidationResponse;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +30,7 @@ public class UserRestController {
 
 	private final String ENTITY_URL =  			StringUtils.JSON_API + StringUtils.FORWARD_SLASH + ENTITY_LIST;
 	private final String ENTITY_URL_WITH_ID =	StringUtils.JSON_API + StringUtils.FORWARD_SLASH + ENTITY_LIST + StringUtils.ID;
+	private final String UPDATE_PASSWORD_URL =	StringUtils.JSON_API + StringUtils.FORWARD_SLASH + ENTITY_LIST + StringUtils.ID + "/update_password";
 
 
 	@Autowired
@@ -41,7 +46,7 @@ public class UserRestController {
 
 	@PostMapping(value = ENTITY_URL, consumes = StringUtils.APPLICATION_JSON)
 	public ResponseEntity<User> postEntity(@RequestBody User user) {
-		ValidationResponse response = userService.validateUser(user);
+		ValidationResponse response = userService.validate(user, Mapping.POST_API);
 
 		if (!response.isValid()) {
 			throw new ResponseStatusException(HttpStatus.METHOD_NOT_ALLOWED, response.getMessage());
@@ -58,13 +63,7 @@ public class UserRestController {
 
 	@PostMapping(value = ENTITY_URL_WITH_ID, consumes = StringUtils.APPLICATION_JSON)
 	public void postEntityWithID(@RequestBody User user, @PathVariable Long id) {
-		User userFromDatabase = userService.getById(id);
-
-		if (userFromDatabase == null) {
-			throw new ResponseStatusException(HttpStatus.NOT_FOUND, ENTITY + " with ID: '" + id + "' not found");
-		} else {
-			throw new ResponseStatusException(HttpStatus.CONFLICT, "resource already exists");
-		}
+		throw new ResponseStatusException(HttpStatus.METHOD_NOT_ALLOWED, "method not allowed");
 	}
 
 
@@ -72,8 +71,6 @@ public class UserRestController {
 	@GetMapping(value = ENTITY_URL, produces = StringUtils.APPLICATION_JSON)
 	public List<User> getEntityList() {
 		List<User> users = userService.getAll();
-
-		// SORT etc...
 		users.sort(Comparator.comparing(User::getId));
 
 		return users;
@@ -93,31 +90,28 @@ public class UserRestController {
 
 
 	@PutMapping(value = ENTITY_URL, consumes = StringUtils.APPLICATION_JSON)
-	public User updateReplaceEntityList(@RequestBody List<User> users) {
+	public User putEntityList(@RequestBody List<User> users) {
 		throw new ResponseStatusException(HttpStatus.METHOD_NOT_ALLOWED, "method not allowed");
 	}
 
 	@PutMapping(value = ENTITY_URL_WITH_ID, consumes = StringUtils.APPLICATION_JSON)
-	public ResponseEntity<User> updateReplaceEntity(@RequestBody User user, @PathVariable Long id) {
-
-		System.out.println("REST PUT");
-		System.out.println(user);
-
-		// EMPTY BODY
+	public ResponseEntity<User> putEntity(@RequestBody User user, @PathVariable Long id) {
 		if (user == null) {
 			throw new ResponseStatusException(HttpStatus.NO_CONTENT, "no content was provided");
-		}
-
-		ValidationResponse response = userService.validateUser(user);
-
-		if (!response.isValid()) {
-			throw new ResponseStatusException(HttpStatus.METHOD_NOT_ALLOWED, response.getMessage());
 		}
 
 		User userFromDatabase = userService.getById(id);
 
 		if (userFromDatabase == null) {
 			throw new ResponseStatusException(HttpStatus.NOT_FOUND, ENTITY + " with ID: '" + id + "' not found");
+		}
+
+		user.setId(id);
+
+		ValidationResponse response = userService.validate(user, Mapping.PUT_API);
+
+		if (!response.isValid()) {
+			throw new ResponseStatusException(HttpStatus.METHOD_NOT_ALLOWED, response.getMessage());
 		}
 
 		user.setId(userFromDatabase.getId());
@@ -136,12 +130,12 @@ public class UserRestController {
 
 	@PatchMapping(value = ENTITY_URL_WITH_ID, consumes = StringUtils.APPLICATION_JSON)
 	public ResponseEntity<User> updateModifyEntity(@RequestBody User user, @PathVariable Long id) {
-		// EMPTY BODY
+
 		if (user == null) {
 			throw new ResponseStatusException(HttpStatus.NO_CONTENT, "no content");
 		}
 
-		ValidationResponse response = userService.validateUser(user);
+		ValidationResponse response = userService.validate(user, Mapping.PATCH_API);
 
 		if (!response.isValid()) {
 			throw new ResponseStatusException(HttpStatus.METHOD_NOT_ALLOWED, response.getMessage());
@@ -161,23 +155,48 @@ public class UserRestController {
 	}
 
 
+	@PostMapping(value = UPDATE_PASSWORD_URL, consumes = StringUtils.APPLICATION_JSON)
+	public ResponseEntity<User> updatePassword(@RequestBody UserPassword userPassword, @PathVariable Long id) {
+
+		if (!userService.isPasswordCorrect(id, userPassword.getCurrentPassword())) {
+			throw new ResponseStatusException(HttpStatus.NOT_ACCEPTABLE, "provided data was incorrect");
+		}
+
+		User userFromDatabase = userService.getById(id);
+		userFromDatabase.setPassword(StringUtils.generateHashFromString(userPassword.getNewPassword1()));
+
+		userService.save(userFromDatabase);
+
+		return ResponseEntity.status(HttpStatus.OK).body(userFromDatabase);
+	}
+
+
 
 	@DeleteMapping(value = ENTITY_URL, consumes = StringUtils.APPLICATION_JSON)
 	public void deleteEntityList(@RequestBody List<User> users) {
 		throw new ResponseStatusException(HttpStatus.METHOD_NOT_ALLOWED, "method not allowed");
 	}
 
-	@DeleteMapping(value = ENTITY_URL_WITH_ID, consumes = StringUtils.APPLICATION_JSON)
-	public ResponseEntity<String> deleteEntity(@PathVariable Long id) {
+	@DeleteMapping(value = ENTITY_URL_WITH_ID)
+	public ResponseEntity<RestResponseHandler<User>> deleteEntity(@PathVariable Long id) {
 		User userFromDatabase = userService.getById(id);
 
 		if (userFromDatabase == null) {
 			throw new ResponseStatusException(HttpStatus.NOT_FOUND, ENTITY + " with ID: '" + id + "' not found");
 		}
 
-		userService.delete(userFromDatabase);
+		try {
+			userService.delete(userFromDatabase);
+		} catch (Exception e) {
+			throw new ResponseStatusException(HttpStatus.METHOD_NOT_ALLOWED, "method not allowed");
+		}
 
-		return ResponseEntity.status(HttpStatus.OK).build();
+		RestResponseHandler<User> responseHandler = new RestResponseHandler<>();
+		responseHandler.setMessage(ENTITY + " deleted successfully");
+		responseHandler.setBody(userFromDatabase);
+		responseHandler.setHttpStatus(HttpStatus.OK);
+
+		return ResponseEntity.ok(responseHandler);
 	}
 
 
@@ -190,10 +209,10 @@ public class UserRestController {
 		for (int i = 1; i < 11; i++) {
 			User user = new User();
 			user.setUsername("username_" + i);
-			user.setPasswordHash(StringUtils.generateHashFromString("password"));
+			user.setPassword(userService.getBcryptEncoder().encode("password"));
 			user.setFirstName("First Name_" + i);
 			user.setLastName("Last Name_" + i);
-			user.setEmail("test@test_" + i + ".com");
+			user.setEmail("test@test" + i + ".com");
 			user.setRole(roleRepository.findByName(StringUtils.ROLE_USER));
 
 			List<Organisation> organisations = organisationService.getAll();

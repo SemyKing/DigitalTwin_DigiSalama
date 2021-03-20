@@ -1,11 +1,11 @@
-package com.example.demo.database.models;
+package com.example.demo.database.models.user;
 
+import com.example.demo.database.models.Organisation;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import javax.persistence.*;
-import java.util.Collection;
 
 @Entity
 @Table(name = "users")
@@ -15,14 +15,14 @@ import java.util.Collection;
 public class User {
 
 	@Id
-	@GeneratedValue(strategy = GenerationType.AUTO)
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 
 	@Column
 	private String username;
 
 	@Column
-	private String passwordHash;
+	private String password;
 
 	@Column
 	private String firstName;
@@ -33,9 +33,7 @@ public class User {
 	@Column
 	private String email;
 
-	private String apiToken;
-
-	@OneToOne
+	@OneToOne(cascade = CascadeType.PERSIST)
 	@JoinColumn(name="organisation_id", referencedColumnName = "id")
 	private Organisation organisation;
 

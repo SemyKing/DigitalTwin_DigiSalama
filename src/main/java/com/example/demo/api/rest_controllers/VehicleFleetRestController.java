@@ -1,8 +1,11 @@
 package com.example.demo.api.rest_controllers;
 
-import com.example.demo.database.models.VehicleFleet;
-import com.example.demo.database.services.VehicleFleetService;
+import com.example.demo.database.models.vehicle.Fleet;
+import com.example.demo.database.services.vehicle.FleetService;
+import com.example.demo.database.services.vehicle.VehicleService;
+import com.example.demo.utils.Mapping;
 import com.example.demo.utils.StringUtils;
+import com.example.demo.utils.ValidationResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -17,157 +20,156 @@ import java.util.List;
 @RequiredArgsConstructor
 public class VehicleFleetRestController {
 
-	private final String ENTITY =       "vehicle_fleet";
-	private final String ENTITY_LIST =  "vehicle_fleets";
+	private final String ENTITY =       "fleet";
+	private final String ENTITY_LIST =  "fleets";
 
-	// CREATE
-	private final String POST_ENTITY_URL =  StringUtils.JSON_API + StringUtils.FORWARD_SLASH + ENTITY_LIST;
-
-	// GET
-	private final String GET_ENTITY_URL =   StringUtils.JSON_API + StringUtils.FORWARD_SLASH + ENTITY_LIST;
-
-	// UPDATE/REPLACE
-	private final String PUT_ENTITY_URL =   StringUtils.JSON_API + StringUtils.FORWARD_SLASH + ENTITY_LIST;
-
-	// UPDATE/MODIFY
-	private final String PATCH_ENTITY_URL = StringUtils.JSON_API + StringUtils.FORWARD_SLASH + ENTITY_LIST;
-
-	// DELETE
-	private final String DELETE_ENTITY_URL =StringUtils.JSON_API + StringUtils.FORWARD_SLASH + ENTITY_LIST;
+	private final String ENTITY_URL =  			StringUtils.JSON_API + StringUtils.FORWARD_SLASH + ENTITY_LIST;
+	private final String ENTITY_URL_WITH_ID =	StringUtils.JSON_API + StringUtils.FORWARD_SLASH + ENTITY_LIST + StringUtils.ID;
 
 
 	@Autowired
-	private final VehicleFleetService vehicleFleetService;
+	private final FleetService fleetService;
+
+	@Autowired
+	private final VehicleService vehicleService;
 
 
 
-	@PostMapping(value = POST_ENTITY_URL, consumes = StringUtils.APPLICATION_JSON)
-	public ResponseEntity<VehicleFleet> postEntity(@RequestBody VehicleFleet vehicleFleet) {
+	@PostMapping(value = ENTITY_URL, consumes = StringUtils.APPLICATION_JSON)
+	public ResponseEntity<Fleet> postEntity(@RequestBody Fleet fleet) {
+		ValidationResponse response = fleetService.validate(fleet, Mapping.POST_API);
 
-		// VALIDATE ENTITY
+		if (!response.isValid()) {
+			throw new ResponseStatusException(HttpStatus.METHOD_NOT_ALLOWED, response.getMessage());
+		}
 
-		VehicleFleet vehicleFleetFromDatabase = vehicleFleetService.save(vehicleFleet);
+		Fleet fleetFromDatabase = fleetService.save(fleet);
 
-		if (vehicleFleetFromDatabase == null) {
-			throw new ResponseStatusException(HttpStatus.EXPECTATION_FAILED, "Failed to save entity");
+		if (fleetFromDatabase == null) {
+			throw new ResponseStatusException(HttpStatus.EXPECTATION_FAILED, "failed to save " + ENTITY + " in database");
 		} else {
-			return ResponseEntity.status(HttpStatus.OK).body(vehicleFleetFromDatabase);
+			return ResponseEntity.status(HttpStatus.OK).body(fleetFromDatabase);
 		}
 	}
 
-	@PostMapping(value = POST_ENTITY_URL + StringUtils.ID, consumes = "application/json")
-	public void postEntityWithID(@RequestBody VehicleFleet vehicleFleet, @PathVariable Long id) {
-		VehicleFleet vehicleFleetFromDatabase = vehicleFleetService.getById(id);
+	@PostMapping(value = ENTITY_URL_WITH_ID, consumes = "application/json")
+	public void postEntityWithID(@RequestBody Fleet fleet, @PathVariable Long id) {
+		Fleet fleetFromDatabase = fleetService.getById(id);
 
-		if (vehicleFleetFromDatabase == null) {
-			throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+		if (fleetFromDatabase == null) {
+			throw new ResponseStatusException(HttpStatus.NOT_FOUND, ENTITY + " with ID: '" + id + "' not found");
 		} else {
-			throw new ResponseStatusException(HttpStatus.CONFLICT);
+			throw new ResponseStatusException(HttpStatus.CONFLICT, "resource already exists");
 		}
 	}
 
 
 
-	@GetMapping(value = GET_ENTITY_URL, produces = StringUtils.APPLICATION_JSON)
-	public List<VehicleFleet> getEntityList() {
-		List<VehicleFleet> vehicleFleets = vehicleFleetService.getAll();
+	@GetMapping(value = ENTITY_URL, produces = StringUtils.APPLICATION_JSON)
+	public List<Fleet> getEntityList() {
+		List<Fleet> fleets = fleetService.getAll();
+		fleets.sort(Comparator.comparing(Fleet::getId));
 
-		// SORT etc...
-		vehicleFleets.sort(Comparator.comparing(VehicleFleet::getId));
-
-		return vehicleFleets;
+		return fleets;
 	}
 
-	@GetMapping(value = GET_ENTITY_URL + StringUtils.ID, produces = StringUtils.APPLICATION_JSON)
-	public VehicleFleet getEntityWithID(@PathVariable Long id) {
-		VehicleFleet vehicleFleetFromDatabase = vehicleFleetService.getById(id);
+	@GetMapping(value = ENTITY_URL_WITH_ID, produces = StringUtils.APPLICATION_JSON)
+	public Fleet getEntityWithID(@PathVariable Long id) {
+		Fleet fleetFromDatabase = fleetService.getById(id);
 
-		if (vehicleFleetFromDatabase == null) {
-			throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Not found");
+		if (fleetFromDatabase == null) {
+			throw new ResponseStatusException(HttpStatus.NOT_FOUND, ENTITY + " with ID: '" + id + "' not found");
 		}
 
-		return vehicleFleetFromDatabase;
+		return fleetFromDatabase;
 	}
 
 
 
-	@PutMapping(value = PUT_ENTITY_URL, consumes = StringUtils.APPLICATION_JSON)
-	public VehicleFleet updateReplaceEntityList(@RequestBody List<VehicleFleet> vehicleFleets) {
-		throw new ResponseStatusException(HttpStatus.METHOD_NOT_ALLOWED, "Method not allowed");
+	@PutMapping(value = ENTITY_URL, consumes = StringUtils.APPLICATION_JSON)
+	public Fleet updateReplaceEntityList(@RequestBody List<Fleet> fleets) {
+		throw new ResponseStatusException(HttpStatus.METHOD_NOT_ALLOWED, "method not allowed");
 	}
 
-	@PutMapping(value = PUT_ENTITY_URL + StringUtils.ID, consumes = StringUtils.APPLICATION_JSON)
-	public ResponseEntity<VehicleFleet> updateReplaceEntity(@RequestBody VehicleFleet vehicleFleet, @PathVariable Long id) {
-		System.out.println("PUT ENTITY");
+	@PutMapping(value = ENTITY_URL_WITH_ID, consumes = StringUtils.APPLICATION_JSON)
+	public ResponseEntity<Fleet> updateReplaceEntity(@RequestBody Fleet fleet, @PathVariable Long id) {
 
-		// VALIDATE ENTITY
-		System.out.println(vehicleFleet);
-
-		// EMPTY BODY
-		if (vehicleFleet == null) {
-			throw new ResponseStatusException(HttpStatus.NO_CONTENT);
+		if (fleet == null) {
+			throw new ResponseStatusException(HttpStatus.NO_CONTENT, "no content was provided");
 		}
 
-		VehicleFleet vehicleFleetFromDatabase = vehicleFleetService.getById(id);
+		ValidationResponse response = fleetService.validate(fleet, Mapping.PUT_API);
 
-		if (vehicleFleetFromDatabase == null) {
-			throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+		if (!response.isValid()) {
+			throw new ResponseStatusException(HttpStatus.METHOD_NOT_ALLOWED, response.getMessage());
 		}
 
-		vehicleFleet.setId(vehicleFleetFromDatabase.getId());
+		Fleet fleetFromDatabase = fleetService.getById(id);
 
-		vehicleFleetService.save(vehicleFleet);
-
-		return ResponseEntity.status(HttpStatus.OK).body(vehicleFleet);
-	}
-
-
-
-	@PatchMapping(value = PATCH_ENTITY_URL, consumes = StringUtils.APPLICATION_JSON)
-	public void updateModifyEntityList(@RequestBody List<VehicleFleet> vehicleFleets) {
-		throw new ResponseStatusException(HttpStatus.METHOD_NOT_ALLOWED);
-	}
-
-	@PatchMapping(value = PATCH_ENTITY_URL + StringUtils.ID, consumes = StringUtils.APPLICATION_JSON)
-	public ResponseEntity<VehicleFleet> updateModifyEntity(@RequestBody VehicleFleet vehicleFleet, @PathVariable Long id) {
-
-		// VALIDATE ENTITY
-		System.out.println(vehicleFleet);
-
-		// EMPTY BODY
-		if (vehicleFleet == null) {
-			throw new ResponseStatusException(HttpStatus.NO_CONTENT, "No content");
+		if (fleetFromDatabase == null) {
+			throw new ResponseStatusException(HttpStatus.NOT_FOUND, ENTITY + " with ID: '" + id + "' not found");
 		}
 
-		VehicleFleet vehicleFleetFromDatabase = vehicleFleetService.getById(id);
+		fleet.setId(fleetFromDatabase.getId());
 
-		if (vehicleFleetFromDatabase == null) {
-			throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Not found");
+		fleetService.save(fleet);
+
+		return ResponseEntity.status(HttpStatus.OK).body(fleet);
+	}
+
+
+
+	@PatchMapping(value = ENTITY_URL, consumes = StringUtils.APPLICATION_JSON)
+	public void updateModifyEntityList(@RequestBody List<Fleet> fleets) {
+		throw new ResponseStatusException(HttpStatus.METHOD_NOT_ALLOWED, "method not allowed");
+	}
+
+	@PatchMapping(value = ENTITY_URL_WITH_ID, consumes = StringUtils.APPLICATION_JSON)
+	public ResponseEntity<Fleet> updateModifyEntity(@RequestBody Fleet fleet, @PathVariable Long id) {
+
+		if (fleet == null) {
+			throw new ResponseStatusException(HttpStatus.NO_CONTENT, "no content was provided");
 		}
 
-		vehicleFleet.setId(vehicleFleetFromDatabase.getId());
+		ValidationResponse response = fleetService.validate(fleet, Mapping.PATCH_API);
 
-		vehicleFleetService.save(vehicleFleet);
+		if (!response.isValid()) {
+			throw new ResponseStatusException(HttpStatus.METHOD_NOT_ALLOWED, response.getMessage());
+		}
 
-		return ResponseEntity.status(HttpStatus.OK).body(vehicleFleet);
+		Fleet fleetFromDatabase = fleetService.getById(id);
+
+		if (fleetFromDatabase == null) {
+			throw new ResponseStatusException(HttpStatus.NOT_FOUND, ENTITY + " with ID: '" + id + "' not found");
+		}
+
+		fleet.setId(fleetFromDatabase.getId());
+
+		fleetService.save(fleet);
+
+		return ResponseEntity.status(HttpStatus.OK).body(fleet);
 	}
 
 
 
-	@DeleteMapping(value = DELETE_ENTITY_URL, consumes = StringUtils.APPLICATION_JSON)
-	public void deleteEntityList(@RequestBody List<VehicleFleet> vehicleFleets) {
-		throw new ResponseStatusException(HttpStatus.METHOD_NOT_ALLOWED);
+	@DeleteMapping(value = ENTITY_URL, consumes = StringUtils.APPLICATION_JSON)
+	public void deleteEntityList(@RequestBody List<Fleet> fleets) {
+		throw new ResponseStatusException(HttpStatus.METHOD_NOT_ALLOWED, "method not allowed");
 	}
 
-	@DeleteMapping(value = DELETE_ENTITY_URL + StringUtils.ID, consumes = StringUtils.APPLICATION_JSON)
+	@DeleteMapping(value = ENTITY_URL_WITH_ID, consumes = StringUtils.APPLICATION_JSON)
 	public ResponseEntity<String> deleteEntity(@PathVariable Long id) {
-		VehicleFleet vehicleFleetFromDatabase = vehicleFleetService.getById(id);
+		Fleet fleetFromDatabase = fleetService.getById(id);
 
-		if (vehicleFleetFromDatabase == null) {
-			throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+		if (fleetFromDatabase == null) {
+			throw new ResponseStatusException(HttpStatus.NOT_FOUND, ENTITY + " with ID: '" + id + "' not found");
 		}
 
-		vehicleFleetService.delete(vehicleFleetFromDatabase);
+		try {
+			fleetService.delete(fleetFromDatabase);
+		} catch (Exception e) {
+			throw new ResponseStatusException(HttpStatus.METHOD_NOT_ALLOWED, "method not allowed");
+		}
 
 		return ResponseEntity.status(HttpStatus.OK).build();
 	}
@@ -178,16 +180,16 @@ public class VehicleFleetRestController {
 	@PostMapping(StringUtils.JSON_API + StringUtils.FORWARD_SLASH + ENTITY_LIST + "/populate_with_test_data")
 	public void populateWithTestData() {
 		for (int i = 1; i < 5; i++) {
-			VehicleFleet vehicleFleet = new VehicleFleet();
-			vehicleFleet.setName("FleetName_" + i);
+			Fleet fleet = new Fleet();
+			fleet.setName("FleetName_" + i);
 
-			vehicleFleetService.save(vehicleFleet);
+			fleetService.save(fleet);
 		}
 	}
 
 	// FOR TESTING
 	@DeleteMapping(StringUtils.JSON_API + StringUtils.FORWARD_SLASH + ENTITY_LIST + "/delete_all")
 	public void deleteAll() {
-		vehicleFleetService.deleteAll();
+		fleetService.deleteAll();
 	}
 }

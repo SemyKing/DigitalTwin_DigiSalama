@@ -1,0 +1,80 @@
+<html xmlns:th="http://www.w3.org/1999/xhtml">
+<head>
+	<title>Files List</title>
+	<link rel="stylesheet"
+		  href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css"
+		  integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO"
+		  crossorigin="anonymous">
+</head>
+
+<body>
+
+<form action="#" th:action="${'/api1/'}" class="mb-0 mx-2 mt-2" method="GET">
+	<button type="submit" class="btn btn-warning">Home</button>
+</form>
+
+<div class="container pt-2">
+
+	<h1>Files List</h1>
+
+	<h2 th:text="${error_message_attribute}" class="text-danger"></h2>
+
+	<h2 th:text="${success_message_attribute}" class="text-success"></h2>
+
+	<div class="col">
+		<div class="row">
+			<form action="#" th:action="${'/api1/files/upload'}" enctype="multipart/form-data" method="POST">
+				<table>
+					<tr>
+						<td>File to upload:</td>
+						<td>
+							<input type="file" name="file" />
+						</td>
+						<td>
+							<input type="submit" class="btn btn-primary" value="Upload" />
+						</td>
+					</tr>
+				</table>
+			</form>
+		</div>
+
+		<table class="table table-hover">
+			<thead>
+				<tr>
+					<th scope="col">ID</th>
+					<th scope="col">Name</th>
+					<th scope="col">Description</th>
+					<th scope="col">Vehicle</th>
+					<th scope="col"> </th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr th:if="${files.empty}">
+					<td colspan="6"> No Files Available </td>
+				</tr>
+
+				<tr th:each="file : ${files}">
+					<td>
+						<span th:text="${file.id}"></span>
+					</td>
+					<td>
+						<span th:text="${file.name}"></span>
+					</td>
+					<td>
+						<span th:text="${file.description}"></span>
+					</td>
+					<td>
+						<span th:text="${file.vehicle == null ? 'NOT SELECTED' : file.vehicle.registrationPlate}"></span>
+					</td>
+					<td>
+						<form action="#" th:action="${'/api1/files/' + file.id}" class="form_button" method="GET">
+							<button type="submit" class="btn btn-primary">View</button>
+						</form>
+					</td>
+				</tr>
+			</tbody>
+		</table>
+	</div>
+</div>
+</body>
+</html>

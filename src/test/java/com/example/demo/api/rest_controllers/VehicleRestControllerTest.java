@@ -1,13 +1,12 @@
 package com.example.demo.api.rest_controllers;
 
-import com.example.demo.database.models.Vehicle;
-import com.example.demo.database.services.VehicleService;
+import com.example.demo.database.models.vehicle.Vehicle;
+import com.example.demo.database.services.vehicle.VehicleService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
@@ -21,7 +20,6 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -44,7 +42,7 @@ class VehicleRestControllerTest {
 	@Test
 	public void deleteAll() {
 		service.deleteAll();
-		Assertions.assertThat(service.getAll().size() == (0));
+		Assertions.assertThat(service.getAll().size() == 0);
 	}
 
 	@Test

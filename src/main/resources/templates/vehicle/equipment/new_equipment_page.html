@@ -1,0 +1,56 @@
+<html xmlns:th="http://www.w3.org/1999/xhtml">
+	<head>
+		<title>New Equipment</title>
+		<link rel="stylesheet"
+			  href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css"
+			  integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO"
+			  crossorigin="anonymous">
+	</head>
+
+	<body>
+
+	<div class="container pt-2">
+
+		<h2 th:text="${error_message_attribute}" class="error_msg"></h2>
+
+		<h1>New Equipment</h1>
+
+		<form action="#" th:action="@{/api1/equipment}" th:object="${equipment}" method="post">
+
+			<div class="form-group">
+				<label for="desc">Description</label>
+				<input type="text" class="form-control" id="desc" placeholder="Description" th:field="*{description}">
+			</div>
+
+			<div class="form-group">
+				<label for="typeSelect">Equipment Type</label>
+				<select class="form-control" id="typeSelect" th:field="${equipment.type}">
+					<option th:each="type : ${types}"
+							th:value="${type.id}"
+							th:utext="${type.name}">
+					</option>
+				</select>
+			</div>
+
+			<div class="form-group">
+				<label for="vehicleSelect">Vehicle</label>
+				<select class="form-control" id="vehicleSelect" th:field="${equipment.vehicle}">
+					<option th:each="vehicle : ${vehicles}"
+							th:value="${vehicle.id}"
+							th:utext="${vehicle.registrationNumber}">
+					</option>
+				</select>
+			</div>
+
+			<div class="form-check">
+				<input class="form-check-input" type="checkbox" id="defaultCheck1" th:field="*{isDeleted}">
+				<label class="form-check-label" for="defaultCheck1">
+					Deleted
+				</label>
+			</div>
+
+			<button type="submit" class="btn btn-primary mx-auto mt-4">Save</button>
+		</form>
+	</div>
+	</body>
+</html>
