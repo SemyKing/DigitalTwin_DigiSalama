@@ -1,6 +1,6 @@
-<html xmlns:th="http://www.w3.org/1999/xhtml">
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{main-layout :: main-fragment(~{:: #main-content})}">
 	<head>
-		<title>Vehicle List</title>
+		<title>Vehicles List</title>
 		<link rel="stylesheet"
 			  href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css"
 			  integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO"
@@ -9,20 +9,21 @@
 
 	<body>
 
-	<div class="container pt-2">
+	<div id="main-content" class="container pt-2">
 
 			<h1 th:text="${'Select Vehicles For Fleet(' + fleet.name + ')'}"></h1>
 
 			<form action="#" th:action="${'/api1/fleets/' + fleet.id + '/add_vehicles'}" th:object="${vehicleList}" class="" method="POST">
-				<table class="table table-hover">
+				<table class="table table-hover table-sm table-bordered">
 					<thead>
 						<tr>
 							<th> ID </th>
 							<th> Name </th>
 							<th> Registration Number </th>
-							<th> Add </th>
+							<th> In Fleet </th>
 						</tr>
 					</thead>
+
 					<tbody>
 						<tr th:each="vehicle, itemStat : *{vehicles}">
 							<td>
@@ -32,7 +33,7 @@
 								<input th:field="*{vehicles[__${itemStat.index}__].name}" readonly/>
 							</td>
 							<td>
-								<input th:field="*{vehicles[__${itemStat.index}__].registrationNumber}" readonly/>
+								<input th:field="*{vehicles[__${itemStat.index}__].registration_number}" readonly/>
 							</td>
 							<td>
 								<input type="checkbox" th:field="*{vehicles[__${itemStat.index}__].isSelected}" />

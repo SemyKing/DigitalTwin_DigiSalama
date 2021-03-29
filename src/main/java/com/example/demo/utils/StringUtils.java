@@ -16,21 +16,11 @@ public class StringUtils {
 	public final static String ROLE_SYSTEM_ADMIN = "ROLE_SYSTEM_ADMIN";
 
 
-
-	public final static String LOCAL_HOST = "http://localhost:8080";
-	public final static String FORWARD_SLASH = "/";
 	public final static String UI_API = 	"/api1";
 	public final static String JSON_API = 	"/api2";
-	public static final String JSON_URL = LOCAL_HOST + JSON_API + FORWARD_SLASH;
-	public final static String APPLICATION_JSON = "application/json";
-	public final static String ID = "/{id}";
-	public final static String NEW = "/new";
-	public final static String EDIT = "/edit";
-	public final static String UPDATE = "/update";
-	public final static String DELETE = "/delete";
-	public final static String REDIRECT = "redirect:";
 
-	public final static String HOME_PAGE =            	  "home_page";
+	public final static String REDIRECT = 	"redirect:";
+
 	public final static String ERROR_PAGE =               "error1";
 	public final static String ERROR_TITLE_ATTRIBUTE =    "error_title_attribute";
 	public final static String ERROR_MESSAGE_ATTRIBUTE =  "error_message_attribute";
@@ -64,5 +54,4 @@ public class StringUtils {
 	public static String generateHashFromString(String string) {
 		return bytesToHex(stringToBytes(string));
 	}
-
 }

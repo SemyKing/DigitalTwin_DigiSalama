@@ -17,21 +17,18 @@ public class Trip {
 	private Long id;
 
 	@Column
-	private String name;
-
-	@Column
 	private String origin;
 
 	@Column
 	private String destination;
 
 	@Column
-	private Integer kiloMetresDriven;
+	private Integer kilometres_driven;
 
 	@ManyToOne
 	@JoinColumn(name="vehicle_id", referencedColumnName = "id")
 	private Vehicle vehicle;
 
-	@Column
-	private Boolean isDeleted = false;
+	@Column(columnDefinition="TEXT")
+	private String description;
 }

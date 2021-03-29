@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" th:fragment="main-fragment (mainContent)">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet"
+          href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css"
+          integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO"
+          crossorigin="anonymous">
+</head>
+
+<body>
+    <div id="main-content" class="container pt-2">
+        <h1 class="my-auto mx-auto text-center">Digital Twin API</h1>
+
+        <form class="form-inline mb-0" method="GET" th:action="@{/login}">
+            <button class="btn btn-primary mx-auto my-auto" type="submit">Log in</button>
+        </form>
+    </div>
+</body>
+</html>

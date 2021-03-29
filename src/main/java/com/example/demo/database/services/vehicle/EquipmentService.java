@@ -1,10 +1,9 @@
 package com.example.demo.database.services.vehicle;
 
 import com.example.demo.database.models.vehicle.Equipment;
-import com.example.demo.database.models.vehicle.Fleet;
 import com.example.demo.database.repositories.vehicle.EquipmentRepository;
-import com.example.demo.database.repositories.vehicle.FleetRepository;
-import com.example.demo.utils.ValidationResponse;
+import com.example.demo.database.models.utils.Mapping;
+import com.example.demo.database.models.utils.ValidationResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -49,6 +48,13 @@ public class EquipmentService {
 	}
 
 	public void delete(Equipment equipment) {
+		if (equipment == null) {
+			return;
+		}
+
+		if (equipment.getId() == null) {
+			return;
+		}
 		repository.delete(equipment);
 	}
 
@@ -56,11 +62,41 @@ public class EquipmentService {
 		repository.deleteAll();
 	}
 
-	public ValidationResponse validate(Equipment equipment) {
+	public ValidationResponse validate(Equipment equipment, Mapping mapping) {
 
-		if (equipment.getDescription() != null) {
-			if (equipment.getDescription().length() <= 0) {
-				return new ValidationResponse(false, "description cannot be empty");
+		if (equipment == null) {
+			return new ValidationResponse(false, "provided NULL entity");
+		}
+
+		if (mapping.equals(Mapping.POST)) {
+			equipment.setId(null);
+		}
+
+		if (mapping.equals(Mapping.PUT) || mapping.equals(Mapping.PATCH)) {
+			if (equipment.getId() == null) {
+				return new ValidationResponse(false, "ID parameter is required");
+			}
+
+			Equipment equipmentFromDatabase = getById(equipment.getId());
+
+			if (equipmentFromDatabase == null) {
+				return new ValidationResponse(false, "ID parameter is invalid");
+			}
+		}
+
+		if (mapping.equals(Mapping.POST) || mapping.equals(Mapping.PUT) || mapping.equals(Mapping.PATCH)) {
+			if (equipment.getDescription() != null) {
+				if (equipment.getDescription().length() <= 0) {
+					return new ValidationResponse(false, "description cannot be empty");
+				}
+			}
+
+			//...
+		}
+
+		if (mapping.equals(Mapping.DELETE)) {
+			if (equipment.getId() == null) {
+				return new ValidationResponse(false, "ID parameter is required");
 			}
 		}
 

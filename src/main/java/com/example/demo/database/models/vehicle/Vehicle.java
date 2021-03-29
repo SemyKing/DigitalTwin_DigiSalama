@@ -28,7 +28,7 @@ public class Vehicle {
 	private String vin;
 
 	@Column
-	private String registrationNumber;
+	private String registration_number;
 
 	@ManyToOne
 	@JoinColumn(name="fleet_id", referencedColumnName = "id")
@@ -41,7 +41,4 @@ public class Vehicle {
 	@Transient
 	@Column
 	private Boolean isSelected = false;
-
-	@Column
-	private Boolean isDeleted = false;
 }

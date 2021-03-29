@@ -6,8 +6,9 @@ import com.example.demo.database.models.vehicle.Vehicle;
 import com.example.demo.database.services.vehicle.EquipmentService;
 import com.example.demo.database.services.vehicle.EquipmentTypeService;
 import com.example.demo.database.services.vehicle.VehicleService;
+import com.example.demo.database.models.utils.Mapping;
 import com.example.demo.utils.StringUtils;
-import com.example.demo.utils.ValidationResponse;
+import com.example.demo.database.models.utils.ValidationResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -38,6 +39,8 @@ public class EquipmentController {
 	@GetMapping({"", "/"})
 	public String getAll(Model model) {
 		List<Equipment> equipment = equipmentService.getAll();
+
+		//TODO: MAYBE REMOVE
 		equipment.sort(Comparator.comparing(Equipment::getId));
 
 		model.addAttribute(ENTITY, equipment);
@@ -51,7 +54,7 @@ public class EquipmentController {
 		Equipment equipment = equipmentService.getById(id);
 
 		if (equipment == null) {
-			model.addAttribute(StringUtils.ERROR_TITLE_ATTRIBUTE, "No such element");
+			model.addAttribute(StringUtils.ERROR_TITLE_ATTRIBUTE, "No such entity");
 			model.addAttribute(StringUtils.ERROR_MESSAGE_ATTRIBUTE, ENTITY + " with id: " + id + " not found");
 			return StringUtils.ERROR_PAGE;
 		}
@@ -62,40 +65,17 @@ public class EquipmentController {
 	}
 
 
-	// GET ALL EQUIPMENT BY VEHICLE ID
-	@GetMapping("/vehicles/{id}")
-	public String getAllByVehicleId(@PathVariable Long id, Model model) {
-
-		Vehicle vehicleFromDatabase = vehicleService.getById(id);
-
-		if (vehicleFromDatabase == null) {
-			model.addAttribute(StringUtils.ERROR_TITLE_ATTRIBUTE, "No such element");
-			model.addAttribute(StringUtils.ERROR_MESSAGE_ATTRIBUTE, "vehicle with id: " + id + " not found");
-			return StringUtils.ERROR_PAGE;
-		}
-
-		model.addAttribute("registrationNumber", vehicleFromDatabase.getRegistrationNumber());
-
-
-		List<Equipment> equipment = equipmentService.getAllByVehicleId(id);
-		model.addAttribute(ENTITY, equipment);
-
-		return "vehicle/equipment/equipment_details_for_vehicle_page";
-	}
-
 
 	// NEW EQUIPMENT FORM
 	@GetMapping("/new")
-	public String newForm(Model model, boolean alreadySet) {
-		if (!alreadySet) {
-			model.addAttribute(ENTITY, new Equipment());
-		}
+	public String newForm(Model model) {
+		model.addAttribute(ENTITY, new Equipment());
 
 		List<Vehicle> vehicles = vehicleService.getAll();
 		model.addAttribute("vehicles", vehicles);
 
 		List<EquipmentType> types = typeService.getAll();
-		model.addAttribute("types", types);
+		model.addAttribute("equipment_types", types);
 
 		return "vehicle/equipment/new_equipment_page";
 	}
@@ -118,7 +98,7 @@ public class EquipmentController {
 		model.addAttribute("vehicles", vehicles);
 
 		List<EquipmentType> types = typeService.getAll();
-		model.addAttribute("types", types);
+		model.addAttribute("equipment_types", types);
 
 		return "vehicle/equipment/edit_equipment_page";
 	}
@@ -127,7 +107,7 @@ public class EquipmentController {
 	// POST EQUIPMENT
 	@PostMapping({"", "/"})
 	public String post(@ModelAttribute Equipment equipment, Model model) {
-		ValidationResponse response = equipmentService.validate(equipment);
+		ValidationResponse response = equipmentService.validate(equipment, Mapping.POST);
 
 		if (!response.isValid()) {
 			model.addAttribute(StringUtils.ERROR_TITLE_ATTRIBUTE, "Validation error");
@@ -156,7 +136,7 @@ public class EquipmentController {
 			return StringUtils.ERROR_PAGE;
 		}
 
-		ValidationResponse response = equipmentService.validate(equipment);
+		ValidationResponse response = equipmentService.validate(equipment, Mapping.PUT);
 
 		if (!response.isValid()) {
 			model.addAttribute(StringUtils.ERROR_TITLE_ATTRIBUTE, "Validation error");

@@ -21,13 +21,10 @@ public class Equipment {
     private String description;
 
     @ManyToOne(cascade = CascadeType.PERSIST)
-    @JoinColumn(name="type_id", referencedColumnName = "id")
-    private EquipmentType type;
+    @JoinColumn(name="equipment_type_id", referencedColumnName = "id")
+    private EquipmentType equipment_type;
 
     @ManyToOne(cascade = CascadeType.PERSIST)
     @JoinColumn(name="vehicle_id", referencedColumnName = "id")
     private Vehicle vehicle;
-
-    @Column
-    private Boolean isDeleted = false;
 }

@@ -27,7 +27,4 @@ public class Fleet {
 	@OneToOne
 	@JoinColumn(name="organisation_id", referencedColumnName = "id")
 	private Organisation organisation;
-
-	@Column
-	private Boolean isDeleted = false;
 }

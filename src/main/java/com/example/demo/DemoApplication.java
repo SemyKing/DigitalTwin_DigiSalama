@@ -46,13 +46,16 @@ public class DemoApplication {
 			organisation.setName("Vedia");
 
 
-			User systemAdmin = new User();
-			systemAdmin.setUsername("system_admin");
-			systemAdmin.setPassword(userService.getBcryptEncoder().encode("password"));
-			systemAdmin.setRole(systemAdminRole);
-			systemAdmin.setOrganisation(organisation);
+			User admin = new User();
+			admin.setUsername("admin");
+			admin.setPassword(userService.getBcryptEncoder().encode("password"));
+			admin.setFirst_name("F_NAME");
+			admin.setLast_name("L_NAME");
+			admin.setEmail("test@mail.com");
+			admin.setRole(systemAdminRole);
+			admin.setOrganisation(organisation);
 
-			userService.save(systemAdmin);
+			userService.save(admin);
 		}
 	}
 

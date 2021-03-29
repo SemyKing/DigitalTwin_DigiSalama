@@ -1,0 +1,53 @@
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{main-layout :: main-fragment(~{:: #main-content})}">
+	<head>
+		<title>New Trip</title>
+		<link rel="stylesheet"
+			  href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css"
+			  integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO"
+			  crossorigin="anonymous">
+	</head>
+	<body>
+	<div id="main-content" class="container pt-2">
+
+		<h1>New Trip</h1>
+
+		<h3 th:text="${error_message_attribute}" class="text-danger"></h3>
+
+		<form action="#" th:action="@{/api1/trips}" th:object="${trip}" method="post">
+
+			<div class="form-group">
+				<label for="origin">Origin</label>
+				<input type="text" class="form-control" id="origin" placeholder="Origin" th:field="*{origin}">
+			</div>
+
+			<div class="form-group">
+				<label for="destination">Destination</label>
+				<input type="text" class="form-control" id="destination" placeholder="Destination" th:field="*{destination}">
+			</div>
+
+			<div class="form-group">
+				<label for="km">Kilometres Driven</label>
+				<input type="number" class="form-control" id="km" placeholder="Kilometres Driven" th:field="*{kilometres_driven}">
+			</div>
+
+			<div class="form-group">
+				<label for="vehicleSelect">Vehicle</label>
+				<select class="form-control" id="vehicleSelect" th:field="${trip.vehicle}">
+					<option value=""></option>
+					<option th:each="vehicle : ${vehicles}"
+							th:value="${vehicle.id}"
+							th:utext="${vehicle.registration_number}">
+					</option>
+				</select>
+			</div>
+
+			<div class="form-group">
+				<label for="description">Description</label>
+				<textarea id="description" style="min-height: 200px;" class="form-control" aria-label="Description" th:field="*{description}"></textarea>
+			</div>
+
+			<button type="submit" class="btn btn-primary mx-auto mt-4">Save</button>
+		</form>
+	</div>
+	</body>
+</html>

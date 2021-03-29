@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" th:fragment="main-fragment (mainContent)">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet"
+          href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css"
+          integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO"
+          crossorigin="anonymous">
+</head>
+
+<body>
+    <header>
+        <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+            <div class="collapse navbar-collapse" id="navbarNavDropdown">
+                <ul class="navbar-nav">
+
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            Navigation
+                        </a>
+                        <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                            <a class="dropdown-item" href="/api1/vehicles/">Vehicles</a>
+                            <a class="dropdown-item" href="/api1/fleets/">Fleets</a>
+                            <a class="dropdown-item" href="/api1/equipment_types/">Equipment Types</a>
+                            <a class="dropdown-item" href="/api1/equipment/">Equipment</a>
+                            <a class="dropdown-item" href="/api1/files/">Files</a>
+                            <a class="dropdown-item" href="/api1/trips/">Trips</a>
+                            <a class="dropdown-item" href="/api1/refuels/">Refuels</a>
+                            <a class="dropdown-item" href="/api1/events/">Events</a>
+                            <div class="dropdown-divider"></div>
+                            <a class="dropdown-item" href="/api1/organisations/">Organisations</a>
+                            <a class="dropdown-item" href="/api1/users/">Users</a>
+                        </div>
+                    </li>
+
+                </ul>
+            </div>
+
+            <form class="form-inline mb-0" method="post" th:action="@{/logout}">
+                <a class="navbar-brand" href="/api1/profile">
+                    <img th:src="@{/user.svg}" width="30" height="30" class="d-inline-block align-top" alt="">
+                    <span th:text="${username}"></span>
+                </a>
+                <button class="btn btn-outline-success my-2 my-sm-0" type="submit">Logout</button>
+            </form>
+        </nav>
+    </header>
+
+    <section>
+        <article th:insert="${mainContent} ?: ~{}">
+
+<!--        INITIAL PAGE AFTER SUCCESSFUL LOGIN-->
+            <div class="container pt-2">
+                <h1 class="my-auto mx-auto text-center">Digital Twin API</h1>
+            </div>
+
+        </article>
+    </section>
+
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.0/jquery.min.js"></script>
+    <script src="//netdna.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="//netdna.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css">
+</body>
+</html>

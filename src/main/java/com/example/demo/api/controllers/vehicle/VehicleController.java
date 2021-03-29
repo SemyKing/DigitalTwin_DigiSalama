@@ -1,18 +1,12 @@
 package com.example.demo.api.controllers.vehicle;
 
 import com.example.demo.database.models.Organisation;
-import com.example.demo.database.models.vehicle.FileDB;
-import com.example.demo.database.models.vehicle.Fleet;
-import com.example.demo.database.models.vehicle.Trip;
-import com.example.demo.database.models.vehicle.Vehicle;
+import com.example.demo.database.models.vehicle.*;
 import com.example.demo.database.services.*;
-import com.example.demo.database.services.vehicle.FleetService;
-import com.example.demo.database.services.vehicle.FileService;
-import com.example.demo.database.services.vehicle.VehicleService;
-import com.example.demo.database.services.vehicle.TripService;
-import com.example.demo.utils.Mapping;
+import com.example.demo.database.services.vehicle.*;
+import com.example.demo.database.models.utils.Mapping;
 import com.example.demo.utils.StringUtils;
-import com.example.demo.utils.ValidationResponse;
+import com.example.demo.database.models.utils.ValidationResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -43,12 +37,20 @@ public class VehicleController {
 	private final FileService fileService;
 
 	@Autowired
+	private final EventService eventService;
+
+	@Autowired
+	private final EquipmentService equipmentService;
+
+	@Autowired
 	private final OrganisationService organisationService;
 
 
 	@GetMapping({"", "/"})
 	public String getAll(Model model) {
 		List<Vehicle> vehicles = vehicleService.getAll();
+
+		//TODO: MAYBE REMOVE
 		vehicles.sort(Comparator.comparing(Vehicle::getId));
 
 		model.addAttribute("vehicles", vehicles);
@@ -59,23 +61,94 @@ public class VehicleController {
 
 	@GetMapping("/{id}")
 	public String getById(@PathVariable Long id, Model model) {
-		Vehicle vehicle = vehicleService.getById(id);
+		Vehicle vehicleFromDatabase = vehicleService.getById(id);
 
-		if (vehicle == null) {
+		if (vehicleFromDatabase == null) {
 			model.addAttribute(StringUtils.ERROR_TITLE_ATTRIBUTE, "No such entity");
 			model.addAttribute(StringUtils.ERROR_MESSAGE_ATTRIBUTE, ENTITY + " with id: " + id + " not found");
 			return StringUtils.ERROR_PAGE;
 		}
 
-		model.addAttribute(ENTITY, vehicle);
+		model.addAttribute(ENTITY, vehicleFromDatabase);
+
+		return "vehicle/vehicle_details_page";
+	}
+
+
+	@GetMapping("/{id}/equipment")
+	public String getEquipmentByVehicleId(@PathVariable Long id, Model model) {
+		Vehicle vehicleFromDatabase = vehicleService.getById(id);
+
+		if (vehicleFromDatabase == null) {
+			model.addAttribute(StringUtils.ERROR_TITLE_ATTRIBUTE, "No such entity");
+			model.addAttribute(StringUtils.ERROR_MESSAGE_ATTRIBUTE, ENTITY + " with id: " + id + " not found");
+			return StringUtils.ERROR_PAGE;
+		}
+
+		model.addAttribute(ENTITY, vehicleFromDatabase);
+
+		List<Equipment> equipment = equipmentService.getAllByVehicleId(id);
+		model.addAttribute("equipment", equipment);
+
+		return "vehicle/vehicle_equipment_list_page";
+	}
+
+
+	@GetMapping("/{id}/trips")
+	public String getTripsByVehicleId(@PathVariable Long id, Model model) {
+		Vehicle vehicleFromDatabase = vehicleService.getById(id);
+
+		if (vehicleFromDatabase == null) {
+			model.addAttribute(StringUtils.ERROR_TITLE_ATTRIBUTE, "No such entity");
+			model.addAttribute(StringUtils.ERROR_MESSAGE_ATTRIBUTE, ENTITY + " with id: " + id + " not found");
+			return StringUtils.ERROR_PAGE;
+		}
+
+		model.addAttribute(ENTITY, vehicleFromDatabase);
 
 		List<Trip> trips = tripService.getAllByVehicleId(id);
 		model.addAttribute("trips", trips);
 
-		List<FileDB> fileDBS = fileService.getAllByVehicleId(id);
-		model.addAttribute("images", fileDBS);
+		return "vehicle/vehicle_trips_list_page";
+	}
 
-		return "vehicle/vehicle_details_page";
+
+	@GetMapping("/{id}/files")
+	public String getFilesByVehicleId(@PathVariable Long id, Model model) {
+		Vehicle vehicleFromDatabase = vehicleService.getById(id);
+
+		if (vehicleFromDatabase == null) {
+			model.addAttribute(StringUtils.ERROR_TITLE_ATTRIBUTE, "No such entity");
+			model.addAttribute(StringUtils.ERROR_MESSAGE_ATTRIBUTE, ENTITY + " with id: " + id + " not found");
+			return StringUtils.ERROR_PAGE;
+		}
+
+		model.addAttribute(ENTITY, vehicleFromDatabase);
+
+
+		List<FileDB> files = fileService.getAllByVehicleId(id);
+		model.addAttribute("files", files);
+
+		return "vehicle/vehicle_files_list_page";
+	}
+
+	@GetMapping("/{id}/events")
+	public String getEventsByVehicleId(@PathVariable Long id, Model model) {
+		Vehicle vehicleFromDatabase = vehicleService.getById(id);
+
+		if (vehicleFromDatabase == null) {
+			model.addAttribute(StringUtils.ERROR_TITLE_ATTRIBUTE, "No such entity");
+			model.addAttribute(StringUtils.ERROR_MESSAGE_ATTRIBUTE, ENTITY + " with id: " + id + " not found");
+			return StringUtils.ERROR_PAGE;
+		}
+
+		model.addAttribute(ENTITY, vehicleFromDatabase);
+
+
+		List<VehicleEvent> events = eventService.getAllByVehicleId(id);
+		model.addAttribute("events", events);
+
+		return "vehicle/vehicle_events_list_page";
 	}
 
 
@@ -121,7 +194,7 @@ public class VehicleController {
 	@PostMapping({"", "/"})
 	public String post(@ModelAttribute Vehicle vehicle, Model model) {
 
-		ValidationResponse response = vehicleService.validate(vehicle, Mapping.POST_UI);
+		ValidationResponse response = vehicleService.validate(vehicle, Mapping.POST);
 
 		if (!response.isValid()) {
 			model.addAttribute(StringUtils.ERROR_TITLE_ATTRIBUTE, "Validation error");
@@ -142,7 +215,7 @@ public class VehicleController {
 
 
 	// UPDATE VEHICLE
-	@PostMapping("/{id}/update")
+	@PostMapping("/update")
 	public String put(@ModelAttribute Vehicle vehicle, Model model) {
 		if (vehicle.getId() == null) {
 			model.addAttribute(StringUtils.ERROR_TITLE_ATTRIBUTE, "Missing parameter");
@@ -150,7 +223,7 @@ public class VehicleController {
 			return StringUtils.ERROR_PAGE;
 		}
 
-		ValidationResponse response = vehicleService.validate(vehicle, Mapping.PUT_UI);
+		ValidationResponse response = vehicleService.validate(vehicle, Mapping.PUT);
 
 		if (!response.isValid()) {
 			model.addAttribute(StringUtils.ERROR_TITLE_ATTRIBUTE, "Validation error");

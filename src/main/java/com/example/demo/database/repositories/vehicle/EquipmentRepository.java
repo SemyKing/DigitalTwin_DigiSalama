@@ -14,8 +14,8 @@ import java.util.List;
 @Qualifier("equipment")
 public interface EquipmentRepository extends JpaRepository<Equipment, Long> {
 
-    @Query("SELECT e FROM Equipment e WHERE e.type IS NOT NULL AND e.type.id = :id")
-    List<Trip> findAllByTypeId(@Param("id") Long id);
+    @Query("SELECT e FROM Equipment e WHERE e.equipment_type IS NOT NULL AND e.equipment_type.id = :id")
+    List<Equipment> findAllByTypeId(@Param("id") Long id);
 
     @Query("SELECT e FROM Equipment e WHERE e.vehicle IS NOT NULL AND e.vehicle.id = :id")
     List<Equipment> findAllByVehicleId(@Param("id") Long id);

@@ -2,8 +2,9 @@ package com.example.demo.api.controllers.vehicle;
 
 import com.example.demo.database.models.vehicle.EquipmentType;
 import com.example.demo.database.services.vehicle.EquipmentTypeService;
+import com.example.demo.database.models.utils.Mapping;
 import com.example.demo.utils.StringUtils;
-import com.example.demo.utils.ValidationResponse;
+import com.example.demo.database.models.utils.ValidationResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -28,6 +29,8 @@ public class EquipmentTypeController {
 	@GetMapping({"", "/"})
 	public String getAll(Model model) {
 		List<EquipmentType> types = typeService.getAll();
+
+		//TODO: MAYBE REMOVE
 		types.sort(Comparator.comparing(EquipmentType::getId));
 
 		model.addAttribute("equipment_types", types);
@@ -81,7 +84,7 @@ public class EquipmentTypeController {
 	// POST EQUIPMENT TYPE
 	@PostMapping({"", "/"})
 	public String post(@ModelAttribute EquipmentType type, Model model) {
-		ValidationResponse response = typeService.validate(type);
+		ValidationResponse response = typeService.validate(type, Mapping.POST);
 
 		if (!response.isValid()) {
 			model.addAttribute(StringUtils.ERROR_TITLE_ATTRIBUTE, "Validation error");
@@ -104,13 +107,8 @@ public class EquipmentTypeController {
 	// UPDATE EQUIPMENT TYPE
 	@PostMapping("/update")
 	public String put(@ModelAttribute EquipmentType type, Model model) {
-		if (type.getId() == null) {
-			model.addAttribute(StringUtils.ERROR_TITLE_ATTRIBUTE, "Missing parameter");
-			model.addAttribute(StringUtils.ERROR_MESSAGE_ATTRIBUTE, "ID parameter is required");
-			return StringUtils.ERROR_PAGE;
-		}
 
-		ValidationResponse response = typeService.validate(type);
+		ValidationResponse response = typeService.validate(type, Mapping.PUT);
 
 		if (!response.isValid()) {
 			model.addAttribute(StringUtils.ERROR_TITLE_ATTRIBUTE, "Validation error");

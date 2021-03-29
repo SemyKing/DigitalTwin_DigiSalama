@@ -1,0 +1,59 @@
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{main-layout :: main-fragment(~{:: #main-content})}">
+<head>
+	<title>Refuels List</title>
+	<link rel="stylesheet"
+		  href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css"
+		  integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO"
+		  crossorigin="anonymous">
+</head>
+
+<body>
+	<div id="main-content" class="container pt-2">
+
+		<div class="col">
+			<div class="row">
+				<h1>Refuels List</h1>
+
+				<form action="#" th:action="${'/api1/refuels/new'}" class="ml-auto p-0" method="get">
+					<button type="submit" class="btn btn-success">+ New Refuel</button>
+				</form>
+			</div>
+
+			<table class="table table-hover table-sm table-bordered">
+				<thead>
+				<tr>
+					<th scope="col">ID</th>
+					<th scope="col">Location</th>
+					<th scope="col">Vehicle</th>
+					<th scope="col">Date & Time</th>
+				</tr>
+				</thead>
+				<tbody>
+				<tr th:if="${refuels.empty}">
+					<td colspan="6"> No Refuels Available </td>
+				</tr>
+				<tr th:each="refuel : ${refuels}">
+					<td>
+						<span th:text="${refuel.id}"></span>
+					</td>
+					<td>
+						<span th:text="${refuel.location}"></span>
+					</td>
+					<td>
+						<span th:text="${refuel.vehicle == null ? 'NOT SELECTED' : refuel.vehicle.registration_number}"></span>
+					</td>
+					<td>
+						<span th:text="${#dates.format(refuel.timestamp, 'dd/MM/yyyy HH:mm')}"></span>
+					</td>
+					<td style="width: 1px;">
+						<form action="#" th:action="${'/api1/refuels/' + refuel.id}" class="m-0 p-0" method="get">
+							<button type="submit" class="btn btn-secondary btn-sm">View</button>
+						</form>
+					</td>
+				</tr>
+				</tbody>
+			</table>
+		</div>
+	</div>
+</body>
+</html>

@@ -42,7 +42,7 @@ tr td {
 	padding-top: 5px;
 }
 
-.error_msg {
+.text-danger {
 	color: red;
 	font-weight: bold;
 }

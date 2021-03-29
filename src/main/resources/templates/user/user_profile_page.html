@@ -1,0 +1,68 @@
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{main-layout :: main-fragment(~{:: #main-content})}">
+	<head>
+		<title>Profile</title>
+		<link rel="stylesheet"
+			  href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css"
+			  integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO"
+			  crossorigin="anonymous">
+	</head>
+
+	<body>
+
+		<form action="#" th:action="${'/api1/'}" class="mb-0 mx-2 mt-2" method="GET">
+			<button type="submit" class="btn btn-warning">Home</button>
+		</form>
+
+		<div id="main-content" class="container pt-2">
+
+			<h1>Profile</h1>
+
+			<h3 th:text="${success_message_attribute}" class="text-success"></h3>
+
+			<form action="#" th:action="${'/api1/users/update'}" th:object="${user}" method="POST">
+
+				<div class="form-group">
+					<label for="username">Username</label>
+					<input type="text" class="form-control" id="username" placeholder="Username" th:field="${user.username}">
+				</div>
+
+				<div class="form-group">
+					<label for="first_name">First Name</label>
+					<input type="text" class="form-control" id="first_name" placeholder="First Name" th:field="${user.first_name}">
+				</div>
+
+				<div class="form-group">
+					<label for="last_name">Last Name</label>
+					<input type="text" class="form-control" id="last_name" placeholder="Last Name" th:field="${user.last_name}">
+				</div>
+
+				<div class="form-group">
+					<label for="email">Email</label>
+					<input type="email" class="form-control" id="email" placeholder="Email" th:field="${user.email}">
+				</div>
+
+				<div class="form-group" th:if="${user.organisation != null}">
+					<label for="organisation">Organisation</label>
+					<input type="text" class="form-control" id="organisation" readonly th:field="${user.organisation.name}">
+				</div>
+
+				<div class="form-group" th:if="${user.role != null}">
+					<label for="role">Role</label>
+					<input type="text" class="form-control" id="role" readonly th:field="${user.role.name}">
+				</div>
+
+				<input type="submit" id="save-profile" class="" hidden/>
+			</form>
+
+			<form action="#" th:action="${'/api1/users/'+ user.id +'/change_password'}" class="" method="GET">
+				<input type="submit" id="change-password-form" class="" hidden/>
+			</form>
+
+			<div class="row mt-4">
+				<label for="save-profile" tabindex="0" class="btn btn-primary">Save</label>
+				<label for="change-password-form" tabindex="1" class="btn btn-warning ml-auto">Change Password</label>
+			</div>
+
+		</div>
+	</body>
+</html>

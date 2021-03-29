@@ -18,13 +18,12 @@ public interface UserRepository extends JpaRepository<User, Long> {
 	@Query("SELECT u FROM User u WHERE u.username = :username")
 	Optional<User> findUserByUsername(@Param("username") String username);
 
-	@Query("SELECT u FROM User u WHERE u.username = :username AND u.password = :password" )
-	Optional<User> findUserByUsernameAndPassword(@Param("username") String username, @Param("password") String password);
-
 	@Query("SELECT u FROM User u WHERE u.email = :email")
 	Optional<User> findUserByEmail(@Param("email") String email);
 
 	@Query("SELECT u FROM User u WHERE u.role IS NOT NULL AND u.role.name = '" + StringUtils.ROLE_SYSTEM_ADMIN + "'")
 	List<User> findSystemAdmins();
 
+	@Query("SELECT u FROM User u WHERE u.password_update_token = :token")
+    Optional<User> findUserByPasswordUpdateToken(@Param("token") String token);
 }

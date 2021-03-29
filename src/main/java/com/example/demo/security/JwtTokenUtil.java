@@ -18,11 +18,9 @@ public class JwtTokenUtil {
     @Value("${jwt.secret}")
     private String secret;
 
-    // 15 MINUTES
-//    public static final long JWT_TOKEN_VALIDITY = 900000; // MILLISECONDS
+    @Value("${jwt.token.validity}")
+    private long token_validity;
 
-    // 1 MINUTE
-    public static final long JWT_TOKEN_VALIDITY = 60000; // MILLISECONDS
 
     //retrieve username from jwt token
     public String getUsernameFromToken(String token) {
@@ -63,7 +61,7 @@ public class JwtTokenUtil {
     private String doGenerateToken(Map<String, Object> claims, String subject) {
 
         return Jwts.builder().setClaims(claims).setSubject(subject).setIssuedAt(new Date(System.currentTimeMillis()))
-                .setExpiration(new Date(System.currentTimeMillis() + JWT_TOKEN_VALIDITY))
+                .setExpiration(new Date(System.currentTimeMillis() + token_validity))
                 .signWith(SignatureAlgorithm.HS512, secret).compact();
     }
 

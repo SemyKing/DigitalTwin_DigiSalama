@@ -1,4 +1,4 @@
-<html xmlns:th="http://www.w3.org/1999/xhtml">
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{main-layout :: main-fragment(~{:: #main-content})}">
 	<head>
 		<title>New Equipment</title>
 		<link rel="stylesheet"
@@ -9,23 +9,24 @@
 
 	<body>
 
-	<div class="container pt-2">
-
-		<h2 th:text="${error_message_attribute}" class="error_msg"></h2>
+	<div id="main-content" class="container pt-2">
 
 		<h1>New Equipment</h1>
+
+		<h3 th:text="${error_message_attribute}" class="text-danger"></h3>
 
 		<form action="#" th:action="@{/api1/equipment}" th:object="${equipment}" method="post">
 
 			<div class="form-group">
-				<label for="desc">Description</label>
-				<input type="text" class="form-control" id="desc" placeholder="Description" th:field="*{description}">
+				<label for="description">Description</label>
+				<textarea id="description" style="min-height: 200px;" class="form-control" aria-label="Description" th:field="*{description}"></textarea>
 			</div>
 
 			<div class="form-group">
 				<label for="typeSelect">Equipment Type</label>
-				<select class="form-control" id="typeSelect" th:field="${equipment.type}">
-					<option th:each="type : ${types}"
+				<select class="form-control" id="typeSelect" th:field="${equipment.equipment_type}">
+					<option value=""></option>
+					<option th:each="type : ${equipment_types}"
 							th:value="${type.id}"
 							th:utext="${type.name}">
 					</option>
@@ -35,18 +36,12 @@
 			<div class="form-group">
 				<label for="vehicleSelect">Vehicle</label>
 				<select class="form-control" id="vehicleSelect" th:field="${equipment.vehicle}">
+					<option value=""></option>
 					<option th:each="vehicle : ${vehicles}"
 							th:value="${vehicle.id}"
-							th:utext="${vehicle.registrationNumber}">
+							th:utext="${vehicle.registration_number}">
 					</option>
 				</select>
-			</div>
-
-			<div class="form-check">
-				<input class="form-check-input" type="checkbox" id="defaultCheck1" th:field="*{isDeleted}">
-				<label class="form-check-label" for="defaultCheck1">
-					Deleted
-				</label>
 			</div>
 
 			<button type="submit" class="btn btn-primary mx-auto mt-4">Save</button>

@@ -3,6 +3,7 @@ package com.example.demo.security;
 import com.example.demo.database.services.UserService;
 import com.example.demo.utils.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
@@ -17,7 +18,10 @@ import org.springframework.security.config.annotation.web.configuration.WebSecur
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
+import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.web.client.RestTemplate;
 
 import javax.security.auth.login.CredentialExpiredException;
@@ -28,13 +32,14 @@ import javax.security.auth.login.CredentialNotFoundException;
 @EnableGlobalMethodSecurity(prePostEnabled = true)
 public class SecurityConfig {
 
+	// UI TOKEN VALID FOR 24 HOURS
+	private final static int SESSION_COOKIE_VALIDITY = 86400000;
+
 	@Autowired
 	private UserService userService;
 
 	@Autowired
 	public void configureGlobal(AuthenticationManagerBuilder auth) throws Exception {
-		// configure AuthenticationManager so that it knows from where to load user for matching credentials
-		// Use BCryptPasswordEncoder
 		auth.userDetailsService(userService).passwordEncoder(passwordEncoder());
 	}
 
@@ -60,27 +65,18 @@ public class SecurityConfig {
 		@Autowired
 		private JwtRequestFilter jwtRequestFilter;
 
-
 		@Override
 		protected void configure(HttpSecurity http) throws Exception {
 			http
-					.antMatcher("/api2/**")
-					.cors()
-						.and()
-					.csrf()
-						.disable()
-
+					.antMatcher(StringUtils.JSON_API + "/**")
 					.authorizeRequests()
-//						.antMatchers("/api2/authenticate").permitAll()
-//						.anyRequest().authenticated()
-////					.antMatchers("/api2/**").authenticated()
-//
-//					// all other requests need to be authenticated
-//					.and()
-//					.exceptionHandling().authenticationEntryPoint(jwtAuthenticationEntryPoint)
-//					.and()
+						.antMatchers(StringUtils.JSON_API + "/authenticate").permitAll()
+						.antMatchers(StringUtils.JSON_API + "/**").authenticated()
+						.and()
+					.exceptionHandling().authenticationEntryPoint(jwtAuthenticationEntryPoint)
+					.and()
 
-					.antMatchers("/api2/**").permitAll().and()
+					.cors().and().csrf().disable()
 
 					// make sure we use stateless session session won't be used to store user's state.
 					.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS);
@@ -91,30 +87,28 @@ public class SecurityConfig {
 	}
 
 
-	@Order(2)
 	@Configuration
 	public static class UI_SecurityConfig extends WebSecurityConfigurerAdapter {
 
 		@Override
-		protected void configure(HttpSecurity httpSecurity) throws Exception {
-			httpSecurity
-					.antMatcher("/api1/**")
-					.csrf().disable()
-//
+		protected void configure(HttpSecurity http) throws Exception {
+			http
 					.authorizeRequests()
-//					.antMatchers("/resources/**").permitAll()
-//					.antMatchers("/api1/login").permitAll()
-//
-//					.anyRequest().authenticated()
-//					.and()
-//						.httpBasic()
+						.antMatchers("/", "/login", "/signin", "/logout").permitAll()
+						.antMatchers(StringUtils.UI_API + "/**").authenticated()
+						.and()
+					.formLogin()
+						.loginProcessingUrl("/signin")
+						.loginPage("/login").permitAll()
+						.defaultSuccessUrl(StringUtils.UI_API + "/", true)
+						.usernameParameter("username")
+						.passwordParameter("password")
+						.and()
+					.csrf().disable()
 
-
-					.antMatchers("/api1/**").permitAll().and()
-
-
-//					// make sure we use stateless session session won't be used to store user's state.
-					.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS);
+					.rememberMe().tokenValiditySeconds(SESSION_COOKIE_VALIDITY).key("mySecret!").rememberMeParameter("checkRememberMe")
+					.and()
+					.logout().logoutRequestMatcher(new AntPathRequestMatcher("/logout")).logoutSuccessUrl("/login");
 		}
 	}
 }

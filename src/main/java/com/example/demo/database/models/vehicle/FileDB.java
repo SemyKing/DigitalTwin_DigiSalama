@@ -3,6 +3,7 @@ package com.example.demo.database.models.vehicle;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.springframework.web.multipart.MultipartFile;
 
 import javax.persistence.*;
 
@@ -17,10 +18,10 @@ public class FileDB {
 	private Long id;
 
 	@Column
-	private String name;
+	private String file_name;
 
 	@Column
-	private String type;
+	private String file_type;
 
 	@Column(columnDefinition="TEXT")
 	private String description;
@@ -33,12 +34,22 @@ public class FileDB {
 	@JoinColumn(name="vehicle_id", referencedColumnName = "id")
 	private Vehicle vehicle;
 
-	@Column
-	private Boolean isDeleted = false;
+	@ManyToOne
+	@JoinColumn(name="refuel_id", referencedColumnName = "id")
+	private Refuel refuel;
 
-	public FileDB(String name, String type, byte[] data) {
-		this.name = name;
-		this.type = type;
+	@ManyToOne
+	@JoinColumn(name="event_id", referencedColumnName = "id")
+	private VehicleEvent event;
+
+
+	@Transient
+	private MultipartFile multipart_file;
+
+
+	public FileDB(String file_name, String file_type, byte[] data) {
+		this.file_name = file_name;
+		this.file_type = file_type;
 		this.data = data;
 	}
 }

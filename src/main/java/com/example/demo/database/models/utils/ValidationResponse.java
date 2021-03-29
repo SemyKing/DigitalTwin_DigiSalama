@@ -1,4 +1,4 @@
-package com.example.demo.utils;
+package com.example.demo.database.models.utils;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -9,7 +9,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class ValidationResponse {
 
-//    private T object;
     private boolean valid;
     private String message;
 }

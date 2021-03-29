@@ -1,4 +1,4 @@
-<html xmlns:th="http://www.w3.org/1999/xhtml">
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{main-layout :: main-fragment(~{:: #main-content})}">
 	<head>
 		<title>New Fleet</title>
 		<link rel="stylesheet"
@@ -9,11 +9,11 @@
 
 	<body>
 
-	<div class="container pt-2">
-
-		<h2 th:text="${error_message_attribute}" class="error_msg"></h2>
+	<div id="main-content" class="container pt-2">
 
 		<h1>New Fleet</h1>
+
+		<h3 th:text="${error_message_attribute}" class="text-danger"></h3>
 
 		<form action="#" th:action="@{/api1/fleets}" th:object="${fleet}" method="post">
 
@@ -25,18 +25,12 @@
 			<div class="form-group" th:object="${organisations}">
 				<label for="organisationSelect">Organisation</label>
 				<select class="form-control" id="organisationSelect" th:field="${fleet.organisation}">
+					<option value=""></option>
 					<option th:each="org : ${organisations}"
 							th:value="${org.id}"
 							th:utext="${org.name}">
 					</option>
 				</select>
-			</div>
-
-			<div class="form-check">
-				<input class="form-check-input" type="checkbox" id="defaultCheck1" th:field="*{isDeleted}">
-				<label class="form-check-label" for="defaultCheck1">
-					Deleted
-				</label>
 			</div>
 
 			<button type="submit" class="btn btn-primary mx-auto mt-4">Save</button>

@@ -23,5 +23,4 @@ public class Role {
 
 	@Column
 	private Integer level;
-
 }

@@ -31,11 +31,13 @@ dependencies {
 
 	implementation 'org.springframework.boot:spring-boot-starter-web'
 	implementation 'org.springframework.boot:spring-boot-starter-security'
-//	implementation 'org.springframework.security:spring-security-oauth2-resource-server'
-//	implementation 'org.springframework.security:spring-security-oauth2-jose'
 
 	// https://mvnrepository.com/artifact/io.jsonwebtoken/jjwt
 	implementation group: 'io.jsonwebtoken', name: 'jjwt', version: '0.9.1'
+
+
+
+
 
 
 	compileOnly 'org.projectlombok:lombok'

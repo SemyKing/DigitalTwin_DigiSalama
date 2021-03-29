@@ -1,12 +1,10 @@
 package com.example.demo.api.controllers;
 
 import com.example.demo.database.models.Organisation;
-import com.example.demo.database.models.user.Role;
-import com.example.demo.database.models.user.User;
 import com.example.demo.database.services.OrganisationService;
-import com.example.demo.utils.Mapping;
+import com.example.demo.database.models.utils.Mapping;
 import com.example.demo.utils.StringUtils;
-import com.example.demo.utils.ValidationResponse;
+import com.example.demo.database.models.utils.ValidationResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -80,7 +78,7 @@ public class OrganisationController {
 	// POST ORGANISATION
 	@PostMapping({"", "/"})
 	public String post(@ModelAttribute Organisation organisation, Model model) {
-		ValidationResponse response = organisationService.validate(organisation, Mapping.POST_UI);
+		ValidationResponse response = organisationService.validate(organisation, Mapping.POST);
 
 		if (!response.isValid()) {
 			model.addAttribute(StringUtils.ERROR_TITLE_ATTRIBUTE, "Validation error");
@@ -109,7 +107,7 @@ public class OrganisationController {
 			return StringUtils.ERROR_PAGE;
 		}
 
-		ValidationResponse response = organisationService.validate(organisation, Mapping.PUT_UI);
+		ValidationResponse response = organisationService.validate(organisation, Mapping.PUT);
 
 		if (!response.isValid()) {
 			model.addAttribute(StringUtils.ERROR_TITLE_ATTRIBUTE, "Validation error");
@@ -124,7 +122,7 @@ public class OrganisationController {
 			model.addAttribute(StringUtils.ERROR_MESSAGE_ATTRIBUTE,"failed to save " + ENTITY + " in database");
 			return StringUtils.ERROR_PAGE;
 		} else {
-			return StringUtils.REDIRECT + StringUtils.UI_API + "/users/" + organisationFromDatabase.getId();
+			return StringUtils.REDIRECT + StringUtils.UI_API + "/organisations/" + organisationFromDatabase.getId();
 		}
 	}
 

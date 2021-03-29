@@ -16,7 +16,7 @@ import javax.validation.constraints.Size;
  */
 public class UserPassword {
 
-	private String currentPassword;
-	private String newPassword1;
-	private String newPassword2;
+	private String current_password;
+	private String new_password_1;
+	private String new_password_2;
 }

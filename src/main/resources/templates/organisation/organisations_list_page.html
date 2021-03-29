@@ -1,4 +1,4 @@
-<html xmlns:th="http://www.w3.org/1999/xhtml">
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{main-layout :: main-fragment(~{:: #main-content})}">
 	<head>
 		<title>Organisations List</title>
 		<link rel="stylesheet"
@@ -9,27 +9,22 @@
 
 	<body>
 
-		<form action="#" th:action="${'/api1/'}" class="mb-0 mx-2 mt-2" method="GET">
-			<button type="submit" class="btn btn-warning">Home</button>
-		</form>
-
-		<div class="container pt-2">
-
-			<h1>Organisations List</h1>
+		<div id="main-content" class="container pt-2">
 
 			<div class="row">
-				<form action="#" th:action="${'/api1/organisations/new'}" class="form_button" method="get">
-					<button type="submit" class="btn btn-primary">New User</button>
+				<h1>Organisations List</h1>
+
+				<form action="#" th:action="${'/api1/organisations/new'}" class="ml-auto p-0" method="get">
+					<button type="submit" class="btn btn-success">+ New Organisation</button>
 				</form>
 			</div>
 
 			<table class="table table-hover table-sm table-bordered">
 				<thead>
-				<tr>
-					<th> ID </th>
-					<th> Name </th>
-					<th> Deleted </th>
-				</tr>
+					<tr>
+						<th> ID </th>
+						<th> Name </th>
+					</tr>
 				</thead>
 				<tbody>
 					<tr th:if="${organisations.empty}">
@@ -42,12 +37,9 @@
 						<td>
 							<span th:text="${organisation.name}"></span>
 						</td>
-						<td>
-							<span th:text="${organisation.isDeleted}"></span>
-						</td>
-						<td>
-							<form action="#" th:action="${'/api1/organisations/' + organisation.id}" class="mb-0" method="get">
-								<button type="submit" class="btn btn-primary w-100">View</button>
+						<td style="width: 1px;">
+							<form action="#" th:action="${'/api1/organisations/' + organisation.id}" class="m-0 p-0" method="get">
+								<button type="submit" class="btn btn-primary btn-sm">View</button>
 							</form>
 						</td>
 					</tr>

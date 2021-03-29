@@ -19,7 +19,4 @@ public class Organisation {
 
 	@Column
 	private String name;
-
-	@Column
-	private Boolean isDeleted = false;
 }

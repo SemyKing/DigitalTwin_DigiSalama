@@ -1,6 +1,6 @@
-<html xmlns:th="http://www.w3.org/1999/xhtml">
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{main-layout :: main-fragment(~{:: #main-content})}">
 	<head>
-		<title>Equipment Type List</title>
+		<title>Equipment Types List</title>
 		<link rel="stylesheet"
 			  href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css"
 			  integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO"
@@ -9,54 +9,46 @@
 
 	<body>
 
-	<form action="#" th:action="${'/api1/'}" class="mb-0 mx-2 mt-2" method="GET">
-		<button type="submit" class="btn btn-warning">Home</button>
-	</form>
+		<div id="main-content" class="container pt-2">
 
-	<div class="container pt-2">
 
-		<h1>Equipment Type List</h1>
+			<div class="col">
+				<div class="row">
+					<h1>Equipment Types List</h1>
 
-		<div class="col">
-			<div class="row">
-				<form action="#" th:action="${'/api1/equipment_types/new'}" class="btn btn-primary" method="get">
-					<button type="submit" class="btn btn-primary">New Equipment Type</button>
-				</form>
+					<form action="#" th:action="${'/api1/equipment_types/new'}" class="ml-auto p-0" method="get">
+						<button type="submit" class="btn btn-success">+ New Equipment Type</button>
+					</form>
+				</div>
+
+				<table class="table table-hover table-sm table-bordered">
+					<thead>
+						<tr>
+							<th scope="col">ID</th>
+							<th scope="col">Name</th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr th:if="${equipment_types.empty}">
+							<td colspan="2"> No Equipment Types Available </td>
+						</tr>
+
+						<tr th:each="type : ${equipment_types}">
+							<td>
+								<span th:text="${type.id}"></span>
+							</td>
+							<td>
+								<span th:text="${type.name}"></span>
+							</td>
+							<td style="width: 1px;">
+								<form action="#" th:action="${'/api1/equipment_types/' + type.id}" class="m-0 p-0" method="get">
+									<button type="submit" class="btn btn-primary btn-sm">View</button>
+								</form>
+							</td>
+						</tr>
+					</tbody>
+				</table>
 			</div>
-
-			<table class="table table-hover table-sm table-bordered">
-				<thead>
-				<tr>
-					<th scope="col">ID</th>
-					<th scope="col">Name</th>
-					<th scope="col">Deleted</th>
-					<th scope="col"> </th>
-				</tr>
-				</thead>
-				<tbody>
-				<tr th:if="${equipment_types.empty}">
-					<td colspan="3"> No Equipment Types Available </td>
-				</tr>
-
-				<tr th:each="type : ${equipment_types}">
-					<td>
-						<span th:text="${type.id}"></span>
-					</td>
-					<td>
-						<span th:text="${type.name}"></span>
-					</td>
-					<td>
-						<span th:text="${type.isDeleted}"></span>
-					</td>
-					<td>
-						<form action="#" th:action="${'/api1/equipment_types/' + type.id}" class="mb-0" method="get">
-							<button type="submit" class="btn btn-primary w-100">View</button>
-						</form>
-					</td>
-				</tr>
-				</tbody>
-			</table>
 		</div>
-	</div>
 	</body>
 </html>

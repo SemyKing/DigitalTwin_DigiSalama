@@ -1,10 +1,9 @@
 package com.example.demo.database.services.vehicle;
 
-import com.example.demo.database.models.vehicle.Equipment;
 import com.example.demo.database.models.vehicle.EquipmentType;
-import com.example.demo.database.repositories.vehicle.EquipmentRepository;
 import com.example.demo.database.repositories.vehicle.EquipmentTypeRepository;
-import com.example.demo.utils.ValidationResponse;
+import com.example.demo.database.models.utils.Mapping;
+import com.example.demo.database.models.utils.ValidationResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -41,6 +40,13 @@ public class EquipmentTypeService {
 	}
 
 	public void delete(EquipmentType type) {
+		if (type == null) {
+			return;
+		}
+
+		if (type.getId() == null) {
+			return;
+		}
 		repository.delete(type);
 	}
 
@@ -48,11 +54,41 @@ public class EquipmentTypeService {
 		repository.deleteAll();
 	}
 
-	public ValidationResponse validate(EquipmentType type) {
+	public ValidationResponse validate(EquipmentType type, Mapping mapping) {
 
-		if (type.getName() != null) {
-			if (type.getName().length() <= 0) {
-				return new ValidationResponse(false, "name cannot be empty");
+		if (type == null) {
+			return new ValidationResponse(false, "provided NULL equipment_type");
+		}
+
+		if (mapping.equals(Mapping.POST)) {
+			type.setId(null);
+		}
+
+		if (mapping.equals(Mapping.PUT) || mapping.equals(Mapping.PATCH)) {
+			if (type.getId() == null) {
+				return new ValidationResponse(false, "ID parameter is required");
+			}
+
+			EquipmentType typeFromDatabase = getById(type.getId());
+
+			if (typeFromDatabase == null) {
+				return new ValidationResponse(false, "ID parameter is invalid");
+			}
+		}
+
+		if (mapping.equals(Mapping.POST) || mapping.equals(Mapping.PUT) || mapping.equals(Mapping.PATCH)) {
+			if (type.getName() != null) {
+				if (type.getName().length() <= 0) {
+					return new ValidationResponse(false, "name cannot be empty");
+				}
+			}
+
+			//...
+		}
+
+		if (mapping.equals(Mapping.DELETE)) {
+			if (type.getId() == null) {
+				return new ValidationResponse(false, "ID parameter is required");
 			}
 		}
 

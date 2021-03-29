@@ -1,4 +1,4 @@
-<html xmlns:th="http://www.w3.org/1999/xhtml">
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{main-layout :: main-fragment(~{:: #main-content})}">
 	<head>
 		<title>New Vehicle</title>
 		<link rel="stylesheet"
@@ -7,35 +7,36 @@
 			  crossorigin="anonymous">
 	</head>
 	<body>
-	<div class="container pt-2">
+	<div id="main-content" class="container pt-2">
 
 		<h1>New Vehicle</h1>
 
-		<h2 th:text="${error_message_attribute}" class="text-danger"></h2>
+		<h3 th:text="${error_message_attribute}" class="text-danger"></h3>
 
 		<form action="#" th:action="@{/api1/vehicles}" th:object="${vehicle}" method="post">
 
 			<div class="form-group">
 				<label for="name">Vehicle Name</label>
-				<input type="text" class="form-control" id="name" placeholder="Name" th:field="*{name}">
+				<input type="text" class="form-control" id="name" placeholder="Vehicle Name" th:field="*{name}">
 			</div>
 
 			<div class="form-group">
-				<label for="registrationNumber">Registration Number</label>
-				<input type="text" class="form-control" id="registrationNumber" placeholder="Name" th:field="*{registrationNumber}">
+				<label for="registration_number">Registration Number</label>
+				<input type="text" class="form-control" id="registration_number" placeholder="Registration Number" th:field="*{registration_number}">
 			</div>
 
 			<div class="form-group">
 				<label for="vin">VIN</label>
-				<input type="text" class="form-control" id="vin" placeholder="Name" th:field="*{vin}">
+				<input type="text" class="form-control" id="vin" placeholder="VIN" th:field="*{vin}">
 			</div>
 
 			<div class="form-group">
 				<label for="organisationSelect">Organisation</label>
 				<select class="form-control" id="organisationSelect" th:field="${vehicle.organisation}">
-					<option th:each="org : ${organisations}"
-							th:value="${org.id}"
-							th:utext="${org.name}">
+					<option value=""></option>
+					<option th:each="organisation : ${organisations}"
+							th:value="${organisation.id}"
+							th:utext="${organisation.name}">
 					</option>
 				</select>
 			</div>
@@ -43,20 +44,13 @@
 			<div class="form-group">
 				<label for="fleetSelect">Fleet</label>
 				<select class="form-control" id="fleetSelect" th:field="${vehicle.fleet}">
-					<option th:each="f : ${fleets}"
-							th:value="${f.id}"
-							th:utext="${f.name}">
+					<option value=""></option>
+					<option th:each="fleet : ${fleets}"
+							th:value="${fleet.id}"
+							th:utext="${fleet.name}">
 					</option>
 				</select>
 			</div>
-
-			<div class="form-check">
-				<input class="form-check-input" type="checkbox" id="defaultCheck1" th:field="*{isDeleted}">
-				<label class="form-check-label" for="defaultCheck1">
-					Deleted
-				</label>
-			</div>
-
 
 			<button type="submit" class="btn btn-primary mx-auto mt-4">Save</button>
 		</form>

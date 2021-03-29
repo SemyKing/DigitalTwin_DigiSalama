@@ -1,4 +1,4 @@
-<html xmlns:th="http://www.w3.org/1999/xhtml">
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{main-layout :: main-fragment(~{:: #main-content})}">
 	<head>
 		<title>Vehicle Details</title>
 		<link rel="stylesheet"
@@ -6,84 +6,87 @@
 			  integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO"
 			  crossorigin="anonymous">
 	</head>
+
 	<body>
 
-	<form action="#" th:action="${'/api1/'}" class="mb-0 mx-2 mt-2" method="GET">
-		<button type="submit" class="btn btn-warning">Home</button>
-	</form>
-
-	<div class="container pt-2">
-			<form action="#" th:action="${'/api1/vehicles/'}" method="GET">
-				<button type="submit" class="btn btn-secondary my-4"><-- Vehicles List</button>
-			</form>
+		<div id="main-content" class="container pt-2">
 
 			<h1>Vehicle Details</h1>
 
 			<div class="col">
-				<table class="table table-hover" th:object="${vehicle}">
-					<tbody th:object="${vehicle}">
-					<tr>
-						<td> ID </td>
-						<td> <span th:text="*{id}"></span> </td>
-					</tr>
-					<tr>
-						<td> Name </td>
-						<td> <span th:text="*{name}"></span> </td>
-					</tr>
-					<tr>
-						<td> Registration Number </td>
-						<td> <span th:text="*{registrationNumber}"></span> </td>
-					</tr>
-					<tr>
-						<td> VIN </td>
-						<td> <span th:text="*{vin}"></span> </td>
-					</tr>
-					<tr>
-						<td> Fleet </td>
-						<td>
-							<span th:text="${vehicle.fleet == null ? 'NOT SELECTED' : vehicle.fleet.name}"></span>
-						</td>
-					</tr>
+				<table class="table table-hover table-sm table-bordered" th:object="${vehicle}">
+					<tbody>
+						<tr>
+							<td> ID </td>
+							<td> <span th:text="*{id}"></span> </td>
+						</tr>
+						<tr>
+							<td> Name </td>
+							<td> <span th:text="*{name}"></span> </td>
+						</tr>
+						<tr>
+							<td> Registration Number </td>
+							<td> <span th:text="*{registration_number}"></span> </td>
+						</tr>
+						<tr>
+							<td> VIN </td>
+							<td> <span th:text="*{vin}"></span> </td>
+						</tr>
+						<tr>
+							<td> Fleet </td>
+							<td>
+								<span th:text="${vehicle.fleet == null ? 'NOT SELECTED' : vehicle.fleet.name}"></span>
+							</td>
+						</tr>
 
-					<tr>
-						<td> Organisation </td>
-						<td>
-							<span th:text="${vehicle.organisation == null ? 'NOT SELECTED' : vehicle.organisation.name}"></span>
-						</td>
-					</tr>
-					<tr>
-						<td> Equipment </td>
-						<td>
-							<form action="#" th:action="${'/api1/equipment/vehicles/' + vehicle.id}" method="GET">
-								<button type="submit" class="btn btn-primary">View</button>
-							</form>
-						</td>
-					</tr>
+						<tr>
+							<td> Organisation </td>
+							<td>
+								<span th:text="${vehicle.organisation == null ? 'NOT SELECTED' : vehicle.organisation.name}"></span>
+							</td>
+						</tr>
+						<tr>
+							<td> Equipment </td>
+							<td>
+								<form action="#" th:action="${'/api1/vehicles/' + vehicle.id + '/equipment'}" class="m-0 p-0"  method="GET">
+									<button type="submit" class="btn btn-secondary btn-sm">View</button>
+								</form>
+							</td>
+						</tr>
 
-					<tr>
-						<td> Number of Trips </td>
-						<td>
-							<span th:text="${#lists.size(trips)}"></span>
-						</td>
-					</tr>
-					<tr>
-						<td> Number of Images </td>
-						<td>
-							<span th:text="${#lists.size(fileDBS)}"></span>
-						</td>
-					</tr>
-					<tr>
-						<td> Deleted </td>
-						<td> <span th:text="*{isDeleted}"></span> </td>
-					</tr>
+						<tr>
+							<td> Trips </td>
+							<td>
+								<form action="#" th:action="${'/api1/vehicles/' + vehicle.id + '/trips'}" class="m-0 p-0" method="GET">
+									<button type="submit" class="btn btn-secondary btn-sm">View</button>
+								</form>
+							</td>
+						</tr>
+						<tr>
+							<td> Files </td>
+							<td>
+								<form action="#" th:action="${'/api1/vehicles/' + vehicle.id + '/files'}" class="m-0 p-0" method="GET">
+									<button type="submit" class="btn btn-secondary btn-sm">View</button>
+								</form>
+							</td>
+						</tr>
+						<tr>
+							<td> Events </td>
+							<td>
+								<form action="#" th:action="${'/api1/vehicles/' + vehicle.id + '/events'}" class="m-0 p-0" method="GET">
+									<button type="submit" class="btn btn-secondary btn-sm">View</button>
+								</form>
+							</td>
+						</tr>
 					</tbody>
 				</table>
+
 				<div class="row">
-					<form action="#" th:action="${'/api1/vehicles/' + vehicle.id + '/edit'}" method="GET">
+					<form action="#" th:action="${'/api1/vehicles/' + vehicle.id + '/edit'}" class="m-0 p-0" method="GET">
 						<button type="submit" class="btn btn-primary">Edit</button>
 					</form>
 
-					<form action="#" th:action="${'/api1/vehicles/' + vehicle.id + '/delete'}" class="ml-auto" method="POST">
+					<form action="#" th:action="${'/api1/vehicles/' + vehicle.id + '/delete'}" class="m-0 ml-auto p-0" method="POST">
 						<button type="submit" class="btn btn-danger">Delete</button>
 					</form>
 				</div>

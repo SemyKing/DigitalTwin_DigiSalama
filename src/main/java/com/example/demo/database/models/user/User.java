@@ -25,10 +25,10 @@ public class User {
 	private String password;
 
 	@Column
-	private String firstName;
+	private String first_name;
 
 	@Column
-	private String lastName;
+	private String last_name;
 
 	@Column
 	private String email;
@@ -42,6 +42,5 @@ public class User {
 	private Role role;
 
 	@Column
-	private Boolean isDeleted = false;
-
+	private String password_update_token = null;
 }

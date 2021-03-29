@@ -1,4 +1,4 @@
-<html xmlns:th="http://www.w3.org/1999/xhtml">
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{main-layout :: main-fragment(~{:: #main-content})}">
 	<head>
 		<title>Equipment Type Details</title>
 		<link rel="stylesheet"
@@ -6,22 +6,14 @@
 			  integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO"
 			  crossorigin="anonymous">
 	</head>
+
 	<body>
 
-	<form action="#" th:action="${'/api1/'}" class="mb-0 mx-2 mt-2" method="GET">
-		<button type="submit" class="btn btn-warning">Home</button>
-	</form>
-
-	<div class="container pt-2">
-
-			<form action="#" th:action="${'/api1/equipment_types/'}" method="GET">
-				<button type="submit" class="btn btn-secondary my-4"><-- Equipment Types List</button>
-			</form>
-
+		<div id="main-content" class="container pt-2">
 			<h1>Equipment Type Details</h1>
 
 			<div class="col">
-				<table class="table table-hover" th:object="${equipment_type}">
+				<table class="table table-hover table-sm table-bordered" th:object="${equipment_type}">
 					<tbody>
 						<tr>
 							<td> ID </td>
@@ -31,17 +23,13 @@
 							<td> Name </td>
 							<td> <span th:text="*{name}"></span> </td>
 						</tr>
-						<tr>
-							<td> Deleted </td>
-							<td> <span th:text="*{isDeleted}"></span> </td>
-						</tr>
 					</tbody>
 				</table>
 				<div class="row">
-					<form action="#" th:action="${'/api1/equipment_types/' + equipment_type.id + '/edit'}" class="form_button" method="GET">
+					<form action="#" th:action="${'/api1/equipment_types/' + equipment_type.id + '/edit'}" class="m-0 p-0" method="GET">
 						<button type="submit" class="btn btn-primary mr-5">Edit</button>
 					</form>
-					<form action="#" th:action="${'/api1/equipment_types/' + equipment_type.id + '/delete'}" class="form_button" method="POST">
+					<form action="#" th:action="${'/api1/equipment_types/' + equipment_type.id + '/delete'}" class="m-0 ml-auto p-0" method="POST">
 						<button type="submit" class="btn btn-danger">Delete</button>
 					</form>
 				</div>

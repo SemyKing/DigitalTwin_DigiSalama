@@ -1,4 +1,4 @@
-<html xmlns:th="http://www.w3.org/1999/xhtml">
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{main-layout :: main-fragment(~{:: #main-content})}">
 	<head>
 		<title>Edit User Details</title>
 		<link rel="stylesheet"
@@ -9,17 +9,13 @@
 
 	<body>
 
-		<div class="container pt-2">
-
-			<form action="#" th:action="${'/api1/users/'}" method="GET">
-				<button type="submit" class="btn btn-secondary my-4"><-- Users List</button>
-			</form>
+		<div id="main-content" class="container pt-2">
 
 			<h1>Edit User Details</h1>
 
-			<h2 th:text="${error_message_attribute}" class="error_msg"></h2>
+			<h3 th:text="${error_message_attribute}" class="text-danger"></h3>
 
-			<h4 th:text="${success_message_attribute}" class="text-success"></h4>
+			<h3 th:text="${success_message_attribute}" class="text-success"></h3>
 
 			<form action="#" th:action="${'/api1/users/update'}" th:object="${user}" method="POST">
 				<div class="form-group">
@@ -28,28 +24,29 @@
 				</div>
 
 				<div class="form-group">
-					<label for="username">Vehicle Name</label>
+					<label for="username">Username</label>
 					<input type="text" class="form-control" id="username" placeholder="Username" th:field="${user.username}">
 				</div>
 
 				<div class="form-group">
-					<label for="firstName">Registration Number</label>
-					<input type="text" class="form-control" id="firstName" placeholder="First Name" th:field="${user.firstName}">
+					<label for="first_name">First Name</label>
+					<input type="text" class="form-control" id="first_name" placeholder="First Name" th:field="${user.first_name}">
 				</div>
 
 				<div class="form-group">
-					<label for="lastName">Registration Number</label>
-					<input type="text" class="form-control" id="lastName" placeholder="Last Name" th:field="${user.lastName}">
+					<label for="last_name">Last Name</label>
+					<input type="text" class="form-control" id="last_name" placeholder="Last Name" th:field="${user.last_name}">
 				</div>
 
 				<div class="form-group">
-					<label for="email">Registration Number</label>
+					<label for="email">Email</label>
 					<input type="email" class="form-control" id="email" placeholder="Email" th:field="${user.email}">
 				</div>
 
 				<div class="form-group" th:object="${organisations}">
 					<label for="organisationSelect">Organisation</label>
 					<select class="form-control" id="organisationSelect" th:field="${user.organisation}">
+						<option value=""></option>
 						<option th:each="org : ${organisations}"
 								th:value="${org.id}"
 								th:utext="${org.name}">
@@ -67,19 +64,11 @@
 					</select>
 				</div>
 
-				<div class="form-check">
-					<input class="form-check-input" type="checkbox" id="isDeletedCheck" th:field="${user.isDeleted}">
-					<label class="form-check-label" for="isDeletedCheck">
-						Deleted
-					</label>
-				</div>
-<!--				<button type="submit" class="btn btn-primary mt-4">Save</button>-->
 				<input type="submit" id="submit-form" class="" hidden/>
 			</form>
 
-			<form action="#" th:action="${'/api1/users/'+ user.id +'/change_password'}" class="" method="GET">
-<!--				<button type="submit" class="btn btn-warning">Change Password</button>-->
-				<input type="submit" id="change-password-form" class="" hidden/>
+			<form action="#" th:action="${'/api1/users/'+ user.id +'/change_password'}" hidden method="GET">
+				<input type="submit" id="change-password-form"/>
 			</form>
 
 			<div class="row">

@@ -7,15 +7,17 @@ import com.example.demo.database.models.user.UserPassword;
 import com.example.demo.database.repositories.RoleRepository;
 import com.example.demo.database.services.OrganisationService;
 import com.example.demo.database.services.UserService;
-import com.example.demo.utils.Mapping;
+import com.example.demo.database.models.utils.Mapping;
 import com.example.demo.utils.StringUtils;
-import com.example.demo.utils.ValidationResponse;
+import com.example.demo.database.models.utils.ValidationResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import javax.servlet.http.HttpServletRequest;
 import java.util.List;
 
 @Controller
@@ -25,6 +27,7 @@ import java.util.List;
 public class UserController {
 
 	private final String ENTITY = "user";
+	private boolean returnToProfile = false;
 
 
 	@Autowired
@@ -179,16 +182,21 @@ public class UserController {
 
 	// PASSWORD CHANGE FORM
 	@GetMapping("/{id}/change_password")
-	public String changePasswordForm(@PathVariable Long id, Model model) {
+	public String changePasswordForm(@PathVariable Long id, Model model, HttpServletRequest request) {
 		model.addAttribute("userId", id);
 		model.addAttribute("password", new UserPassword());
+
+		if (request.getHeader("Referer").contains("/profile")) {
+			returnToProfile = true;
+		}
+
 		return "user/change_password_page";
 	}
 
 
 	// UPDATE PASSWORD
 	@PostMapping("/{id}/update_password")
-	public String updatePassword(@ModelAttribute UserPassword userPassword, @PathVariable Long id, Model model) {
+	public String updatePassword(@ModelAttribute UserPassword userPassword, @PathVariable Long id, Model model, RedirectAttributes redirectAttributes) {
 //		try {
 //			ResponseEntity<User> response = this.restTemplate.postForEntity(USER_JSON_URL + "/" + +id + "/update_password", userPassword, User.class);
 //
@@ -227,20 +235,26 @@ public class UserController {
 		model.addAttribute("userId", id);
 		model.addAttribute("password", userPassword);
 
-		if (!userService.isPasswordCorrect(userFromDatabase, userPassword.getCurrentPassword())) {
+		if (!userService.isPasswordCorrect(userFromDatabase, userPassword.getCurrent_password())) {
 			model.addAttribute(StringUtils.ERROR_MESSAGE_ATTRIBUTE, "Current password invalid");
 			return "user/change_password_page";
 		}
 
-		if (!userPassword.getNewPassword1().equals(userPassword.getNewPassword2())) {
+		if (!userPassword.getNew_password_1().equals(userPassword.getNew_password_2())) {
 			model.addAttribute(StringUtils.ERROR_MESSAGE_ATTRIBUTE, "Passwords don't match");
 			return "user/change_password_page";
 		}
 
-		userFromDatabase.setPassword(userService.getBcryptEncoder().encode(userPassword.getNewPassword1()));
+		userFromDatabase.setPassword(userService.getBcryptEncoder().encode(userPassword.getNew_password_1()));
 		userService.save(userFromDatabase);
 
 		model.addAttribute(StringUtils.SUCCESS_MESSAGE_ATTRIBUTE, "Password changed");
+
+		if (returnToProfile) {
+			returnToProfile = false;
+			redirectAttributes.addFlashAttribute(StringUtils.SUCCESS_MESSAGE_ATTRIBUTE, "Password changed successfully");
+			return StringUtils.REDIRECT + StringUtils.UI_API + "/profile";
+		}
 
 		return StringUtils.REDIRECT + StringUtils.UI_API + "/users/" + id + "/edit";
 	}
@@ -277,7 +291,7 @@ public class UserController {
 //			}
 //		}
 
-		ValidationResponse response = userService.validate(user, Mapping.POST_UI);
+		ValidationResponse response = userService.validate(user, Mapping.POST);
 
 		if (!response.isValid()) {
 			model.addAttribute(StringUtils.ERROR_TITLE_ATTRIBUTE, "Validation error");
@@ -299,7 +313,7 @@ public class UserController {
 
 	// UPDATE USER
 	@PostMapping("/update")
-	public String put(@ModelAttribute User user, Model model) {
+	public String put(@ModelAttribute User user, Model model, HttpServletRequest request) {
 //		try {
 //			UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(USER_JSON_URL + "/" + user.getId());
 //
@@ -341,7 +355,7 @@ public class UserController {
 			return StringUtils.ERROR_PAGE;
 		}
 
-		ValidationResponse response = userService.validate(user, Mapping.PUT_UI);
+		ValidationResponse response = userService.validate(user, Mapping.PUT);
 
 		if (!response.isValid()) {
 			model.addAttribute(StringUtils.ERROR_TITLE_ATTRIBUTE, "Validation error");
@@ -356,6 +370,10 @@ public class UserController {
 			model.addAttribute(StringUtils.ERROR_MESSAGE_ATTRIBUTE,"failed to save " + ENTITY + " in database");
 			return StringUtils.ERROR_PAGE;
 		} else {
+			if (request.getHeader("Referer").contains("/profile")) {
+				return StringUtils.REDIRECT + StringUtils.UI_API + "/";
+			}
+
 			return StringUtils.REDIRECT + StringUtils.UI_API + "/users/" + userFromDatabase.getId();
 		}
 	}

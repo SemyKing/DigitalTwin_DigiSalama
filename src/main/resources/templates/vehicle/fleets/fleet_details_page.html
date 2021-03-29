@@ -1,4 +1,4 @@
-<html xmlns:th="http://www.w3.org/1999/xhtml">
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{main-layout :: main-fragment(~{:: #main-content})}">
 	<head>
 		<title>Fleet Details</title>
 		<link rel="stylesheet"
@@ -7,10 +7,12 @@
 			  crossorigin="anonymous">
 	</head>
 	<body>
-		<div class="container pt-2">
+		<div id="main-content" class="container pt-2">
+
 			<h1>Fleet Details</h1>
+
 			<div class="col">
-				<table class="table table-hover" th:object="${fleet}">
+				<table class="table table-hover table-sm table-bordered" th:object="${fleet}">
 					<tbody>
 						<tr>
 							<td> ID </td>
@@ -26,19 +28,15 @@
 						</tr>
 						<tr>
 							<td> Vehicles in Fleet </td>
-							<td> <span th:text="${#lists.size(vehicles)}"></span> </td>
-						</tr>
-						<tr>
-							<td> Deleted </td>
-							<td> <span th:text="*{isDeleted}"></span> </td>
+							<td> <span th:text="${vehicles_count}"></span> </td>
 						</tr>
 					</tbody>
 				</table>
 				<div class="row">
-					<form action="#" th:action="${'/api1/fleets/' + fleet.id + '/edit'}" class="form_button" method="GET">
+					<form action="#" th:action="${'/api1/fleets/' + fleet.id + '/edit'}" class="m-0 p-0" method="GET">
 						<button type="submit" class="btn btn-primary mr-5">Edit</button>
 					</form>
-					<form action="#" th:action="${'/api1/fleets/' + fleet.id + '/delete'}" class="form_button" method="POST">
+					<form action="#" th:action="${'/api1/fleets/' + fleet.id + '/delete'}" class="m-0 ml-auto p-0" method="POST">
 						<button type="submit" class="btn btn-danger">Delete</button>
 					</form>
 				</div>

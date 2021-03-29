@@ -1,4 +1,4 @@
-<html xmlns:th="http://www.w3.org/1999/xhtml">
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{main-layout :: main-fragment(~{:: #main-content})}">
 	<head>
 		<title>File Details</title>
 		<link rel="stylesheet"
@@ -14,15 +14,11 @@
 		</form>
 
 
-		<div class="container pt-2">
-
-			<form action="#" th:action="${'/api1/files/'}" method="GET">
-				<button type="submit" class="btn btn-secondary my-4"><-- Files List</button>
-			</form>
+		<div id="main-content" class="container pt-2">
 
 			<h1>File Details</h1>
 
-			<table class="table table-hover" th:object="${organisation}">
+			<table class="table table-hover table-sm table-bordered" th:object="${organisation}">
 				<tbody th:object="${file}">
 					<tr>
 						<td> ID </td>
@@ -30,30 +26,39 @@
 					</tr>
 					<tr>
 						<td> Name </td>
-						<td> <span th:text="*{name}"></span> </td>
-					</tr>
-					<tr>
-						<td> Description </td>
-						<td> <span th:text="*{description}"></span> </td>
+						<td> <span th:text="*{file_name}"></span> </td>
 					</tr>
 					<tr>
 						<td> Vehicle </td>
 						<td>
-							<span th:text="${file.vehicle == null ? 'NOT SELECTED' : file.vehicle.registrationPlate}"></span>
+							<span th:text="${file.vehicle == null ? 'NOT SELECTED' : file.vehicle.registration_number}"></span>
+						</td>
+					</tr>
+					<tr>
+						<td> Description </td>
+						<td>
+							<textarea id="description" style="min-height: 200px;" class="form-control" aria-label="Description" readonly th:field="*{description}"></textarea>
 						</td>
 					</tr>
 					<tr th:if="${isImage}">
-						<img class='img-thumbnail' style="max-height: 500px" th:src="'data: + ${fileType} + ;base64,' + ${image}" />
+						<td> Image </td>
+						<td>
+							<img class='img-thumbnail mx-auto' style="max-height: 400px" th:src="'data: + ${fileType} + ;base64,' + ${image}" />
+						</td>
 					</tr>
 				</tbody>
 			</table>
 
 			<div class="row">
-				<form action="#" th:action="${'/api1/files/' + file.id + '/edit'}" class="" method="get">
+				<form action="#" th:action="${'/api1/files/' + file.id + '/edit'}" class="m-0 p-0" method="get">
 					<button type="submit" class="btn btn-primary">Edit</button>
 				</form>
 
-				<form action="#" th:action="${'/api1/files/' + file.id + '/delete'}" class="ml-auto" method="post">
+				<form action="#" th:action="${'/api1/files/' + file.id + '/download'}" class="m-0 p-0 mr-auto ml-5" method="get">
+					<button type="submit" class="btn btn-success">Download</button>
+				</form>
+
+				<form action="#" th:action="${'/api1/files/' + file.id + '/delete'}" class="m-0 ml-auto p-0" method="post">
 					<button type="submit" class="btn btn-danger">Delete</button>
 				</form>
 			</div>

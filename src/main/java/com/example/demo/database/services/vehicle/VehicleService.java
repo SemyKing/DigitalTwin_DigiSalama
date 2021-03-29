@@ -1,15 +1,9 @@
 package com.example.demo.database.services.vehicle;
 
-import com.example.demo.database.models.vehicle.Equipment;
-import com.example.demo.database.models.vehicle.FileDB;
-import com.example.demo.database.models.vehicle.Trip;
-import com.example.demo.database.models.vehicle.Vehicle;
-import com.example.demo.database.repositories.vehicle.EquipmentRepository;
-import com.example.demo.database.repositories.vehicle.FileRepository;
-import com.example.demo.database.repositories.vehicle.TripRepository;
-import com.example.demo.database.repositories.vehicle.VehicleRepository;
-import com.example.demo.utils.Mapping;
-import com.example.demo.utils.ValidationResponse;
+import com.example.demo.database.models.vehicle.*;
+import com.example.demo.database.repositories.vehicle.*;
+import com.example.demo.database.models.utils.Mapping;
+import com.example.demo.database.models.utils.ValidationResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -26,9 +20,11 @@ public class VehicleService {
 
 	private final EquipmentRepository equipmentRepository;
 
-	private final FileRepository imageRepository;
+	private final FileRepository fileRepository;
 
 	private final TripRepository tripRepository;
+
+	private final RefuelRepository refuelRepository;
 
 
 	public List<Vehicle> getAll() {
@@ -61,6 +57,7 @@ public class VehicleService {
 		return vehicleRepository.save(vehicle);
 	}
 
+
 	public void delete(Vehicle vehicle) {
 		if (vehicle == null) {
 			return;
@@ -77,21 +74,28 @@ public class VehicleService {
 //				equipmentRepository.delete(e);
 			}
 
-			List<FileDB> fileDBS = imageRepository.findAllByVehicleId(vehicle.getId());
-			for (FileDB i : fileDBS) {
-				i.setVehicle(null);
-				imageRepository.save(i);
+			List<Trip> trips = tripRepository.findAllByVehicleId(vehicle.getId());
+			for (Trip trip : trips) {
+				trip.setVehicle(null);
+				tripRepository.save(trip);
 
-//				imageRepository.delete(i);
+//				tripRepository.delete(trip);
 			}
 
+			List<FileDB> files = fileRepository.findAllByVehicleId(vehicle.getId());
+			for (FileDB file : files) {
+				file.setVehicle(null);
+				fileRepository.save(file);
 
-			List<Trip> trips = tripRepository.findAllByVehicleId(vehicle.getId());
-			for (Trip t : trips) {
-				t.setVehicle(null);
-				tripRepository.save(t);
+//				fileRepository.delete(file);
+			}
 
-//				tripRepository.delete(t);
+			List<Refuel> refuels = refuelRepository.findAllByVehicleId(vehicle.getId());
+			for (Refuel refuel : refuels) {
+				refuel.setVehicle(null);
+				refuelRepository.save(refuel);
+
+//				refuelRepository.delete(refuel);
 			}
 
 
@@ -114,22 +118,33 @@ public class VehicleService {
 		}
 
 		//TODO: MAYBE HARD DELETE INSTEAD OF SET NULL
-//		imageRepository.deleteAll();
-
-		List<FileDB> fileDBS = imageRepository.findAll();
-		for (FileDB i : fileDBS) {
-			i.setVehicle(null);
-			imageRepository.save(i);
-		}
-
-		//TODO: MAYBE HARD DELETE INSTEAD OF SET NULL
 //		tripRepository.deleteAll();
 
 		List<Trip> trips = tripRepository.findAll();
-		for (Trip t : trips) {
-			t.setVehicle(null);
-			tripRepository.save(t);
+		for (Trip trip : trips) {
+			trip.setVehicle(null);
+			tripRepository.save(trip);
 		}
+
+		//TODO: MAYBE HARD DELETE INSTEAD OF SET NULL
+//		fileRepository.deleteAll();
+
+		List<FileDB> files = fileRepository.findAll();
+		for (FileDB file : files) {
+			file.setVehicle(null);
+			fileRepository.save(file);
+		}
+
+		//TODO: MAYBE HARD DELETE INSTEAD OF SET NULL
+//		refuelRepository.deleteAll();
+
+		List<Refuel> refuels = refuelRepository.findAll();
+		for (Refuel refuel : refuels) {
+			refuel.setVehicle(null);
+			refuelRepository.save(refuel);
+		}
+
+
 
 
 
@@ -139,21 +154,50 @@ public class VehicleService {
 
 	public ValidationResponse validate(Vehicle vehicle, Mapping mapping) {
 
-		if (vehicle.getName() != null) {
-			if (vehicle.getName().length() <= 0) {
-				return new ValidationResponse(false, "vehicle name cannot be empty");
+		if (vehicle == null) {
+			return new ValidationResponse(false, "provided NULL entity");
+		}
+
+		if (mapping.equals(Mapping.POST)) {
+			vehicle.setId(null);
+		}
+
+		if (mapping.equals(Mapping.PUT) || mapping.equals(Mapping.PATCH)) {
+			if (vehicle.getId() == null) {
+				return new ValidationResponse(false, "ID parameter is required");
+			}
+
+			// CHECK ID
+			Vehicle vehicleFromDatabase = getById(vehicle.getId());
+
+			if (vehicleFromDatabase == null) {
+				return new ValidationResponse(false, "ID parameter is invalid");
 			}
 		}
 
-		if (vehicle.getVin() != null) {
-			if (vehicle.getVin().length() <= 0) {
-				return new ValidationResponse(false, "vehicle VIN cannot be empty");
+		if (mapping.equals(Mapping.POST) || mapping.equals(Mapping.PUT) || mapping.equals(Mapping.PATCH)) {
+			if (vehicle.getName() != null) {
+				if (vehicle.getName().length() <= 0) {
+					return new ValidationResponse(false, "name cannot be empty");
+				}
+			}
+
+			if (vehicle.getVin() != null) {
+				if (vehicle.getVin().length() <= 0) {
+					return new ValidationResponse(false, "vin cannot be empty");
+				}
+			}
+
+			if (vehicle.getRegistration_number() != null) {
+				if (vehicle.getRegistration_number().length() <= 0) {
+					return new ValidationResponse(false, "registration number cannot be empty");
+				}
 			}
 		}
 
-		if (vehicle.getRegistrationNumber() != null) {
-			if (vehicle.getRegistrationNumber().length() <= 0) {
-				return new ValidationResponse(false, "vehicle Registration Number cannot be empty");
+		if (mapping.equals(Mapping.DELETE)) {
+			if (vehicle.getId() == null) {
+				return new ValidationResponse(false, "ID parameter is required");
 			}
 		}
 

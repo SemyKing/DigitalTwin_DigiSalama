@@ -19,7 +19,4 @@ public class EquipmentType {
 
     @Column
     private String name;
-
-    @Column
-    private Boolean isDeleted = false;
 }
