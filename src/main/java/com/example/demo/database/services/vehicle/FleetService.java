@@ -1,13 +1,19 @@
 package com.example.demo.database.services.vehicle;
 
-import com.example.demo.database.models.vehicle.Fleet;
-import com.example.demo.database.repositories.vehicle.FleetRepository;
 import com.example.demo.database.models.utils.Mapping;
 import com.example.demo.database.models.utils.ValidationResponse;
+import com.example.demo.database.models.vehicle.Fleet;
+import com.example.demo.database.models.vehicle.Trip;
+import com.example.demo.database.models.vehicle.Vehicle;
+import com.example.demo.database.repositories.vehicle.FleetRepository;
+import com.example.demo.database.repositories.vehicle.VehicleRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.util.ReflectionUtils;
 
 import javax.transaction.Transactional;
+import java.lang.reflect.Field;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -17,6 +23,8 @@ import java.util.Optional;
 public class FleetService {
 
 	private final FleetRepository repository;
+
+	private final VehicleRepository vehicleRepository;
 
 
 	public List<Fleet> getAll() {
@@ -33,6 +41,30 @@ public class FleetService {
 			return null;
 		}
 		return fleet.get();
+	}
+
+	public List<Fleet> getFleetsNotContainingVehicle(Long vehicleId) {
+		if (vehicleId == null) {
+			return null;
+		}
+
+		Optional<Vehicle> vehicleFromDatabase = vehicleRepository.findById(vehicleId);
+
+		if (vehicleFromDatabase.isEmpty()) {
+			return null;
+		}
+
+		List<Fleet> fleetsNotContainingVehicle = new ArrayList<>();
+
+		List<Fleet> allFleets = getAll();
+
+		for (Fleet fleet : allFleets) {
+			if (fleet.getVehicles() == null || !fleet.getVehicles().contains(vehicleFromDatabase.get())) {
+				fleetsNotContainingVehicle.add(fleet);
+			}
+		}
+
+		return fleetsNotContainingVehicle;
 	}
 
 	public Fleet save(Fleet fleet) {
@@ -77,14 +109,29 @@ public class FleetService {
 		}
 
 		if (mapping.equals(Mapping.POST) || mapping.equals(Mapping.PUT) || mapping.equals(Mapping.PATCH)) {
-			if (fleet.getName() != null) {
-				if (fleet.getName().length() <= 0) {
-					return new ValidationResponse(false, "name cannot be empty");
+
+			// EMPTY STRING CHECK
+			List<Field> stringFields = new ArrayList<>();
+
+			Field[] allFields = Fleet.class.getDeclaredFields();
+			for (Field field : allFields) {
+				if (field.getType().equals(String.class)) {
+					stringFields.add(field);
 				}
 			}
 
+			for (Field field : stringFields) {
+				field.setAccessible(true);
+				Object object = ReflectionUtils.getField(field, fleet);
 
-			// OTHER VALIDATION
+				if (object != null) {
+					if (object instanceof String) {
+						if (((String) object).length() <= 0) {
+							return new ValidationResponse(false, "'" + field.getName() + "' cannot be empty");
+						}
+					}
+				}
+			}
 		}
 
 		if (mapping.equals(Mapping.DELETE)) {

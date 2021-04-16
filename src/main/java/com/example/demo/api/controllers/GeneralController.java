@@ -1,7 +1,7 @@
 package com.example.demo.api.controllers;
 
-import com.example.demo.database.models.utils.JwtResponse;
 import com.example.demo.database.models.user.User;
+import com.example.demo.database.models.utils.JwtResponse;
 import com.example.demo.database.services.UserService;
 import com.example.demo.security.JwtTokenUtil;
 import com.example.demo.utils.StringUtils;
@@ -81,16 +81,20 @@ public class GeneralController {
 		try {
 			final UserDetails userDetails = userService.loadUserByUsername(user.getUsername());
 
+			if (userDetails == null) {
+				log.info("GeneralController -> createAuthenticationToken() userDetails is NULL");
+				return new ResponseEntity<>("Invalid credentials", HttpStatus.BAD_REQUEST);
+			}
+
 			authenticate(userDetails.getUsername(), user.getPassword(), userDetails.getAuthorities());
 
 			final String token = jwtTokenUtil.generateToken(userDetails);
 
 			return ResponseEntity.ok(new JwtResponse(token));
 		} catch (UsernameNotFoundException e) {
+			log.error("GeneralController -> createAuthenticationToken() UsernameNotFoundException: " + e.getMessage() + ", username: '" + user.getUsername() + "'");
 
-			log.error(e.getMessage());
-
-			return new ResponseEntity<>(e.getMessage(), HttpStatus.NOT_ACCEPTABLE);
+			return new ResponseEntity<>("Invalid credentials", HttpStatus.BAD_REQUEST);
 		}
 	}
 

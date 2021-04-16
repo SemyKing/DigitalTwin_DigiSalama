@@ -1,19 +1,19 @@
 package com.example.demo.api.controllers.vehicle;
 
+import com.example.demo.database.models.utils.Mapping;
+import com.example.demo.database.models.utils.ValidationResponse;
 import com.example.demo.database.models.vehicle.Trip;
 import com.example.demo.database.models.vehicle.Vehicle;
 import com.example.demo.database.services.vehicle.TripService;
 import com.example.demo.database.services.vehicle.VehicleService;
-import com.example.demo.database.models.utils.Mapping;
+import com.example.demo.utils.FieldReflectionUtils;
 import com.example.demo.utils.StringUtils;
-import com.example.demo.database.models.utils.ValidationResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Comparator;
 import java.util.List;
 
 @Controller
@@ -34,10 +34,6 @@ public class TripController {
 	@GetMapping({"", "/"})
 	public String getAll(Model model) {
 		List<Trip> trips = tripService.getAll();
-
-		//TODO: MAYBE REMOVE
-		trips.sort(Comparator.comparing(Trip::getId));
-
 		model.addAttribute("trips", trips);
 
 		return "vehicle/trips/trips_list_page";
@@ -91,9 +87,10 @@ public class TripController {
 	}
 
 
-	// POST TRIP
 	@PostMapping({"", "/"})
 	public String post(@ModelAttribute Trip trip, Model model) {
+		trip = new FieldReflectionUtils<Trip>().getObjectWithEmptyStringValuesAsNull(trip);
+
 		ValidationResponse response = tripService.validate(trip, Mapping.POST);
 
 		if (!response.isValid()) {
@@ -116,11 +113,7 @@ public class TripController {
 
 	@PostMapping("/update")
 	public String put(@ModelAttribute Trip trip, Model model) {
-		if (trip.getId() == null) {
-			model.addAttribute(StringUtils.ERROR_TITLE_ATTRIBUTE, "Missing parameter");
-			model.addAttribute(StringUtils.ERROR_MESSAGE_ATTRIBUTE, "ID parameter is required");
-			return StringUtils.ERROR_PAGE;
-		}
+		trip = new FieldReflectionUtils<Trip>().getObjectWithEmptyStringValuesAsNull(trip);
 
 		ValidationResponse response = tripService.validate(trip, Mapping.PUT);
 

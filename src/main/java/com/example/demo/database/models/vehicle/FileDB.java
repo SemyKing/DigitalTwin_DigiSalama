@@ -3,7 +3,7 @@ package com.example.demo.database.models.vehicle;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.springframework.web.multipart.MultipartFile;
+import lombok.ToString;
 
 import javax.persistence.*;
 
@@ -11,6 +11,7 @@ import javax.persistence.*;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@ToString(exclude = {"data"})
 public class FileDB {
 
 	@Id
@@ -41,10 +42,6 @@ public class FileDB {
 	@ManyToOne
 	@JoinColumn(name="event_id", referencedColumnName = "id")
 	private VehicleEvent event;
-
-
-	@Transient
-	private MultipartFile multipart_file;
 
 
 	public FileDB(String file_name, String file_type, byte[] data) {

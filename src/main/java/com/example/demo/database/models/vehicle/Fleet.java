@@ -1,13 +1,9 @@
 package com.example.demo.database.models.vehicle;
 
 import com.example.demo.database.models.Organisation;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import javax.persistence.*;
-import java.util.Collection;
-import java.util.HashSet;
 import java.util.Set;
 
 @Entity
@@ -15,6 +11,8 @@ import java.util.Set;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@EqualsAndHashCode(exclude="vehicles")
+@ToString(exclude = "vehicles")
 public class Fleet {
 
 	@Id
@@ -24,7 +22,14 @@ public class Fleet {
 	@Column
 	private String name;
 
+	@ManyToMany(mappedBy = "fleets")
+	private Set<Vehicle> vehicles;
+
 	@OneToOne
 	@JoinColumn(name="organisation_id", referencedColumnName = "id")
 	private Organisation organisation;
+
+
+	@Transient
+	private Boolean isSelected = false;
 }

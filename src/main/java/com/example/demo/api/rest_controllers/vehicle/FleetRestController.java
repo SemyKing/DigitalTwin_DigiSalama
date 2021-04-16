@@ -1,12 +1,12 @@
 package com.example.demo.api.rest_controllers.vehicle;
 
 import com.example.demo.database.models.Organisation;
+import com.example.demo.database.models.utils.Mapping;
 import com.example.demo.database.models.utils.RestResponse;
+import com.example.demo.database.models.utils.ValidationResponse;
 import com.example.demo.database.models.vehicle.Fleet;
 import com.example.demo.database.services.vehicle.FleetService;
-import com.example.demo.database.models.utils.Mapping;
 import com.example.demo.utils.StringUtils;
-import com.example.demo.database.models.utils.ValidationResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -41,38 +41,38 @@ public class FleetRestController {
 		List<RestResponse<Fleet>> responseList = new ArrayList<>();
 
 		for (Fleet fleet : fleets) {
+			RestResponse<Fleet> restResponse = new RestResponse<>();
+			restResponse.setBody(fleet);
+			
 			ValidationResponse response = fleetService.validate(fleet, Mapping.POST);
 
 			if (!response.isValid()) {
-				RestResponse<Fleet> responseHandler = new RestResponse<>();
-				responseHandler.setBody(fleet);
-				responseHandler.setHttp_status(HttpStatus.BAD_REQUEST);
-				responseHandler.setMessage(response.getMessage());
+				restResponse.setHttp_status(HttpStatus.BAD_REQUEST);
+				restResponse.setMessage(response.getMessage());
 
-				responseList.add(responseHandler);
+				responseList.add(restResponse);
 
 				errorOccurred = true;
 			} else {
 				Fleet fleetFromDatabase = fleetService.save(fleet);
 
-				RestResponse<Fleet> responseHandler = new RestResponse<>();
-				responseHandler.setBody(fleet);
-
 				if (fleetFromDatabase == null) {
-					responseHandler.setHttp_status(HttpStatus.EXPECTATION_FAILED);
-					responseHandler.setMessage("failed to save " + ENTITY + " in database");
+					restResponse.setHttp_status(HttpStatus.INTERNAL_SERVER_ERROR);
+					restResponse.setMessage("failed to save " + ENTITY + " in database");
+
+					errorOccurred = true;
 				} else {
-					responseHandler.setBody(fleetFromDatabase);
-					responseHandler.setHttp_status(HttpStatus.OK);
-					responseHandler.setMessage(ENTITY + " saved successfully");
+					restResponse.setBody(fleetFromDatabase);
+					restResponse.setHttp_status(HttpStatus.OK);
+					restResponse.setMessage(ENTITY + " saved successfully");
 				}
 
-				responseList.add(responseHandler);
+				responseList.add(restResponse);
 			}
 		}
 
 		if (errorOccurred) {
-			return ResponseEntity.status(HttpStatus.PARTIAL_CONTENT).body(responseList);
+			return ResponseEntity.status(HttpStatus.MULTI_STATUS).body(responseList);
 		} else {
 			return ResponseEntity.status(HttpStatus.OK).body(responseList);
 		}
@@ -82,28 +82,31 @@ public class FleetRestController {
 	@PostMapping(value = {"", "/"}, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<RestResponse<Fleet>> post(@RequestBody Fleet fleet) {
 
+		RestResponse<Fleet> restResponse = new RestResponse<>();
+		restResponse.setBody(fleet);
+		
 		ValidationResponse response = fleetService.validate(fleet, Mapping.POST);
 
-		RestResponse<Fleet> responseHandler = new RestResponse<>();
-		responseHandler.setBody(fleet);
-
 		if (!response.isValid()) {
-			responseHandler.setHttp_status(HttpStatus.NOT_ACCEPTABLE);
-			responseHandler.setMessage(response.getMessage());
-			return ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE).body(responseHandler);
+			restResponse.setHttp_status(HttpStatus.BAD_REQUEST);
+			restResponse.setMessage(response.getMessage());
+
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(restResponse);
 		}
 
 		Fleet fleetFromDatabase = fleetService.save(fleet);
 
 		if (fleetFromDatabase == null) {
-			responseHandler.setHttp_status(HttpStatus.UNPROCESSABLE_ENTITY);
-			responseHandler.setMessage("failed to save " + ENTITY + " in database");
-			return ResponseEntity.status(HttpStatus.EXPECTATION_FAILED).body(responseHandler);
+			restResponse.setHttp_status(HttpStatus.INTERNAL_SERVER_ERROR);
+			restResponse.setMessage("failed to save " + ENTITY + " in database");
+
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(restResponse);
 		} else {
-			responseHandler.setBody(fleetFromDatabase);
-			responseHandler.setHttp_status(HttpStatus.OK);
-			responseHandler.setMessage(ENTITY + " saved successfully");
-			return ResponseEntity.status(HttpStatus.OK).body(responseHandler);
+			restResponse.setBody(fleetFromDatabase);
+			restResponse.setHttp_status(HttpStatus.OK);
+			restResponse.setMessage(ENTITY + " saved successfully");
+
+			return ResponseEntity.status(HttpStatus.OK).body(restResponse);
 		}
 	}
 
@@ -116,12 +119,7 @@ public class FleetRestController {
 
 	@GetMapping(value = {"", "/"}, produces = MediaType.APPLICATION_JSON_VALUE)
 	public List<Fleet> getAll() {
-		List<Fleet> fleets = fleetService.getAll();
-
-		// TODO: MAYBE REMOVE
-		fleets.sort(Comparator.comparing(Fleet::getId));
-
-		return fleets;
+		return fleetService.getAll();
 	}
 
 	@GetMapping(value = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -145,67 +143,71 @@ public class FleetRestController {
 		List<RestResponse<Fleet>> responseList = new ArrayList<>();
 
 		for (Fleet fleet : fleets) {
+			RestResponse<Fleet> restResponse = new RestResponse<>();
+			restResponse.setBody(fleet);
+			
 			ValidationResponse response = fleetService.validate(fleet, Mapping.PUT);
 
 			if (!response.isValid()) {
-				RestResponse<Fleet> responseHandler = new RestResponse<>();
-				responseHandler.setBody(fleet);
-				responseHandler.setHttp_status(HttpStatus.BAD_REQUEST);
-				responseHandler.setMessage(response.getMessage());
+				restResponse.setHttp_status(HttpStatus.BAD_REQUEST);
+				restResponse.setMessage(response.getMessage());
 
-				responseList.add(responseHandler);
+				responseList.add(restResponse);
 
 				errorOccurred = true;
 			} else {
 				Fleet fleetFromDatabase = fleetService.save(fleet);
 
-				RestResponse<Fleet> responseHandler = new RestResponse<>();
-				responseHandler.setBody(fleet);
-
 				if (fleetFromDatabase == null) {
-					responseHandler.setHttp_status(HttpStatus.EXPECTATION_FAILED);
-					responseHandler.setMessage("failed to save " + ENTITY + " in database");
+					restResponse.setHttp_status(HttpStatus.INTERNAL_SERVER_ERROR);
+					restResponse.setMessage("failed to save " + ENTITY + " in database");
+
+					errorOccurred = true;
 				} else {
-					responseHandler.setBody(fleetFromDatabase);
-					responseHandler.setHttp_status(HttpStatus.OK);
-					responseHandler.setMessage(ENTITY + " saved successfully");
+					restResponse.setBody(fleetFromDatabase);
+					restResponse.setHttp_status(HttpStatus.OK);
+					restResponse.setMessage(ENTITY + " saved successfully");
 				}
 
-				responseList.add(responseHandler);
+				responseList.add(restResponse);
 			}
 		}
 
 		if (errorOccurred) {
-			return ResponseEntity.status(HttpStatus.PARTIAL_CONTENT).body(responseList);
+			return ResponseEntity.status(HttpStatus.MULTI_STATUS).body(responseList);
 		} else {
 			return ResponseEntity.status(HttpStatus.OK).body(responseList);
 		}
 	}
 
 	@PutMapping(value = "/{id}", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-	public ResponseEntity<Fleet> putById(@RequestBody Fleet fleet, @PathVariable Long id) {
+	public ResponseEntity<RestResponse<Fleet>> putById(@RequestBody Fleet fleet, @PathVariable Long id) {
 
-		if (fleet == null) {
-			throw new ResponseStatusException(HttpStatus.NO_CONTENT, "no content was provided");
-		}
-
+		RestResponse<Fleet> restResponse = new RestResponse<>();
+		restResponse.setBody(fleet);
+		
 		ValidationResponse response = fleetService.validate(fleet, Mapping.PUT);
 
 		if (!response.isValid()) {
-			throw new ResponseStatusException(HttpStatus.METHOD_NOT_ALLOWED, response.getMessage());
+			restResponse.setHttp_status(HttpStatus.BAD_REQUEST);
+			restResponse.setMessage(response.getMessage());
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(restResponse);
 		}
 
-		Fleet fleetFromDatabase = fleetService.getById(id);
+		Fleet fleetFromDatabase = fleetService.save(fleet);
 
 		if (fleetFromDatabase == null) {
-			throw new ResponseStatusException(HttpStatus.NOT_FOUND, ENTITY + " with ID: '" + id + "' not found");
+			restResponse.setHttp_status(HttpStatus.INTERNAL_SERVER_ERROR);
+			restResponse.setMessage("failed to save " + ENTITY + " in database");
+
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(restResponse);
+		} else {
+			restResponse.setBody(fleetFromDatabase);
+			restResponse.setHttp_status(HttpStatus.OK);
+			restResponse.setMessage(ENTITY + " saved successfully");
+
+			return ResponseEntity.status(HttpStatus.OK).body(restResponse);
 		}
-
-		fleet.setId(fleetFromDatabase.getId());
-
-		fleetService.save(fleet);
-
-		return ResponseEntity.status(HttpStatus.OK).body(fleet);
 	}
 
 
@@ -218,13 +220,11 @@ public class FleetRestController {
 
 		for (Map<String, Object> changes : changesList) {
 
-			changes.remove("password");
-
 			RestResponse<Map<String, Object>> mapResponse = new RestResponse<>();
 			mapResponse.setBody(changes);
 
 			if (!changes.containsKey("id")) {
-				mapResponse.setHttp_status(HttpStatus.METHOD_NOT_ALLOWED);
+				mapResponse.setHttp_status(HttpStatus.BAD_REQUEST);
 				mapResponse.setMessage("ID parameter is required");
 
 				responseList.add(mapResponse);
@@ -234,7 +234,7 @@ public class FleetRestController {
 				Object idObj = changes.get("id");
 
 				if (!(idObj instanceof Integer)) {
-					mapResponse.setHttp_status(HttpStatus.METHOD_NOT_ALLOWED);
+					mapResponse.setHttp_status(HttpStatus.BAD_REQUEST);
 					mapResponse.setMessage("ID parameter is invalid");
 
 					responseList.add(mapResponse);
@@ -255,28 +255,28 @@ public class FleetRestController {
 						}
 					});
 
+					RestResponse<Fleet> restResponse = new RestResponse<>();
+					restResponse.setBody(fleetFromDatabase);
+					
 					ValidationResponse response = fleetService.validate(fleetFromDatabase, Mapping.PATCH);
 
-					RestResponse<Fleet> userResponse = new RestResponse<>();
-					userResponse.setBody(fleetFromDatabase);
-
 					if (!response.isValid()) {
-						userResponse.setHttp_status(HttpStatus.NOT_ACCEPTABLE);
-						userResponse.setMessage(response.getMessage());
+						restResponse.setHttp_status(HttpStatus.BAD_REQUEST);
+						restResponse.setMessage(response.getMessage());
 
 						errorOccurred = true;
 					} else {
-						userResponse.setHttp_status(HttpStatus.OK);
-						userResponse.setMessage(ENTITY + "patched successfully");
+						restResponse.setHttp_status(HttpStatus.OK);
+						restResponse.setMessage(ENTITY + "patched successfully");
 					}
 
-					responseList.add(userResponse);
+					responseList.add(restResponse);
 				}
 			}
 		}
 
 		if (errorOccurred) {
-			return ResponseEntity.status(HttpStatus.PARTIAL_CONTENT).body(responseList);
+			return ResponseEntity.status(HttpStatus.MULTI_STATUS).body(responseList);
 		} else {
 			return ResponseEntity.status(HttpStatus.OK).body(responseList);
 		}
@@ -292,7 +292,6 @@ public class FleetRestController {
 		}
 
 		changes.remove("id");
-		changes.remove("password");
 
 		changes.forEach((key, value) -> {
 			Field field = ReflectionUtils.findField(Fleet.class, key);
@@ -302,28 +301,30 @@ public class FleetRestController {
 			}
 		});
 
-		RestResponse<Fleet> responseHandler = new RestResponse<>();
-
+		RestResponse<Fleet> restResponse = new RestResponse<>();
+		restResponse.setBody(fleetFromDatabase);
+		
 		ValidationResponse response = fleetService.validate(fleetFromDatabase, Mapping.PATCH);
-		responseHandler.setBody(fleetFromDatabase);
 
 		if (!response.isValid()) {
-			responseHandler.setHttp_status(HttpStatus.NOT_ACCEPTABLE);
-			responseHandler.setMessage(response.getMessage());
-			return ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE).body(responseHandler);
+			restResponse.setHttp_status(HttpStatus.BAD_REQUEST);
+			restResponse.setMessage(response.getMessage());
+
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(restResponse);
 		}
 
 		Fleet patchedFleet = fleetService.save(fleetFromDatabase);
-		responseHandler.setBody(patchedFleet);
+		restResponse.setBody(patchedFleet);
 
 		if (patchedFleet == null) {
-			responseHandler.setHttp_status(HttpStatus.UNPROCESSABLE_ENTITY);
-			responseHandler.setMessage("failed to save " + ENTITY + " in database");
-			return ResponseEntity.status(HttpStatus.EXPECTATION_FAILED).body(responseHandler);
+			restResponse.setHttp_status(HttpStatus.INTERNAL_SERVER_ERROR);
+			restResponse.setMessage("failed to save " + ENTITY + " in database");
+
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(restResponse);
 		} else {
-			responseHandler.setHttp_status(HttpStatus.OK);
-			responseHandler.setMessage(ENTITY + " saved successfully");
-			return ResponseEntity.status(HttpStatus.OK).body(responseHandler);
+			restResponse.setHttp_status(HttpStatus.OK);
+			restResponse.setMessage(ENTITY + " saved successfully");
+			return ResponseEntity.status(HttpStatus.OK).body(restResponse);
 		}
 	}
 
@@ -337,35 +338,37 @@ public class FleetRestController {
 		List<RestResponse<Fleet>> responseList = new ArrayList<>();
 
 		for (Fleet fleet : fleets) {
+			RestResponse<Fleet> restResponse = new RestResponse<>();
+			restResponse.setBody(fleet);
+			
 			ValidationResponse response = fleetService.validate(fleet, Mapping.DELETE);
 
-			RestResponse<Fleet> responseHandler = new RestResponse<>();
-			responseHandler.setBody(fleet);
-
 			if (!response.isValid()) {
-				responseHandler.setHttp_status(HttpStatus.NOT_ACCEPTABLE);
-				responseHandler.setMessage(response.getMessage());
+				restResponse.setHttp_status(HttpStatus.BAD_REQUEST);
+				restResponse.setMessage(response.getMessage());
 
-				responseList.add(responseHandler);
+				responseList.add(restResponse);
 
 				errorOccurred = true;
 			} else {
 				try {
 					fleetService.delete(fleet);
 
-					responseHandler.setHttp_status(HttpStatus.OK);
-					responseHandler.setMessage(ENTITY + " deleted successfully");
+					restResponse.setHttp_status(HttpStatus.OK);
+					restResponse.setMessage(ENTITY + " deleted successfully");
 				} catch (Exception e) {
-					responseHandler.setHttp_status(HttpStatus.UNPROCESSABLE_ENTITY);
-					responseHandler.setMessage("failed to delete " + ENTITY + " from database \n" + e.getMessage());
+					restResponse.setHttp_status(HttpStatus.INTERNAL_SERVER_ERROR);
+					restResponse.setMessage("failed to delete " + ENTITY + " from database \n" + e.getMessage());
+
+					errorOccurred = true;
 				}
 
-				responseList.add(responseHandler);
+				responseList.add(restResponse);
 			}
 		}
 
 		if (errorOccurred) {
-			return ResponseEntity.status(HttpStatus.EXPECTATION_FAILED).body(responseList);
+			return ResponseEntity.status(HttpStatus.MULTI_STATUS).body(responseList);
 		} else {
 			return ResponseEntity.status(HttpStatus.OK).body(responseList);
 		}
@@ -382,15 +385,15 @@ public class FleetRestController {
 		try {
 			fleetService.delete(fleetFromDatabase);
 		} catch (Exception e) {
-			throw new ResponseStatusException(HttpStatus.METHOD_NOT_ALLOWED, "method not allowed");
+			throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "failed to delete " + ENTITY + " from database \n" + e.getMessage());
 		}
 
-		RestResponse<Fleet> responseHandler = new RestResponse<>();
-		responseHandler.setMessage(ENTITY + " deleted successfully");
-		responseHandler.setBody(fleetFromDatabase);
-		responseHandler.setHttp_status(HttpStatus.OK);
+		RestResponse<Fleet> restResponse = new RestResponse<>();
+		restResponse.setBody(fleetFromDatabase);
+		restResponse.setHttp_status(HttpStatus.OK);
+		restResponse.setMessage(ENTITY + " deleted successfully");
 
-		return ResponseEntity.ok(responseHandler);
+		return ResponseEntity.ok(restResponse);
 	}
 
 

@@ -1,5 +1,6 @@
 package com.example.demo.api.rest_controllers.vehicle;
 
+import com.example.demo.database.models.Organisation;
 import com.example.demo.database.models.utils.Mapping;
 import com.example.demo.database.models.utils.RestResponse;
 import com.example.demo.database.models.utils.ValidationResponse;
@@ -40,38 +41,36 @@ public class EventRestController {
 		List<RestResponse<VehicleEvent>> responseList = new ArrayList<>();
 
 		for (VehicleEvent event : events) {
+			RestResponse<VehicleEvent> restResponse = new RestResponse<>();
+			restResponse.setBody(event);
+			
 			ValidationResponse response = eventService.validate(event, Mapping.POST);
 
 			if (!response.isValid()) {
-				RestResponse<VehicleEvent> responseHandler = new RestResponse<>();
-				responseHandler.setBody(event);
-				responseHandler.setHttp_status(HttpStatus.BAD_REQUEST);
-				responseHandler.setMessage(response.getMessage());
+				restResponse.setHttp_status(HttpStatus.BAD_REQUEST);
+				restResponse.setMessage(response.getMessage());
 
-				responseList.add(responseHandler);
+				responseList.add(restResponse);
 
 				errorOccurred = true;
 			} else {
 				VehicleEvent eventFromDatabase = eventService.save(event);
 
-				RestResponse<VehicleEvent> responseHandler = new RestResponse<>();
-				responseHandler.setBody(event);
-
 				if (eventFromDatabase == null) {
-					responseHandler.setHttp_status(HttpStatus.EXPECTATION_FAILED);
-					responseHandler.setMessage("failed to save " + ENTITY + " in database");
+					restResponse.setHttp_status(HttpStatus.INTERNAL_SERVER_ERROR);
+					restResponse.setMessage("failed to save " + ENTITY + " in database");
 				} else {
-					responseHandler.setBody(eventFromDatabase);
-					responseHandler.setHttp_status(HttpStatus.OK);
-					responseHandler.setMessage(ENTITY + " saved successfully");
+					restResponse.setBody(eventFromDatabase);
+					restResponse.setHttp_status(HttpStatus.OK);
+					restResponse.setMessage(ENTITY + " saved successfully");
 				}
 
-				responseList.add(responseHandler);
+				responseList.add(restResponse);
 			}
 		}
 
 		if (errorOccurred) {
-			return ResponseEntity.status(HttpStatus.PARTIAL_CONTENT).body(responseList);
+			return ResponseEntity.status(HttpStatus.MULTI_STATUS).body(responseList);
 		} else {
 			return ResponseEntity.status(HttpStatus.OK).body(responseList);
 		}
@@ -81,28 +80,31 @@ public class EventRestController {
 	@PostMapping(value = {"", "/"}, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<RestResponse<VehicleEvent>> post(@RequestBody VehicleEvent event) {
 
+		RestResponse<VehicleEvent> restResponse = new RestResponse<>();
+		restResponse.setBody(event);
+		
 		ValidationResponse response = eventService.validate(event, Mapping.POST);
 
-		RestResponse<VehicleEvent> responseHandler = new RestResponse<>();
-		responseHandler.setBody(event);
-
 		if (!response.isValid()) {
-			responseHandler.setHttp_status(HttpStatus.NOT_ACCEPTABLE);
-			responseHandler.setMessage(response.getMessage());
-			return ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE).body(responseHandler);
+			restResponse.setHttp_status(HttpStatus.BAD_REQUEST);
+			restResponse.setMessage(response.getMessage());
+
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(restResponse);
 		}
 
 		VehicleEvent eventFromDatabase = eventService.save(event);
 
 		if (eventFromDatabase == null) {
-			responseHandler.setHttp_status(HttpStatus.UNPROCESSABLE_ENTITY);
-			responseHandler.setMessage("failed to save " + ENTITY + " in database");
-			return ResponseEntity.status(HttpStatus.EXPECTATION_FAILED).body(responseHandler);
+			restResponse.setHttp_status(HttpStatus.INTERNAL_SERVER_ERROR);
+			restResponse.setMessage("failed to save " + ENTITY + " in database");
+
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(restResponse);
 		} else {
-			responseHandler.setBody(eventFromDatabase);
-			responseHandler.setHttp_status(HttpStatus.OK);
-			responseHandler.setMessage(ENTITY + " saved successfully");
-			return ResponseEntity.status(HttpStatus.OK).body(responseHandler);
+			restResponse.setBody(eventFromDatabase);
+			restResponse.setHttp_status(HttpStatus.OK);
+			restResponse.setMessage(ENTITY + " saved successfully");
+
+			return ResponseEntity.status(HttpStatus.OK).body(restResponse);
 		}
 	}
 
@@ -115,12 +117,7 @@ public class EventRestController {
 
 	@GetMapping(value = {"", "/"}, produces = MediaType.APPLICATION_JSON_VALUE)
 	public List<VehicleEvent> getAll() {
-		List<VehicleEvent> events = eventService.getAll();
-
-		// TODO: MAYBE REMOVE
-		events.sort(Comparator.comparing(VehicleEvent::getId));
-
-		return events;
+		return eventService.getAll();
 	}
 
 	@GetMapping(value = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -144,67 +141,70 @@ public class EventRestController {
 		List<RestResponse<VehicleEvent>> responseList = new ArrayList<>();
 
 		for (VehicleEvent event : events) {
+			RestResponse<VehicleEvent> restResponse = new RestResponse<>();
+			restResponse.setBody(event);
+			
 			ValidationResponse response = eventService.validate(event, Mapping.PUT);
 
 			if (!response.isValid()) {
-				RestResponse<VehicleEvent> responseHandler = new RestResponse<>();
-				responseHandler.setBody(event);
-				responseHandler.setHttp_status(HttpStatus.BAD_REQUEST);
-				responseHandler.setMessage(response.getMessage());
+				restResponse.setHttp_status(HttpStatus.BAD_REQUEST);
+				restResponse.setMessage(response.getMessage());
 
-				responseList.add(responseHandler);
+				responseList.add(restResponse);
 
 				errorOccurred = true;
 			} else {
 				VehicleEvent eventFromDatabase = eventService.save(event);
 
-				RestResponse<VehicleEvent> responseHandler = new RestResponse<>();
-				responseHandler.setBody(event);
-
 				if (eventFromDatabase == null) {
-					responseHandler.setHttp_status(HttpStatus.EXPECTATION_FAILED);
-					responseHandler.setMessage("failed to save " + ENTITY + " in database");
+					restResponse.setHttp_status(HttpStatus.INTERNAL_SERVER_ERROR);
+					restResponse.setMessage("failed to save " + ENTITY + " in database");
 				} else {
-					responseHandler.setBody(eventFromDatabase);
-					responseHandler.setHttp_status(HttpStatus.OK);
-					responseHandler.setMessage(ENTITY + " saved successfully");
+					restResponse.setBody(eventFromDatabase);
+					restResponse.setHttp_status(HttpStatus.OK);
+					restResponse.setMessage(ENTITY + " saved successfully");
 				}
 
-				responseList.add(responseHandler);
+				responseList.add(restResponse);
 			}
 		}
 
 		if (errorOccurred) {
-			return ResponseEntity.status(HttpStatus.PARTIAL_CONTENT).body(responseList);
+			return ResponseEntity.status(HttpStatus.MULTI_STATUS).body(responseList);
 		} else {
 			return ResponseEntity.status(HttpStatus.OK).body(responseList);
 		}
 	}
 
 	@PutMapping(value = "/{id}", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-	public ResponseEntity<VehicleEvent> putById(@RequestBody VehicleEvent event, @PathVariable Long id) {
+	public ResponseEntity<RestResponse<VehicleEvent>> putById(@RequestBody VehicleEvent event, @PathVariable Long id) {
 
-		if (event == null) {
-			throw new ResponseStatusException(HttpStatus.NO_CONTENT, "no content was provided");
-		}
-
+		RestResponse<VehicleEvent> restResponse = new RestResponse<>();
+		restResponse.setBody(event);
+		
 		ValidationResponse response = eventService.validate(event, Mapping.PUT);
 
 		if (!response.isValid()) {
-			throw new ResponseStatusException(HttpStatus.METHOD_NOT_ALLOWED, response.getMessage());
+			restResponse.setHttp_status(HttpStatus.BAD_REQUEST);
+			restResponse.setMessage(response.getMessage());
+
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(restResponse);
 		}
 
-		VehicleEvent eventFromDatabase = eventService.getById(id);
+		VehicleEvent eventFromDatabase = eventService.save(event);
 
 		if (eventFromDatabase == null) {
-			throw new ResponseStatusException(HttpStatus.NOT_FOUND, ENTITY + " with ID: '" + id + "' not found");
+			restResponse.setHttp_status(HttpStatus.INTERNAL_SERVER_ERROR);
+			restResponse.setMessage("failed to save " + ENTITY + " in database");
+
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(restResponse);
+		} else {
+			restResponse.setBody(eventFromDatabase);
+			restResponse.setHttp_status(HttpStatus.OK);
+			restResponse.setMessage(ENTITY + " saved successfully");
+
+			return ResponseEntity.status(HttpStatus.OK).body(restResponse);
 		}
-
-		event.setId(eventFromDatabase.getId());
-
-		eventService.save(event);
-
-		return ResponseEntity.status(HttpStatus.OK).body(event);
 	}
 
 
@@ -216,8 +216,6 @@ public class EventRestController {
 		boolean errorOccurred = false;
 
 		for (Map<String, Object> changes : changesList) {
-
-			changes.remove("password");
 
 			RestResponse<Map<String, Object>> mapResponse = new RestResponse<>();
 			mapResponse.setBody(changes);
@@ -233,7 +231,7 @@ public class EventRestController {
 				Object idObj = changes.get("id");
 
 				if (!(idObj instanceof Integer)) {
-					mapResponse.setHttp_status(HttpStatus.METHOD_NOT_ALLOWED);
+					mapResponse.setHttp_status(HttpStatus.BAD_REQUEST);
 					mapResponse.setMessage("ID parameter is invalid");
 
 					responseList.add(mapResponse);
@@ -254,28 +252,28 @@ public class EventRestController {
 						}
 					});
 
+					RestResponse<VehicleEvent> restResponse = new RestResponse<>();
+					restResponse.setBody(eventFromDatabase);
+					
 					ValidationResponse response = eventService.validate(eventFromDatabase, Mapping.PATCH);
 
-					RestResponse<VehicleEvent> userResponse = new RestResponse<>();
-					userResponse.setBody(eventFromDatabase);
-
 					if (!response.isValid()) {
-						userResponse.setHttp_status(HttpStatus.NOT_ACCEPTABLE);
-						userResponse.setMessage(response.getMessage());
+						restResponse.setHttp_status(HttpStatus.BAD_REQUEST);
+						restResponse.setMessage(response.getMessage());
 
 						errorOccurred = true;
 					} else {
-						userResponse.setHttp_status(HttpStatus.OK);
-						userResponse.setMessage(ENTITY + "patched successfully");
+						restResponse.setHttp_status(HttpStatus.OK);
+						restResponse.setMessage(ENTITY + "patched successfully");
 					}
 
-					responseList.add(userResponse);
+					responseList.add(restResponse);
 				}
 			}
 		}
 
 		if (errorOccurred) {
-			return ResponseEntity.status(HttpStatus.PARTIAL_CONTENT).body(responseList);
+			return ResponseEntity.status(HttpStatus.MULTI_STATUS).body(responseList);
 		} else {
 			return ResponseEntity.status(HttpStatus.OK).body(responseList);
 		}
@@ -291,7 +289,6 @@ public class EventRestController {
 		}
 
 		changes.remove("id");
-		changes.remove("password");
 
 		changes.forEach((key, value) -> {
 			Field field = ReflectionUtils.findField(VehicleEvent.class, key);
@@ -301,28 +298,31 @@ public class EventRestController {
 			}
 		});
 
-		RestResponse<VehicleEvent> responseHandler = new RestResponse<>();
-
+		RestResponse<VehicleEvent> restResponse = new RestResponse<>();
+		restResponse.setBody(eventFromDatabase);
+		
 		ValidationResponse response = eventService.validate(eventFromDatabase, Mapping.PATCH);
-		responseHandler.setBody(eventFromDatabase);
 
 		if (!response.isValid()) {
-			responseHandler.setHttp_status(HttpStatus.NOT_ACCEPTABLE);
-			responseHandler.setMessage(response.getMessage());
-			return ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE).body(responseHandler);
+			restResponse.setHttp_status(HttpStatus.BAD_REQUEST);
+			restResponse.setMessage(response.getMessage());
+
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(restResponse);
 		}
 
 		VehicleEvent patchedVehicleEvent = eventService.save(eventFromDatabase);
-		responseHandler.setBody(patchedVehicleEvent);
+		restResponse.setBody(patchedVehicleEvent);
 
 		if (patchedVehicleEvent == null) {
-			responseHandler.setHttp_status(HttpStatus.UNPROCESSABLE_ENTITY);
-			responseHandler.setMessage("failed to save " + ENTITY + " in database");
-			return ResponseEntity.status(HttpStatus.EXPECTATION_FAILED).body(responseHandler);
+			restResponse.setHttp_status(HttpStatus.INTERNAL_SERVER_ERROR);
+			restResponse.setMessage("failed to save " + ENTITY + " in database");
+
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(restResponse);
 		} else {
-			responseHandler.setHttp_status(HttpStatus.OK);
-			responseHandler.setMessage(ENTITY + " saved successfully");
-			return ResponseEntity.status(HttpStatus.OK).body(responseHandler);
+			restResponse.setHttp_status(HttpStatus.OK);
+			restResponse.setMessage(ENTITY + " saved successfully");
+
+			return ResponseEntity.status(HttpStatus.OK).body(restResponse);
 		}
 	}
 
@@ -336,35 +336,35 @@ public class EventRestController {
 		List<RestResponse<VehicleEvent>> responseList = new ArrayList<>();
 
 		for (VehicleEvent event : events) {
+			RestResponse<VehicleEvent> restResponse = new RestResponse<>();
+			restResponse.setBody(event);
+			
 			ValidationResponse response = eventService.validate(event, Mapping.DELETE);
 
-			RestResponse<VehicleEvent> responseHandler = new RestResponse<>();
-			responseHandler.setBody(event);
-
 			if (!response.isValid()) {
-				responseHandler.setHttp_status(HttpStatus.NOT_ACCEPTABLE);
-				responseHandler.setMessage(response.getMessage());
+				restResponse.setHttp_status(HttpStatus.BAD_REQUEST);
+				restResponse.setMessage(response.getMessage());
 
-				responseList.add(responseHandler);
+				responseList.add(restResponse);
 
 				errorOccurred = true;
 			} else {
 				try {
 					eventService.delete(event);
 
-					responseHandler.setHttp_status(HttpStatus.OK);
-					responseHandler.setMessage(ENTITY + " deleted successfully");
+					restResponse.setHttp_status(HttpStatus.OK);
+					restResponse.setMessage(ENTITY + " deleted successfully");
 				} catch (Exception e) {
-					responseHandler.setHttp_status(HttpStatus.UNPROCESSABLE_ENTITY);
-					responseHandler.setMessage("failed to delete " + ENTITY + " from database \n" + e.getMessage());
+					restResponse.setHttp_status(HttpStatus.INTERNAL_SERVER_ERROR);
+					restResponse.setMessage("failed to delete " + ENTITY + " from database \n" + e.getMessage());
 				}
 
-				responseList.add(responseHandler);
+				responseList.add(restResponse);
 			}
 		}
 
 		if (errorOccurred) {
-			return ResponseEntity.status(HttpStatus.EXPECTATION_FAILED).body(responseList);
+			return ResponseEntity.status(HttpStatus.MULTI_STATUS).body(responseList);
 		} else {
 			return ResponseEntity.status(HttpStatus.OK).body(responseList);
 		}
@@ -381,15 +381,15 @@ public class EventRestController {
 		try {
 			eventService.delete(eventFromDatabase);
 		} catch (Exception e) {
-			throw new ResponseStatusException(HttpStatus.METHOD_NOT_ALLOWED, "method not allowed");
+			throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "failed to delete " + ENTITY + " from database \n" + e.getMessage());
 		}
 
-		RestResponse<VehicleEvent> responseHandler = new RestResponse<>();
-		responseHandler.setMessage(ENTITY + " deleted successfully");
-		responseHandler.setBody(eventFromDatabase);
-		responseHandler.setHttp_status(HttpStatus.OK);
+		RestResponse<VehicleEvent> restResponse = new RestResponse<>();
+		restResponse.setBody(eventFromDatabase);
+		restResponse.setHttp_status(HttpStatus.OK);
+		restResponse.setMessage(ENTITY + " deleted successfully");
 
-		return ResponseEntity.ok(responseHandler);
+		return ResponseEntity.ok(restResponse);
 	}
 
 

@@ -12,7 +12,8 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.event.EventListener;
-import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import javax.transaction.Transactional;
 
@@ -45,10 +46,12 @@ public class DemoApplication {
 			Organisation organisation = new Organisation();
 			organisation.setName("Vedia");
 
+			PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+
 
 			User admin = new User();
 			admin.setUsername("admin");
-			admin.setPassword(userService.getBcryptEncoder().encode("password"));
+			admin.setPassword(passwordEncoder.encode("password"));
 			admin.setFirst_name("F_NAME");
 			admin.setLast_name("L_NAME");
 			admin.setEmail("test@mail.com");

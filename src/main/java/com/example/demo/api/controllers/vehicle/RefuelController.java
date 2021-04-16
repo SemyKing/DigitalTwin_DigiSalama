@@ -1,14 +1,15 @@
 package com.example.demo.api.controllers.vehicle;
 
+import com.example.demo.database.models.utils.Mapping;
+import com.example.demo.database.models.utils.ValidationResponse;
 import com.example.demo.database.models.vehicle.FileDB;
 import com.example.demo.database.models.vehicle.Refuel;
 import com.example.demo.database.models.vehicle.Vehicle;
 import com.example.demo.database.services.vehicle.FileService;
 import com.example.demo.database.services.vehicle.RefuelService;
 import com.example.demo.database.services.vehicle.VehicleService;
-import com.example.demo.database.models.utils.Mapping;
+import com.example.demo.utils.FieldReflectionUtils;
 import com.example.demo.utils.StringUtils;
-import com.example.demo.database.models.utils.ValidationResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -16,7 +17,6 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
-import java.util.Comparator;
 import java.util.List;
 
 @Controller
@@ -40,10 +40,6 @@ public class RefuelController {
 	@GetMapping({"", "/"})
 	public String getAll(Model model) {
 		List<Refuel> refuels = refuelService.getAll();
-
-		//TODO: MAYBE REMOVE
-		refuels.sort(Comparator.comparing(Refuel::getId));
-
 		model.addAttribute("refuels", refuels);
 
 		return "vehicle/refuels/refuels_list_page";
@@ -63,6 +59,26 @@ public class RefuelController {
 		model.addAttribute(ENTITY, refuelFromDatabase);
 
 		return "vehicle/refuels/refuel_details_page";
+	}
+
+
+	@GetMapping("/{id}/files")
+	public String getFilesByRefuelId(@PathVariable Long id, Model model) {
+		Refuel refuelFromDatabase = refuelService.getById(id);
+
+		if (refuelFromDatabase == null) {
+			model.addAttribute(StringUtils.ERROR_TITLE_ATTRIBUTE, "No such entity");
+			model.addAttribute(StringUtils.ERROR_MESSAGE_ATTRIBUTE, ENTITY + " with id: " + id + " not found");
+			return StringUtils.ERROR_PAGE;
+		}
+
+		model.addAttribute(ENTITY, refuelFromDatabase);
+
+
+		List<FileDB> files = fileService.getAllByRefuelId(id);
+		model.addAttribute("files", files);
+
+		return "vehicle/refuels/refuel_files_list_page";
 	}
 
 
@@ -102,9 +118,10 @@ public class RefuelController {
 	}
 
 
-	// POST
 	@PostMapping({"", "/"})
 	public String post(@ModelAttribute Refuel refuel, Model model) {
+		refuel = new FieldReflectionUtils<Refuel>().getObjectWithEmptyStringValuesAsNull(refuel);
+
 		ValidationResponse response = refuelService.validate(refuel, Mapping.POST);
 
 		if (!response.isValid()) {
@@ -134,6 +151,8 @@ public class RefuelController {
 
 	@PostMapping("/update")
 	public String put(@ModelAttribute Refuel refuel, Model model, HttpServletRequest request) {
+		refuel = new FieldReflectionUtils<Refuel>().getObjectWithEmptyStringValuesAsNull(refuel);
+
 		ValidationResponse response = refuelService.validate(refuel, Mapping.PUT);
 
 		if (!response.isValid()) {
@@ -151,7 +170,7 @@ public class RefuelController {
 				List<FileDB> files = fileService.getAll();
 				model.addAttribute("files", files);
 
-				return referer;
+				return "vehicle/refuels/edit_refuel_page";
 			}
 
 			return StringUtils.ERROR_PAGE;

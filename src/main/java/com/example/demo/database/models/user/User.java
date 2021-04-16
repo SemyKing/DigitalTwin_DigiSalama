@@ -4,6 +4,7 @@ import com.example.demo.database.models.Organisation;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 
 import javax.persistence.*;
 
@@ -12,6 +13,7 @@ import javax.persistence.*;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
+@ToString(exclude = {"password_update_token", "password"})
 public class User {
 
 	@Id
@@ -34,7 +36,7 @@ public class User {
 	private String email;
 
 	@OneToOne(cascade = CascadeType.PERSIST)
-	@JoinColumn(name="organisation_id", referencedColumnName = "id")
+	@JoinColumn(name = "organisation_id", referencedColumnName = "id")
 	private Organisation organisation;
 
 	@OneToOne

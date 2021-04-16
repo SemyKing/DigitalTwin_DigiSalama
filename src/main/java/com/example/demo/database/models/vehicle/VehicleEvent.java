@@ -30,5 +30,6 @@ public class VehicleEvent {
 
 	@Column(columnDefinition = "TIMESTAMP")
 	@Temporal(TemporalType.TIMESTAMP)
+	@DateTimeFormat(pattern = "yyyy-MM-dd'T'HH:mm")
 	private Date timestamp = new Date();
 }

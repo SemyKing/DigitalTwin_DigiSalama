@@ -1,15 +1,16 @@
 package com.example.demo.api.controllers.vehicle;
 
 import com.example.demo.database.models.Organisation;
+import com.example.demo.database.models.utils.ListWrapper;
+import com.example.demo.database.models.utils.Mapping;
+import com.example.demo.database.models.utils.ValidationResponse;
 import com.example.demo.database.models.vehicle.Fleet;
 import com.example.demo.database.models.vehicle.Vehicle;
-import com.example.demo.database.models.utils.VehicleListWrapper;
 import com.example.demo.database.services.OrganisationService;
 import com.example.demo.database.services.vehicle.FleetService;
 import com.example.demo.database.services.vehicle.VehicleService;
-import com.example.demo.database.models.utils.Mapping;
+import com.example.demo.utils.FieldReflectionUtils;
 import com.example.demo.utils.StringUtils;
-import com.example.demo.database.models.utils.ValidationResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -17,8 +18,9 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;
-import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Controller
 @RequiredArgsConstructor
@@ -41,10 +43,6 @@ public class FleetController {
 	@GetMapping({"", "/"})
 	public String getAll(Model model) {
 		List<Fleet> fleets = fleetService.getAll();
-
-		//TODO: MAYBE REMOVE
-		fleets.sort(Comparator.comparing(Fleet::getId));
-
 		model.addAttribute("fleets", fleets);
 
 		return "vehicle/fleets/fleets_list_page";
@@ -63,14 +61,32 @@ public class FleetController {
 
 		model.addAttribute(ENTITY, fleetFromDatabase);
 
-		List<Vehicle> vehiclesInFleet = vehicleService.getAllByFleetId(id);
+		Set<Vehicle> vehiclesInFleet = fleetFromDatabase.getVehicles();
 		model.addAttribute("vehicles_count", vehiclesInFleet.size());
 
 		return "vehicle/fleets/fleet_details_page";
 	}
 
 
-	// NEW FLEET FORM
+	@GetMapping("/{id}/vehicles")
+	public String getVehiclesByFleetsId(@PathVariable Long id, Model model) {
+		Fleet fleetFromDatabase = fleetService.getById(id);
+
+		if (fleetFromDatabase == null) {
+			model.addAttribute(StringUtils.ERROR_TITLE_ATTRIBUTE, "No such entity");
+			model.addAttribute(StringUtils.ERROR_MESSAGE_ATTRIBUTE, ENTITY + " with id: " + id + " not found");
+			return StringUtils.ERROR_PAGE;
+		}
+
+		model.addAttribute(ENTITY, fleetFromDatabase);
+
+		Set<Vehicle> vehicles = fleetFromDatabase.getVehicles();
+		model.addAttribute("vehicles", vehicles);
+
+		return "vehicle/fleets/fleet_vehicles_list_page";
+	}
+
+
 	@GetMapping("/new")
 	public String newForm(Model model) {
 		model.addAttribute(ENTITY, new Fleet());
@@ -82,7 +98,6 @@ public class FleetController {
 	}
 
 
-	// EDIT FLEET FORM
 	@GetMapping("/{id}/edit")
 	public String editForm(@PathVariable Long id, Model model) {
 		Fleet fleetFromDatabase = fleetService.getById(id);
@@ -102,37 +117,9 @@ public class FleetController {
 	}
 
 
-	// VEHICLES TO BE ADDED TO FLEET LIST
-	@GetMapping("/{id}/add_vehicles")
-	public String vehiclesListForm(@ModelAttribute Fleet fleet, @PathVariable Long id, Model model) {
-		List<Vehicle> vehiclesFromDatabase = vehicleService.getAll();
-		List<Vehicle> vehicles = new ArrayList<>();
-
-		for (Vehicle vehicle : vehiclesFromDatabase) {
-
-			if (vehicle.getFleet() == null) {
-				vehicles.add(vehicle);
-			} else {
-				if (vehicle.getFleet().getId().equals(id)) {
-					vehicle.setIsSelected(true);
-					vehicles.add(vehicle);
-				}
-			}
-		}
-
-		VehicleListWrapper vehicleListWrapper = new VehicleListWrapper();
-		vehicleListWrapper.getVehicles().addAll(vehicles);
-
-		model.addAttribute("vehicleList", vehicleListWrapper);
-		model.addAttribute(ENTITY, fleet);
-
-		return "vehicle/fleets/add_vehicles_to_fleet_page";
-	}
-
-
-	// ADD VEHICLES TO FLEET
-	@PostMapping("/{id}/add_vehicles")
-	public String addVehiclesToFleet(@ModelAttribute VehicleListWrapper vehicleListWrapper, @PathVariable Long id, Model model) {
+	// VEHICLES LIST
+	@GetMapping("/{id}/set_vehicles")
+	public String vehiclesListForm(@PathVariable Long id, Model model) {
 		Fleet fleetFromDatabase = fleetService.getById(id);
 
 		if (fleetFromDatabase == null) {
@@ -141,24 +128,57 @@ public class FleetController {
 			return StringUtils.ERROR_PAGE;
 		}
 
-		for (Vehicle vehicle : vehicleListWrapper.getVehicles()) {
-			if (vehicle.getIsSelected()) {
-				vehicle.setFleet(fleetFromDatabase);
-			} else {
-				vehicle.setFleet(null);
-			}
-
-			vehicle.setIsSelected(false);
-			vehicleService.save(vehicle);
+		List<Vehicle> fleetVehicles = new ArrayList<>(fleetFromDatabase.getVehicles());
+		for (Vehicle vehicle : fleetVehicles) {
+			vehicle.setIsSelected(true);
 		}
 
-		return StringUtils.REDIRECT + "/fleets";
+		List<Vehicle> vehiclesNotInFleet = vehicleService.getVehiclesNotInFleet(id);
+		fleetVehicles.addAll(vehiclesNotInFleet);
+
+		ListWrapper vehiclesWrapper = new ListWrapper();
+		vehiclesWrapper.getVehicles().addAll(fleetVehicles);
+
+		model.addAttribute("vehiclesWrapper", vehiclesWrapper);
+		model.addAttribute(ENTITY, fleetFromDatabase);
+
+		return "vehicle/fleets/add_vehicles_to_fleet_page";
 	}
 
 
-	// POST FLEET
+	// SET VEHICLES FOR FLEET
+	@PostMapping("/{id}/set_vehicles")
+	public String addVehiclesToFleet(@ModelAttribute ListWrapper vehiclesWrapper, @PathVariable Long id, Model model) {
+		Fleet fleetFromDatabase = fleetService.getById(id);
+
+		if (fleetFromDatabase == null) {
+			model.addAttribute(StringUtils.ERROR_TITLE_ATTRIBUTE, "No such entity");
+			model.addAttribute(StringUtils.ERROR_MESSAGE_ATTRIBUTE, ENTITY + " with id: " + id + " not found");
+			return StringUtils.ERROR_PAGE;
+		}
+
+		if (vehiclesWrapper.getVehicles().size() > 0) {
+			Set<Vehicle> vehicles = new HashSet<>();
+
+			for (Vehicle vehicle : vehiclesWrapper.getVehicles()) {
+				if (vehicle.getIsSelected()) {
+					Vehicle vehicleFromDatabase = vehicleService.getById(vehicle.getId());
+					vehicles.add(vehicleFromDatabase);
+				}
+			}
+
+			fleetFromDatabase.setVehicles(vehicles);
+			fleetService.save(fleetFromDatabase);
+		}
+
+		return StringUtils.REDIRECT + StringUtils.UI_API + "/fleets";
+	}
+
+
 	@PostMapping({"", "/"})
 	public String post(@ModelAttribute Fleet fleet, Model model) {
+		fleet = new FieldReflectionUtils<Fleet>().getObjectWithEmptyStringValuesAsNull(fleet);
+
 		ValidationResponse response = fleetService.validate(fleet, Mapping.POST);
 
 		if (!response.isValid()) {
@@ -179,14 +199,9 @@ public class FleetController {
 	}
 
 
-	// UPDATE FLEET
 	@PostMapping("/update")
 	public String put(@ModelAttribute Fleet fleet, Model model) {
-		if (fleet.getId() == null) {
-			model.addAttribute(StringUtils.ERROR_TITLE_ATTRIBUTE, "Missing parameter");
-			model.addAttribute(StringUtils.ERROR_MESSAGE_ATTRIBUTE, "ID parameter is required");
-			return StringUtils.ERROR_PAGE;
-		}
+		fleet = new FieldReflectionUtils<Fleet>().getObjectWithEmptyStringValuesAsNull(fleet);
 
 		ValidationResponse response = fleetService.validate(fleet, Mapping.PUT);
 
@@ -208,7 +223,6 @@ public class FleetController {
 	}
 
 
-	// DELETE FLEET
 	@PostMapping("/{id}/delete")
 	public String delete(@PathVariable Long id, Model model) {
 		Fleet fleetFromDatabase = fleetService.getById(id);

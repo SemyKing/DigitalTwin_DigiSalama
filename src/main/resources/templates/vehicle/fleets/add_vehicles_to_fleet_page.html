@@ -13,40 +13,39 @@
 
 			<h1 th:text="${'Select Vehicles For Fleet(' + fleet.name + ')'}"></h1>
 
-			<form action="#" th:action="${'/api1/fleets/' + fleet.id + '/add_vehicles'}" th:object="${vehicleList}" class="" method="POST">
+			<form action="#" th:action="${'/api1/fleets/' + fleet.id + '/set_vehicles'}" th:object="${vehiclesWrapper}" class="" method="POST">
 				<table class="table table-hover table-sm table-bordered">
 					<thead>
 						<tr>
 							<th> ID </th>
 							<th> Name </th>
 							<th> Registration Number </th>
-							<th> In Fleet </th>
+							<th> Select </th>
 						</tr>
 					</thead>
 
 					<tbody>
 						<tr th:each="vehicle, itemStat : *{vehicles}">
 							<td>
-								<input th:field="*{vehicles[__${itemStat.index}__].id}" readonly/>
+								<span th:text="*{vehicles[__${itemStat.index}__].id}"></span>
 							</td>
 							<td>
-								<input th:field="*{vehicles[__${itemStat.index}__].name}" readonly/>
+								<span th:text="*{vehicles[__${itemStat.index}__].name}"></span>
 							</td>
 							<td>
-								<input th:field="*{vehicles[__${itemStat.index}__].registration_number}" readonly/>
+								<span th:text="*{vehicles[__${itemStat.index}__].registration_number}"></span>
 							</td>
 							<td>
 								<input type="checkbox" th:field="*{vehicles[__${itemStat.index}__].isSelected}" />
 							</td>
-							<td>
-								<input type="hidden" th:field="*{vehicles[__${itemStat.index}__].vin}" id="vinId">
-							</td>
-							<td>
-								<input type="hidden" th:field="*{vehicles[__${itemStat.index}__].fleet}" id="fleetId">
+							<td hidden>
+								<input readonly hidden th:field="*{vehicles[__${itemStat.index}__].id}"/>
 							</td>
 						</tr>
 					</tbody>
 				</table>
+
+
 
 				<button type="submit" class="btn btn-primary mb-0">Save</button>
 			</form>

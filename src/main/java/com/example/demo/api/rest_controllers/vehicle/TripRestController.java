@@ -1,5 +1,6 @@
 package com.example.demo.api.rest_controllers.vehicle;
 
+import com.example.demo.database.models.Organisation;
 import com.example.demo.database.models.utils.Mapping;
 import com.example.demo.database.models.utils.RestResponse;
 import com.example.demo.database.models.utils.ValidationResponse;
@@ -28,6 +29,7 @@ public class TripRestController {
 
 	private final String ENTITY = "trip";
 
+
 	@Autowired
 	private final TripService tripService;
 
@@ -40,38 +42,38 @@ public class TripRestController {
 		List<RestResponse<Trip>> responseList = new ArrayList<>();
 
 		for (Trip trip : trips) {
+			RestResponse<Trip> restResponse = new RestResponse<>();
+			restResponse.setBody(trip);
+			
 			ValidationResponse response = tripService.validate(trip, Mapping.POST);
 
 			if (!response.isValid()) {
-				RestResponse<Trip> responseHandler = new RestResponse<>();
-				responseHandler.setBody(trip);
-				responseHandler.setHttp_status(HttpStatus.BAD_REQUEST);
-				responseHandler.setMessage(response.getMessage());
+				restResponse.setHttp_status(HttpStatus.BAD_REQUEST);
+				restResponse.setMessage(response.getMessage());
 
-				responseList.add(responseHandler);
+				responseList.add(restResponse);
 
 				errorOccurred = true;
 			} else {
 				Trip tripFromDatabase = tripService.save(trip);
 
-				RestResponse<Trip> responseHandler = new RestResponse<>();
-				responseHandler.setBody(trip);
-
 				if (tripFromDatabase == null) {
-					responseHandler.setHttp_status(HttpStatus.EXPECTATION_FAILED);
-					responseHandler.setMessage("failed to save " + ENTITY + " in database");
+					restResponse.setHttp_status(HttpStatus.INTERNAL_SERVER_ERROR);
+					restResponse.setMessage("failed to save " + ENTITY + " in database");
+
+					errorOccurred = true;
 				} else {
-					responseHandler.setBody(tripFromDatabase);
-					responseHandler.setHttp_status(HttpStatus.OK);
-					responseHandler.setMessage(ENTITY + " saved successfully");
+					restResponse.setBody(tripFromDatabase);
+					restResponse.setHttp_status(HttpStatus.OK);
+					restResponse.setMessage(ENTITY + " saved successfully");
 				}
 
-				responseList.add(responseHandler);
+				responseList.add(restResponse);
 			}
 		}
 
 		if (errorOccurred) {
-			return ResponseEntity.status(HttpStatus.PARTIAL_CONTENT).body(responseList);
+			return ResponseEntity.status(HttpStatus.MULTI_STATUS).body(responseList);
 		} else {
 			return ResponseEntity.status(HttpStatus.OK).body(responseList);
 		}
@@ -80,29 +82,31 @@ public class TripRestController {
 
 	@PostMapping(value = {"", "/"}, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<RestResponse<Trip>> post(@RequestBody Trip trip) {
-
+		RestResponse<Trip> restResponse = new RestResponse<>();
+		restResponse.setBody(trip);
+		
 		ValidationResponse response = tripService.validate(trip, Mapping.POST);
 
-		RestResponse<Trip> responseHandler = new RestResponse<>();
-		responseHandler.setBody(trip);
-
 		if (!response.isValid()) {
-			responseHandler.setHttp_status(HttpStatus.NOT_ACCEPTABLE);
-			responseHandler.setMessage(response.getMessage());
-			return ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE).body(responseHandler);
+			restResponse.setHttp_status(HttpStatus.BAD_REQUEST);
+			restResponse.setMessage(response.getMessage());
+
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(restResponse);
 		}
 
 		Trip tripFromDatabase = tripService.save(trip);
 
 		if (tripFromDatabase == null) {
-			responseHandler.setHttp_status(HttpStatus.UNPROCESSABLE_ENTITY);
-			responseHandler.setMessage("failed to save " + ENTITY + " in database");
-			return ResponseEntity.status(HttpStatus.EXPECTATION_FAILED).body(responseHandler);
+			restResponse.setHttp_status(HttpStatus.INTERNAL_SERVER_ERROR);
+			restResponse.setMessage("failed to save " + ENTITY + " in database");
+
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(restResponse);
 		} else {
-			responseHandler.setBody(tripFromDatabase);
-			responseHandler.setHttp_status(HttpStatus.OK);
-			responseHandler.setMessage(ENTITY + " saved successfully");
-			return ResponseEntity.status(HttpStatus.OK).body(responseHandler);
+			restResponse.setBody(tripFromDatabase);
+			restResponse.setHttp_status(HttpStatus.OK);
+			restResponse.setMessage(ENTITY + " saved successfully");
+
+			return ResponseEntity.status(HttpStatus.OK).body(restResponse);
 		}
 	}
 
@@ -115,12 +119,7 @@ public class TripRestController {
 
 	@GetMapping(value = {"", "/"}, produces = MediaType.APPLICATION_JSON_VALUE)
 	public List<Trip> getAll() {
-		List<Trip> trips = tripService.getAll();
-
-		// TODO: MAYBE REMOVE
-		trips.sort(Comparator.comparing(Trip::getId));
-
-		return trips;
+		return tripService.getAll();
 	}
 
 	@GetMapping(value = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -144,67 +143,72 @@ public class TripRestController {
 		List<RestResponse<Trip>> responseList = new ArrayList<>();
 
 		for (Trip trip : trips) {
+			RestResponse<Trip> restResponse = new RestResponse<>();
+			restResponse.setBody(trip);
+			
 			ValidationResponse response = tripService.validate(trip, Mapping.PUT);
 
 			if (!response.isValid()) {
-				RestResponse<Trip> responseHandler = new RestResponse<>();
-				responseHandler.setBody(trip);
-				responseHandler.setHttp_status(HttpStatus.BAD_REQUEST);
-				responseHandler.setMessage(response.getMessage());
+				restResponse.setHttp_status(HttpStatus.BAD_REQUEST);
+				restResponse.setMessage(response.getMessage());
 
-				responseList.add(responseHandler);
+				responseList.add(restResponse);
 
 				errorOccurred = true;
 			} else {
 				Trip tripFromDatabase = tripService.save(trip);
 
-				RestResponse<Trip> responseHandler = new RestResponse<>();
-				responseHandler.setBody(trip);
-
 				if (tripFromDatabase == null) {
-					responseHandler.setHttp_status(HttpStatus.EXPECTATION_FAILED);
-					responseHandler.setMessage("failed to save " + ENTITY + " in database");
+					restResponse.setHttp_status(HttpStatus.INTERNAL_SERVER_ERROR);
+					restResponse.setMessage("failed to save " + ENTITY + " in database");
+
+					errorOccurred = true;
 				} else {
-					responseHandler.setBody(tripFromDatabase);
-					responseHandler.setHttp_status(HttpStatus.OK);
-					responseHandler.setMessage(ENTITY + " saved successfully");
+					restResponse.setBody(tripFromDatabase);
+					restResponse.setHttp_status(HttpStatus.OK);
+					restResponse.setMessage(ENTITY + " saved successfully");
 				}
 
-				responseList.add(responseHandler);
+				responseList.add(restResponse);
 			}
 		}
 
 		if (errorOccurred) {
-			return ResponseEntity.status(HttpStatus.PARTIAL_CONTENT).body(responseList);
+			return ResponseEntity.status(HttpStatus.MULTI_STATUS).body(responseList);
 		} else {
 			return ResponseEntity.status(HttpStatus.OK).body(responseList);
 		}
 	}
 
 	@PutMapping(value = "/{id}", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-	public ResponseEntity<Trip> putById(@RequestBody Trip trip, @PathVariable Long id) {
+	public ResponseEntity<RestResponse<Trip>> putById(@RequestBody Trip trip, @PathVariable Long id) {
 
-		if (trip == null) {
-			throw new ResponseStatusException(HttpStatus.NO_CONTENT, "no content was provided");
-		}
-
+		RestResponse<Trip> restResponse = new RestResponse<>();
+		restResponse.setBody(trip);
+		
 		ValidationResponse response = tripService.validate(trip, Mapping.PUT);
 
 		if (!response.isValid()) {
-			throw new ResponseStatusException(HttpStatus.METHOD_NOT_ALLOWED, response.getMessage());
+			restResponse.setHttp_status(HttpStatus.BAD_REQUEST);
+			restResponse.setMessage(response.getMessage());
+
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(restResponse);
 		}
 
-		Trip tripFromDatabase = tripService.getById(id);
+		Trip tripFromDatabase = tripService.save(trip);
 
 		if (tripFromDatabase == null) {
-			throw new ResponseStatusException(HttpStatus.NOT_FOUND, ENTITY + " with ID: '" + id + "' not found");
+			restResponse.setHttp_status(HttpStatus.INTERNAL_SERVER_ERROR);
+			restResponse.setMessage("failed to save " + ENTITY + " in database");
+
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(restResponse);
+		} else {
+			restResponse.setBody(tripFromDatabase);
+			restResponse.setHttp_status(HttpStatus.OK);
+			restResponse.setMessage(ENTITY + " saved successfully");
+
+			return ResponseEntity.status(HttpStatus.OK).body(restResponse);
 		}
-
-		trip.setId(tripFromDatabase.getId());
-
-		tripService.save(trip);
-
-		return ResponseEntity.status(HttpStatus.OK).body(trip);
 	}
 
 
@@ -217,13 +221,11 @@ public class TripRestController {
 
 		for (Map<String, Object> changes : changesList) {
 
-			changes.remove("password");
-
 			RestResponse<Map<String, Object>> mapResponse = new RestResponse<>();
 			mapResponse.setBody(changes);
 
 			if (!changes.containsKey("id")) {
-				mapResponse.setHttp_status(HttpStatus.METHOD_NOT_ALLOWED);
+				mapResponse.setHttp_status(HttpStatus.BAD_REQUEST);
 				mapResponse.setMessage("ID parameter is required");
 
 				responseList.add(mapResponse);
@@ -233,7 +235,7 @@ public class TripRestController {
 				Object idObj = changes.get("id");
 
 				if (!(idObj instanceof Integer)) {
-					mapResponse.setHttp_status(HttpStatus.METHOD_NOT_ALLOWED);
+					mapResponse.setHttp_status(HttpStatus.BAD_REQUEST);
 					mapResponse.setMessage("ID parameter is invalid");
 
 					responseList.add(mapResponse);
@@ -254,28 +256,27 @@ public class TripRestController {
 						}
 					});
 
+					RestResponse<Trip> restResponse = new RestResponse<>();
+					restResponse.setBody(tripFromDatabase);
 					ValidationResponse response = tripService.validate(tripFromDatabase, Mapping.PATCH);
 
-					RestResponse<Trip> userResponse = new RestResponse<>();
-					userResponse.setBody(tripFromDatabase);
-
 					if (!response.isValid()) {
-						userResponse.setHttp_status(HttpStatus.NOT_ACCEPTABLE);
-						userResponse.setMessage(response.getMessage());
+						restResponse.setHttp_status(HttpStatus.BAD_REQUEST);
+						restResponse.setMessage(response.getMessage());
 
 						errorOccurred = true;
 					} else {
-						userResponse.setHttp_status(HttpStatus.OK);
-						userResponse.setMessage(ENTITY + "patched successfully");
+						restResponse.setHttp_status(HttpStatus.OK);
+						restResponse.setMessage(ENTITY + "patched successfully");
 					}
 
-					responseList.add(userResponse);
+					responseList.add(restResponse);
 				}
 			}
 		}
 
 		if (errorOccurred) {
-			return ResponseEntity.status(HttpStatus.PARTIAL_CONTENT).body(responseList);
+			return ResponseEntity.status(HttpStatus.MULTI_STATUS).body(responseList);
 		} else {
 			return ResponseEntity.status(HttpStatus.OK).body(responseList);
 		}
@@ -291,7 +292,6 @@ public class TripRestController {
 		}
 
 		changes.remove("id");
-		changes.remove("password");
 
 		changes.forEach((key, value) -> {
 			Field field = ReflectionUtils.findField(Trip.class, key);
@@ -301,28 +301,31 @@ public class TripRestController {
 			}
 		});
 
-		RestResponse<Trip> responseHandler = new RestResponse<>();
+		RestResponse<Trip> restResponse = new RestResponse<>();
 
 		ValidationResponse response = tripService.validate(tripFromDatabase, Mapping.PATCH);
-		responseHandler.setBody(tripFromDatabase);
+		restResponse.setBody(tripFromDatabase);
 
 		if (!response.isValid()) {
-			responseHandler.setHttp_status(HttpStatus.NOT_ACCEPTABLE);
-			responseHandler.setMessage(response.getMessage());
-			return ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE).body(responseHandler);
+			restResponse.setHttp_status(HttpStatus.BAD_REQUEST);
+			restResponse.setMessage(response.getMessage());
+
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(restResponse);
 		}
 
 		Trip patchedTrip = tripService.save(tripFromDatabase);
-		responseHandler.setBody(patchedTrip);
+		restResponse.setBody(patchedTrip);
 
 		if (patchedTrip == null) {
-			responseHandler.setHttp_status(HttpStatus.UNPROCESSABLE_ENTITY);
-			responseHandler.setMessage("failed to save " + ENTITY + " in database");
-			return ResponseEntity.status(HttpStatus.EXPECTATION_FAILED).body(responseHandler);
+			restResponse.setHttp_status(HttpStatus.INTERNAL_SERVER_ERROR);
+			restResponse.setMessage("failed to save " + ENTITY + " in database");
+
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(restResponse);
 		} else {
-			responseHandler.setHttp_status(HttpStatus.OK);
-			responseHandler.setMessage(ENTITY + " saved successfully");
-			return ResponseEntity.status(HttpStatus.OK).body(responseHandler);
+			restResponse.setHttp_status(HttpStatus.OK);
+			restResponse.setMessage(ENTITY + " saved successfully");
+
+			return ResponseEntity.status(HttpStatus.OK).body(restResponse);
 		}
 	}
 
@@ -338,33 +341,33 @@ public class TripRestController {
 		for (Trip trip : trips) {
 			ValidationResponse response = tripService.validate(trip, Mapping.DELETE);
 
-			RestResponse<Trip> responseHandler = new RestResponse<>();
-			responseHandler.setBody(trip);
+			RestResponse<Trip> restResponse = new RestResponse<>();
+			restResponse.setBody(trip);
 
 			if (!response.isValid()) {
-				responseHandler.setHttp_status(HttpStatus.NOT_ACCEPTABLE);
-				responseHandler.setMessage(response.getMessage());
+				restResponse.setHttp_status(HttpStatus.BAD_REQUEST);
+				restResponse.setMessage(response.getMessage());
 
-				responseList.add(responseHandler);
+				responseList.add(restResponse);
 
 				errorOccurred = true;
 			} else {
 				try {
 					tripService.delete(trip);
 
-					responseHandler.setHttp_status(HttpStatus.OK);
-					responseHandler.setMessage(ENTITY + " deleted successfully");
+					restResponse.setHttp_status(HttpStatus.OK);
+					restResponse.setMessage(ENTITY + " deleted successfully");
 				} catch (Exception e) {
-					responseHandler.setHttp_status(HttpStatus.UNPROCESSABLE_ENTITY);
-					responseHandler.setMessage("failed to delete " + ENTITY + " from database \n" + e.getMessage());
+					restResponse.setHttp_status(HttpStatus.INTERNAL_SERVER_ERROR);
+					restResponse.setMessage("failed to delete " + ENTITY + " from database \n" + e.getMessage());
 				}
 
-				responseList.add(responseHandler);
+				responseList.add(restResponse);
 			}
 		}
 
 		if (errorOccurred) {
-			return ResponseEntity.status(HttpStatus.EXPECTATION_FAILED).body(responseList);
+			return ResponseEntity.status(HttpStatus.MULTI_STATUS).body(responseList);
 		} else {
 			return ResponseEntity.status(HttpStatus.OK).body(responseList);
 		}
@@ -381,15 +384,15 @@ public class TripRestController {
 		try {
 			tripService.delete(tripFromDatabase);
 		} catch (Exception e) {
-			throw new ResponseStatusException(HttpStatus.METHOD_NOT_ALLOWED, "method not allowed");
+			throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "failed to delete " + ENTITY + " from database \n" + e.getMessage());
 		}
 
-		RestResponse<Trip> responseHandler = new RestResponse<>();
-		responseHandler.setMessage(ENTITY + " deleted successfully");
-		responseHandler.setBody(tripFromDatabase);
-		responseHandler.setHttp_status(HttpStatus.OK);
+		RestResponse<Trip> restResponse = new RestResponse<>();
+		restResponse.setBody(tripFromDatabase);
+		restResponse.setHttp_status(HttpStatus.OK);
+		restResponse.setMessage(ENTITY + " deleted successfully");
 
-		return ResponseEntity.ok(responseHandler);
+		return ResponseEntity.ok(restResponse);
 	}
 
 

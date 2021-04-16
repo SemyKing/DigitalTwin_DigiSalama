@@ -1,19 +1,20 @@
 package com.example.demo.database.services.vehicle;
 
-import com.example.demo.database.models.vehicle.FileDB;
-import com.example.demo.database.models.vehicle.Refuel;
-import com.example.demo.database.repositories.vehicle.FileRepository;
-import com.example.demo.database.repositories.vehicle.RefuelRepository;
 import com.example.demo.database.models.utils.Mapping;
 import com.example.demo.database.models.utils.ValidationResponse;
+import com.example.demo.database.models.vehicle.FileDB;
+import com.example.demo.database.models.vehicle.Refuel;
+import com.example.demo.database.models.vehicle.Trip;
+import com.example.demo.database.repositories.vehicle.FileRepository;
+import com.example.demo.database.repositories.vehicle.RefuelRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.util.ReflectionUtils;
 
 import javax.transaction.Transactional;
-import java.sql.Date;
-import java.sql.Timestamp;
-import java.text.ParseException;
+import java.lang.reflect.Field;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -114,37 +115,29 @@ public class RefuelService {
 		}
 
 		if (mapping.equals(Mapping.POST) || mapping.equals(Mapping.PUT) || mapping.equals(Mapping.PATCH)) {
-			if (refuel.getLocation() != null) {
-				if (refuel.getLocation().length() <= 0) {
-					return new ValidationResponse(false, "location cannot be empty");
+
+			// EMPTY STRING CHECK
+			List<Field> stringFields = new ArrayList<>();
+
+			Field[] allFields = Refuel.class.getDeclaredFields();
+			for (Field field : allFields) {
+				if (field.getType().equals(String.class)) {
+					stringFields.add(field);
 				}
 			}
 
-			if (refuel.getFuel_name() != null) {
-				if (refuel.getFuel_name().length() <= 0) {
-					return new ValidationResponse(false, "fuel name cannot be empty");
+			for (Field field : stringFields) {
+				field.setAccessible(true);
+				Object object = ReflectionUtils.getField(field, refuel);
+
+				if (object != null) {
+					if (object instanceof String) {
+						if (((String) object).length() <= 0) {
+							return new ValidationResponse(false, "'" + field.getName() + "' cannot be empty");
+						}
+					}
 				}
 			}
-
-			if (refuel.getRefuel_amount() != null) {
-				if (refuel.getRefuel_amount() < 0) {
-					return new ValidationResponse(false, "refuel amount invalid");
-				}
-			}
-
-			if (refuel.getPrice() != null) {
-				if (refuel.getPrice() < 0) {
-					return new ValidationResponse(false, "price invalid");
-				}
-			}
-
-			if (refuel.getDescription() != null) {
-				if (refuel.getDescription().length() <= 0) {
-					return new ValidationResponse(false, "description cannot be empty");
-				}
-			}
-
-			// OTHER VALIDATION
 		}
 
 		if (mapping.equals(Mapping.DELETE)) {

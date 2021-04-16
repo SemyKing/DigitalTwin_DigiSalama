@@ -8,6 +8,7 @@ import com.example.demo.database.models.vehicle.VehicleEvent;
 import com.example.demo.database.services.vehicle.EventService;
 import com.example.demo.database.services.vehicle.FileService;
 import com.example.demo.database.services.vehicle.VehicleService;
+import com.example.demo.utils.FieldReflectionUtils;
 import com.example.demo.utils.StringUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,7 +17,6 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
-import java.util.Comparator;
 import java.util.List;
 
 @Controller
@@ -40,10 +40,6 @@ public class EventController {
 	@GetMapping({"", "/"})
 	public String getAll(Model model) {
 		List<VehicleEvent> events = eventService.getAll();
-
-		//TODO: MAYBE REMOVE
-		events.sort(Comparator.comparing(VehicleEvent::getId));
-
 		model.addAttribute("events", events);
 
 		return "vehicle/events/events_list_page";
@@ -102,9 +98,10 @@ public class EventController {
 	}
 
 
-	// POST
 	@PostMapping({"", "/"})
 	public String post(@ModelAttribute VehicleEvent event, Model model) {
+		event = new FieldReflectionUtils<VehicleEvent>().getObjectWithEmptyStringValuesAsNull(event);
+
 		ValidationResponse response = eventService.validate(event, Mapping.POST);
 
 		if (!response.isValid()) {
@@ -134,6 +131,8 @@ public class EventController {
 
 	@PostMapping("/update")
 	public String put(@ModelAttribute VehicleEvent event, Model model, HttpServletRequest request) {
+		event = new FieldReflectionUtils<VehicleEvent>().getObjectWithEmptyStringValuesAsNull(event);
+
 		ValidationResponse response = eventService.validate(event, Mapping.PUT);
 
 		if (!response.isValid()) {

@@ -39,6 +39,7 @@ public class Refuel {
 
 	@Column(columnDefinition = "TIMESTAMP")
 	@Temporal(TemporalType.TIMESTAMP)
+	@DateTimeFormat(pattern = "yyyy-MM-dd'T'HH:mm")
 	private Date timestamp = new Date();
 
 	@Transient

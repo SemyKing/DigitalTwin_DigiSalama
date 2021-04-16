@@ -1,5 +1,6 @@
 package com.example.demo.api.rest_controllers.vehicle;
 
+import com.example.demo.database.models.Organisation;
 import com.example.demo.database.models.utils.Mapping;
 import com.example.demo.database.models.utils.RestResponse;
 import com.example.demo.database.models.utils.ValidationResponse;
@@ -40,38 +41,36 @@ public class EquipmentRestController {
 		List<RestResponse<Equipment>> responseList = new ArrayList<>();
 
 		for (Equipment equipment : equipmentList) {
+			RestResponse<Equipment> restResponse = new RestResponse<>();
+			restResponse.setBody(equipment);
+			
 			ValidationResponse response = equipmentService.validate(equipment, Mapping.POST);
 
 			if (!response.isValid()) {
-				RestResponse<Equipment> responseHandler = new RestResponse<>();
-				responseHandler.setBody(equipment);
-				responseHandler.setHttp_status(HttpStatus.BAD_REQUEST);
-				responseHandler.setMessage(response.getMessage());
+				restResponse.setHttp_status(HttpStatus.BAD_REQUEST);
+				restResponse.setMessage(response.getMessage());
 
-				responseList.add(responseHandler);
+				responseList.add(restResponse);
 
 				errorOccurred = true;
 			} else {
 				Equipment equipmentFromDatabase = equipmentService.save(equipment);
 
-				RestResponse<Equipment> responseHandler = new RestResponse<>();
-				responseHandler.setBody(equipment);
-
 				if (equipmentFromDatabase == null) {
-					responseHandler.setHttp_status(HttpStatus.EXPECTATION_FAILED);
-					responseHandler.setMessage("failed to save " + ENTITY + " in database");
+					restResponse.setHttp_status(HttpStatus.INTERNAL_SERVER_ERROR);
+					restResponse.setMessage("failed to save " + ENTITY + " in database");
 				} else {
-					responseHandler.setBody(equipmentFromDatabase);
-					responseHandler.setHttp_status(HttpStatus.OK);
-					responseHandler.setMessage(ENTITY + " saved successfully");
+					restResponse.setBody(equipmentFromDatabase);
+					restResponse.setHttp_status(HttpStatus.OK);
+					restResponse.setMessage(ENTITY + " saved successfully");
 				}
 
-				responseList.add(responseHandler);
+				responseList.add(restResponse);
 			}
 		}
 
 		if (errorOccurred) {
-			return ResponseEntity.status(HttpStatus.PARTIAL_CONTENT).body(responseList);
+			return ResponseEntity.status(HttpStatus.MULTI_STATUS).body(responseList);
 		} else {
 			return ResponseEntity.status(HttpStatus.OK).body(responseList);
 		}
@@ -81,28 +80,31 @@ public class EquipmentRestController {
 	@PostMapping(value = {"", "/"}, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<RestResponse<Equipment>> post(@RequestBody Equipment equipment) {
 
+		RestResponse<Equipment> restResponse = new RestResponse<>();
+		restResponse.setBody(equipment);
+		
 		ValidationResponse response = equipmentService.validate(equipment, Mapping.POST);
 
-		RestResponse<Equipment> responseHandler = new RestResponse<>();
-		responseHandler.setBody(equipment);
-
 		if (!response.isValid()) {
-			responseHandler.setHttp_status(HttpStatus.NOT_ACCEPTABLE);
-			responseHandler.setMessage(response.getMessage());
-			return ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE).body(responseHandler);
+			restResponse.setHttp_status(HttpStatus.BAD_REQUEST);
+			restResponse.setMessage(response.getMessage());
+
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(restResponse);
 		}
 
 		Equipment equipmentFromDatabase = equipmentService.save(equipment);
 
 		if (equipmentFromDatabase == null) {
-			responseHandler.setHttp_status(HttpStatus.UNPROCESSABLE_ENTITY);
-			responseHandler.setMessage("failed to save " + ENTITY + " in database");
-			return ResponseEntity.status(HttpStatus.EXPECTATION_FAILED).body(responseHandler);
+			restResponse.setHttp_status(HttpStatus.INTERNAL_SERVER_ERROR);
+			restResponse.setMessage("failed to save " + ENTITY + " in database");
+
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(restResponse);
 		} else {
-			responseHandler.setBody(equipmentFromDatabase);
-			responseHandler.setHttp_status(HttpStatus.OK);
-			responseHandler.setMessage(ENTITY + " saved successfully");
-			return ResponseEntity.status(HttpStatus.OK).body(responseHandler);
+			restResponse.setBody(equipmentFromDatabase);
+			restResponse.setHttp_status(HttpStatus.OK);
+			restResponse.setMessage(ENTITY + " saved successfully");
+
+			return ResponseEntity.status(HttpStatus.OK).body(restResponse);
 		}
 	}
 
@@ -115,12 +117,7 @@ public class EquipmentRestController {
 
 	@GetMapping(value = {"", "/"}, produces = MediaType.APPLICATION_JSON_VALUE)
 	public List<Equipment> getAll() {
-		List<Equipment> equipment = equipmentService.getAll();
-
-		// TODO: MAYBE REMOVE
-		equipment.sort(Comparator.comparing(Equipment::getId));
-
-		return equipment;
+		return equipmentService.getAll();
 	}
 
 	@GetMapping(value = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -144,67 +141,72 @@ public class EquipmentRestController {
 		List<RestResponse<Equipment>> responseList = new ArrayList<>();
 
 		for (Equipment equipment : equipmentList) {
+			RestResponse<Equipment> restResponse = new RestResponse<>();
+			restResponse.setBody(equipment);
+			
 			ValidationResponse response = equipmentService.validate(equipment, Mapping.PUT);
 
 			if (!response.isValid()) {
-				RestResponse<Equipment> responseHandler = new RestResponse<>();
-				responseHandler.setBody(equipment);
-				responseHandler.setHttp_status(HttpStatus.BAD_REQUEST);
-				responseHandler.setMessage(response.getMessage());
+				restResponse.setHttp_status(HttpStatus.BAD_REQUEST);
+				restResponse.setMessage(response.getMessage());
 
-				responseList.add(responseHandler);
+				responseList.add(restResponse);
 
 				errorOccurred = true;
 			} else {
 				Equipment equipmentFromDatabase = equipmentService.save(equipment);
 
-				RestResponse<Equipment> responseHandler = new RestResponse<>();
-				responseHandler.setBody(equipment);
-
 				if (equipmentFromDatabase == null) {
-					responseHandler.setHttp_status(HttpStatus.EXPECTATION_FAILED);
-					responseHandler.setMessage("failed to save " + ENTITY + " in database");
+					restResponse.setHttp_status(HttpStatus.INTERNAL_SERVER_ERROR);
+					restResponse.setMessage("failed to save " + ENTITY + " in database");
+
+					errorOccurred = true;
 				} else {
-					responseHandler.setBody(equipmentFromDatabase);
-					responseHandler.setHttp_status(HttpStatus.OK);
-					responseHandler.setMessage(ENTITY + " saved successfully");
+					restResponse.setBody(equipmentFromDatabase);
+					restResponse.setHttp_status(HttpStatus.OK);
+					restResponse.setMessage(ENTITY + " saved successfully");
 				}
 
-				responseList.add(responseHandler);
+				responseList.add(restResponse);
 			}
 		}
 
 		if (errorOccurred) {
-			return ResponseEntity.status(HttpStatus.PARTIAL_CONTENT).body(responseList);
+			return ResponseEntity.status(HttpStatus.MULTI_STATUS).body(responseList);
 		} else {
 			return ResponseEntity.status(HttpStatus.OK).body(responseList);
 		}
 	}
 
 	@PutMapping(value = "/{id}", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-	public ResponseEntity<Equipment> putById(@RequestBody Equipment equipment, @PathVariable Long id) {
+	public ResponseEntity<RestResponse<Equipment>> putById(@RequestBody Equipment equipment, @PathVariable Long id) {
 
-		if (equipment == null) {
-			throw new ResponseStatusException(HttpStatus.NO_CONTENT, "no content was provided");
-		}
-
+		RestResponse<Equipment> restResponse = new RestResponse<>();
+		restResponse.setBody(equipment);
+		
 		ValidationResponse response = equipmentService.validate(equipment, Mapping.PUT);
 
 		if (!response.isValid()) {
-			throw new ResponseStatusException(HttpStatus.METHOD_NOT_ALLOWED, response.getMessage());
+			restResponse.setHttp_status(HttpStatus.BAD_REQUEST);
+			restResponse.setMessage(response.getMessage());
+
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(restResponse);
 		}
 
-		Equipment equipmentFromDatabase = equipmentService.getById(id);
+		Equipment equipmentFromDatabase = equipmentService.save(equipment);
 
 		if (equipmentFromDatabase == null) {
-			throw new ResponseStatusException(HttpStatus.NOT_FOUND, ENTITY + " with ID: '" + id + "' not found");
+			restResponse.setHttp_status(HttpStatus.INTERNAL_SERVER_ERROR);
+			restResponse.setMessage("failed to save " + ENTITY + " in database");
+
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(restResponse);
+		} else {
+			restResponse.setBody(equipmentFromDatabase);
+			restResponse.setHttp_status(HttpStatus.OK);
+			restResponse.setMessage(ENTITY + " saved successfully");
+
+			return ResponseEntity.status(HttpStatus.OK).body(restResponse);
 		}
-
-		equipment.setId(equipmentFromDatabase.getId());
-
-		equipmentService.save(equipment);
-
-		return ResponseEntity.status(HttpStatus.OK).body(equipment);
 	}
 
 
@@ -216,8 +218,6 @@ public class EquipmentRestController {
 		boolean errorOccurred = false;
 
 		for (Map<String, Object> changes : changesList) {
-
-			changes.remove("password");
 
 			RestResponse<Map<String, Object>> mapResponse = new RestResponse<>();
 			mapResponse.setBody(changes);
@@ -233,7 +233,7 @@ public class EquipmentRestController {
 				Object idObj = changes.get("id");
 
 				if (!(idObj instanceof Integer)) {
-					mapResponse.setHttp_status(HttpStatus.METHOD_NOT_ALLOWED);
+					mapResponse.setHttp_status(HttpStatus.BAD_REQUEST);
 					mapResponse.setMessage("ID parameter is invalid");
 
 					responseList.add(mapResponse);
@@ -254,28 +254,28 @@ public class EquipmentRestController {
 						}
 					});
 
+					RestResponse<Equipment> restResponse = new RestResponse<>();
+					restResponse.setBody(equipmentFromDatabase);
+					
 					ValidationResponse response = equipmentService.validate(equipmentFromDatabase, Mapping.PATCH);
 
-					RestResponse<Equipment> userResponse = new RestResponse<>();
-					userResponse.setBody(equipmentFromDatabase);
-
 					if (!response.isValid()) {
-						userResponse.setHttp_status(HttpStatus.NOT_ACCEPTABLE);
-						userResponse.setMessage(response.getMessage());
+						restResponse.setHttp_status(HttpStatus.BAD_REQUEST);
+						restResponse.setMessage(response.getMessage());
 
 						errorOccurred = true;
 					} else {
-						userResponse.setHttp_status(HttpStatus.OK);
-						userResponse.setMessage(ENTITY + "patched successfully");
+						restResponse.setHttp_status(HttpStatus.OK);
+						restResponse.setMessage(ENTITY + "patched successfully");
 					}
 
-					responseList.add(userResponse);
+					responseList.add(restResponse);
 				}
 			}
 		}
 
 		if (errorOccurred) {
-			return ResponseEntity.status(HttpStatus.PARTIAL_CONTENT).body(responseList);
+			return ResponseEntity.status(HttpStatus.MULTI_STATUS).body(responseList);
 		} else {
 			return ResponseEntity.status(HttpStatus.OK).body(responseList);
 		}
@@ -291,7 +291,6 @@ public class EquipmentRestController {
 		}
 
 		changes.remove("id");
-		changes.remove("password");
 
 		changes.forEach((key, value) -> {
 			Field field = ReflectionUtils.findField(Equipment.class, key);
@@ -301,28 +300,31 @@ public class EquipmentRestController {
 			}
 		});
 
-		RestResponse<Equipment> responseHandler = new RestResponse<>();
-
+		RestResponse<Equipment> restResponse = new RestResponse<>();
+		restResponse.setBody(equipmentFromDatabase);
+		
 		ValidationResponse response = equipmentService.validate(equipmentFromDatabase, Mapping.PATCH);
-		responseHandler.setBody(equipmentFromDatabase);
-
+		
 		if (!response.isValid()) {
-			responseHandler.setHttp_status(HttpStatus.NOT_ACCEPTABLE);
-			responseHandler.setMessage(response.getMessage());
-			return ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE).body(responseHandler);
+			restResponse.setHttp_status(HttpStatus.BAD_REQUEST);
+			restResponse.setMessage(response.getMessage());
+
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(restResponse);
 		}
 
 		Equipment patchedEquipment = equipmentService.save(equipmentFromDatabase);
-		responseHandler.setBody(patchedEquipment);
+		restResponse.setBody(patchedEquipment);
 
 		if (patchedEquipment == null) {
-			responseHandler.setHttp_status(HttpStatus.UNPROCESSABLE_ENTITY);
-			responseHandler.setMessage("failed to save " + ENTITY + " in database");
-			return ResponseEntity.status(HttpStatus.EXPECTATION_FAILED).body(responseHandler);
+			restResponse.setHttp_status(HttpStatus.INTERNAL_SERVER_ERROR);
+			restResponse.setMessage("failed to save " + ENTITY + " in database");
+
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(restResponse);
 		} else {
-			responseHandler.setHttp_status(HttpStatus.OK);
-			responseHandler.setMessage(ENTITY + " saved successfully");
-			return ResponseEntity.status(HttpStatus.OK).body(responseHandler);
+			restResponse.setHttp_status(HttpStatus.OK);
+			restResponse.setMessage(ENTITY + " saved successfully");
+
+			return ResponseEntity.status(HttpStatus.OK).body(restResponse);
 		}
 	}
 
@@ -336,35 +338,37 @@ public class EquipmentRestController {
 		List<RestResponse<Equipment>> responseList = new ArrayList<>();
 
 		for (Equipment equipment : equipmentList) {
+			RestResponse<Equipment> restResponse = new RestResponse<>();
+			restResponse.setBody(equipment);
+			
 			ValidationResponse response = equipmentService.validate(equipment, Mapping.DELETE);
 
-			RestResponse<Equipment> responseHandler = new RestResponse<>();
-			responseHandler.setBody(equipment);
-
 			if (!response.isValid()) {
-				responseHandler.setHttp_status(HttpStatus.NOT_ACCEPTABLE);
-				responseHandler.setMessage(response.getMessage());
+				restResponse.setHttp_status(HttpStatus.BAD_REQUEST);
+				restResponse.setMessage(response.getMessage());
 
-				responseList.add(responseHandler);
+				responseList.add(restResponse);
 
 				errorOccurred = true;
 			} else {
 				try {
 					equipmentService.delete(equipment);
 
-					responseHandler.setHttp_status(HttpStatus.OK);
-					responseHandler.setMessage(ENTITY + " deleted successfully");
+					restResponse.setHttp_status(HttpStatus.OK);
+					restResponse.setMessage(ENTITY + " deleted successfully");
 				} catch (Exception e) {
-					responseHandler.setHttp_status(HttpStatus.UNPROCESSABLE_ENTITY);
-					responseHandler.setMessage("failed to delete " + ENTITY + " from database \n" + e.getMessage());
+					restResponse.setHttp_status(HttpStatus.INTERNAL_SERVER_ERROR);
+					restResponse.setMessage("failed to delete " + ENTITY + " from database \n" + e.getMessage());
+
+					errorOccurred = true;
 				}
 
-				responseList.add(responseHandler);
+				responseList.add(restResponse);
 			}
 		}
 
 		if (errorOccurred) {
-			return ResponseEntity.status(HttpStatus.EXPECTATION_FAILED).body(responseList);
+			return ResponseEntity.status(HttpStatus.MULTI_STATUS).body(responseList);
 		} else {
 			return ResponseEntity.status(HttpStatus.OK).body(responseList);
 		}
@@ -381,15 +385,15 @@ public class EquipmentRestController {
 		try {
 			equipmentService.delete(equipmentFromDatabase);
 		} catch (Exception e) {
-			throw new ResponseStatusException(HttpStatus.METHOD_NOT_ALLOWED, "method not allowed");
+			throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "failed to delete " + ENTITY + " from database \n" + e.getMessage());
 		}
 
-		RestResponse<Equipment> responseHandler = new RestResponse<>();
-		responseHandler.setMessage(ENTITY + " deleted successfully");
-		responseHandler.setBody(equipmentFromDatabase);
-		responseHandler.setHttp_status(HttpStatus.OK);
+		RestResponse<Equipment> restResponse = new RestResponse<>();
+		restResponse.setBody(equipmentFromDatabase);
+		restResponse.setHttp_status(HttpStatus.OK);
+		restResponse.setMessage(ENTITY + " deleted successfully");
 
-		return ResponseEntity.ok(responseHandler);
+		return ResponseEntity.ok(restResponse);
 	}
 
 

@@ -1,0 +1,48 @@
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{main-layout :: main-fragment(~{:: #main-content})}">
+	<head>
+		<title>New Distance</title>
+		<link rel="stylesheet"
+			  href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css"
+			  integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO"
+			  crossorigin="anonymous">
+	</head>
+	<body>
+	<div id="main-content" class="container pt-2">
+
+		<h1>New Distance</h1>
+
+		<h3 th:text="${error_message_attribute}" class="text-danger"></h3>
+
+		<form action="#" th:action="@{/api1/distances}" th:object="${distance}" method="post">
+
+			<div class="form-group">
+				<label for="km">Kilometres</label>
+				<input type="number" class="form-control" id="km" placeholder="Kilometres" th:field="*{kilometres}">
+			</div>
+
+			<div class="form-group">
+				<label for="vehicleSelect">Vehicle</label>
+				<select class="form-control" id="vehicleSelect" th:field="${distance.vehicle}">
+					<option value=""></option>
+					<option th:each="vehicle : ${vehicles}"
+							th:value="${vehicle.id}"
+							th:utext="${vehicle.registration_number}">
+					</option>
+				</select>
+			</div>
+
+			<div class="form-group">
+				<label for="description">Description</label>
+				<textarea id="description" style="min-height: 200px;" class="form-control" aria-label="Description" th:field="*{description}"></textarea>
+			</div>
+
+			<div class="form-group">
+				<label for="timestamp">Timestamp</label>
+				<input type="datetime-local" class="form-control" id="timestamp" placeholder="Timestamp" th:field="*{{timestamp}}">
+			</div>
+
+			<button type="submit" class="btn btn-primary mx-auto mt-4">Save</button>
+		</form>
+	</div>
+	</body>
+</html>

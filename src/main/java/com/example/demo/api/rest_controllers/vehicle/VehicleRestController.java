@@ -1,15 +1,13 @@
 package com.example.demo.api.rest_controllers.vehicle;
 
-import com.example.demo.database.models.user.User;
-import com.example.demo.database.models.utils.RestResponse;
 import com.example.demo.database.models.Organisation;
+import com.example.demo.database.models.utils.Mapping;
+import com.example.demo.database.models.utils.RestResponse;
+import com.example.demo.database.models.utils.ValidationResponse;
 import com.example.demo.database.models.vehicle.Vehicle;
-import com.example.demo.database.models.vehicle.VehicleEvent;
 import com.example.demo.database.services.OrganisationService;
 import com.example.demo.database.services.vehicle.VehicleService;
-import com.example.demo.database.models.utils.Mapping;
 import com.example.demo.utils.StringUtils;
-import com.example.demo.database.models.utils.ValidationResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -32,7 +30,6 @@ public class VehicleRestController {
 
 	private final String ENTITY = "vehicle";
 
-
 	@Autowired
 	private final VehicleService vehicleService;
 
@@ -49,58 +46,68 @@ public class VehicleRestController {
 		List<RestResponse<Vehicle>> responseList = new ArrayList<>();
 
 		for (Vehicle vehicle : vehicles) {
+			RestResponse<Vehicle> restResponse = new RestResponse<>();
+			restResponse.setBody(vehicle);
+			
 			ValidationResponse response = vehicleService.validate(vehicle, Mapping.POST);
 
 			if (!response.isValid()) {
-				RestResponse<Vehicle> responseHandler = new RestResponse<>();
-				responseHandler.setBody(vehicle);
-				responseHandler.setHttp_status(HttpStatus.BAD_REQUEST);
-				responseHandler.setMessage(response.getMessage());
+				restResponse.setHttp_status(HttpStatus.BAD_REQUEST);
+				restResponse.setMessage(response.getMessage());
 
-				responseList.add(responseHandler);
+				responseList.add(restResponse);
 
 				errorOccurred = true;
 			} else {
 				Vehicle vehicleFromDatabase = vehicleService.save(vehicle);
 
-				RestResponse<Vehicle> responseHandler = new RestResponse<>();
-				responseHandler.setBody(vehicle);
-
 				if (vehicleFromDatabase == null) {
-					responseHandler.setHttp_status(HttpStatus.EXPECTATION_FAILED);
-					responseHandler.setMessage("failed to save " + ENTITY + " in database");
+					restResponse.setHttp_status(HttpStatus.INTERNAL_SERVER_ERROR);
+					restResponse.setMessage("failed to save " + ENTITY + " in database");
 				} else {
-					responseHandler.setBody(vehicleFromDatabase);
-					responseHandler.setHttp_status(HttpStatus.OK);
-					responseHandler.setMessage(ENTITY + " saved successfully");
+					restResponse.setBody(vehicleFromDatabase);
+					restResponse.setHttp_status(HttpStatus.OK);
+					restResponse.setMessage(ENTITY + " saved successfully");
 				}
 
-				responseList.add(responseHandler);
+				responseList.add(restResponse);
 			}
 		}
 
 		if (errorOccurred) {
-			return ResponseEntity.status(HttpStatus.PARTIAL_CONTENT).body(responseList);
+			return ResponseEntity.status(HttpStatus.MULTI_STATUS).body(responseList);
 		} else {
 			return ResponseEntity.status(HttpStatus.OK).body(responseList);
 		}
 	}
 
 	@PostMapping(value = {"", "/"}, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-	public ResponseEntity<Vehicle> post(@RequestBody Vehicle vehicle) {
-
+	public ResponseEntity<RestResponse<Vehicle>> post(@RequestBody Vehicle vehicle) {
+		RestResponse<Vehicle> restResponse = new RestResponse<>();
+		restResponse.setBody(vehicle);
+		
 		ValidationResponse response = vehicleService.validate(vehicle, Mapping.POST);
 
 		if (!response.isValid()) {
-			throw new ResponseStatusException(HttpStatus.METHOD_NOT_ALLOWED, response.getMessage());
+			restResponse.setHttp_status(HttpStatus.BAD_REQUEST);
+			restResponse.setMessage(response.getMessage());
+
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(restResponse);
 		}
 
 		Vehicle vehicleFromDatabase = vehicleService.save(vehicle);
 
 		if (vehicleFromDatabase == null) {
-			throw new ResponseStatusException(HttpStatus.EXPECTATION_FAILED, "failed to save " + ENTITY + " in database");
+			restResponse.setHttp_status(HttpStatus.INTERNAL_SERVER_ERROR);
+			restResponse.setMessage("failed to save " + ENTITY + " in database");
+
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(restResponse);
 		} else {
-			return ResponseEntity.status(HttpStatus.OK).body(vehicleFromDatabase);
+			restResponse.setBody(vehicleFromDatabase);
+			restResponse.setHttp_status(HttpStatus.OK);
+			restResponse.setMessage(ENTITY + " saved successfully");
+
+			return ResponseEntity.status(HttpStatus.OK).body(restResponse);
 		}
 	}
 
@@ -113,12 +120,7 @@ public class VehicleRestController {
 
 	@GetMapping(value = {"", "/"}, produces = MediaType.APPLICATION_JSON_VALUE)
 	public List<Vehicle> getAll() {
-		List<Vehicle> vehicles = vehicleService.getAll();
-
-		// TODO: MAYBE REMOVE
-		vehicles.sort(Comparator.comparing(Vehicle::getId));
-
-		return vehicles;
+		return vehicleService.getAll();
 	}
 
 	@GetMapping(value = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -142,70 +144,68 @@ public class VehicleRestController {
 		List<RestResponse<Vehicle>> responseList = new ArrayList<>();
 
 		for (Vehicle vehicle : vehicles) {
+			RestResponse<Vehicle> restResponse = new RestResponse<>();
+			restResponse.setBody(vehicle);
+			
 			ValidationResponse response = vehicleService.validate(vehicle, Mapping.PUT);
 
 			if (!response.isValid()) {
-				RestResponse<Vehicle> responseHandler = new RestResponse<>();
-				responseHandler.setBody(vehicle);
-				responseHandler.setHttp_status(HttpStatus.BAD_REQUEST);
-				responseHandler.setMessage(response.getMessage());
+				restResponse.setHttp_status(HttpStatus.BAD_REQUEST);
+				restResponse.setMessage(response.getMessage());
 
-				responseList.add(responseHandler);
+				responseList.add(restResponse);
 
 				errorOccurred = true;
 			} else {
 				Vehicle vehicleFromDatabase = vehicleService.save(vehicle);
 
-				RestResponse<Vehicle> responseHandler = new RestResponse<>();
-				responseHandler.setBody(vehicle);
-
 				if (vehicleFromDatabase == null) {
-					responseHandler.setHttp_status(HttpStatus.EXPECTATION_FAILED);
-					responseHandler.setMessage("failed to save " + ENTITY + " in database");
+					restResponse.setHttp_status(HttpStatus.INTERNAL_SERVER_ERROR);
+					restResponse.setMessage("failed to save " + ENTITY + " in database");
 				} else {
-					responseHandler.setHttp_status(HttpStatus.OK);
-					responseHandler.setMessage(ENTITY + " saved successfully");
+					restResponse.setHttp_status(HttpStatus.OK);
+					restResponse.setMessage(ENTITY + " saved successfully");
 				}
-
-				responseList.add(responseHandler);
 			}
+			
+			responseList.add(restResponse);
 		}
 
 		if (errorOccurred) {
-			return ResponseEntity.status(HttpStatus.PARTIAL_CONTENT).body(responseList);
+			return ResponseEntity.status(HttpStatus.MULTI_STATUS).body(responseList);
 		} else {
 			return ResponseEntity.status(HttpStatus.OK).body(responseList);
 		}
-
-
-
-//		throw new ResponseStatusException(HttpStatus.METHOD_NOT_ALLOWED, "method not allowed");
 	}
 
 	@PutMapping(value = "/{id}", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-	public ResponseEntity<Vehicle> putById(@RequestBody Vehicle vehicle, @PathVariable Long id) {
+	public ResponseEntity<RestResponse<Vehicle>> putById(@RequestBody Vehicle vehicle, @PathVariable Long id) {
 
-		if (vehicle == null) {
-			throw new ResponseStatusException(HttpStatus.NO_CONTENT, "no content was provided");
-		}
-
+		RestResponse<Vehicle> restResponse = new RestResponse<>();
+		restResponse.setBody(vehicle);
+		
 		ValidationResponse response = vehicleService.validate(vehicle, Mapping.PUT);
 
 		if (!response.isValid()) {
-			throw new ResponseStatusException(HttpStatus.METHOD_NOT_ALLOWED, response.getMessage());
+			restResponse.setHttp_status(HttpStatus.BAD_REQUEST);
+			restResponse.setMessage(response.getMessage());
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(restResponse);
 		}
 
-		Vehicle vehicleFromDatabase = vehicleService.getById(id);
+		Vehicle vehicleFromDatabase = vehicleService.save(vehicle);
 
 		if (vehicleFromDatabase == null) {
-			throw new ResponseStatusException(HttpStatus.NOT_FOUND, ENTITY + " with ID: '" + id + "' not found");
+			restResponse.setHttp_status(HttpStatus.INTERNAL_SERVER_ERROR);
+			restResponse.setMessage("failed to save " + ENTITY + " in database");
+
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(restResponse);
+		} else {
+			restResponse.setBody(vehicleFromDatabase);
+			restResponse.setHttp_status(HttpStatus.OK);
+			restResponse.setMessage(ENTITY + " saved successfully");
+
+			return ResponseEntity.status(HttpStatus.OK).body(restResponse);
 		}
-
-		vehicle.setId(vehicleFromDatabase.getId());
-
-		vehicleService.save(vehicle);
-
-		return ResponseEntity.status(HttpStatus.OK).body(vehicle);
 	}
 
 
@@ -218,13 +218,11 @@ public class VehicleRestController {
 
 		for (Map<String, Object> changes : changesList) {
 
-			changes.remove("password");
-
 			RestResponse<Map<String, Object>> mapResponse = new RestResponse<>();
 			mapResponse.setBody(changes);
 
 			if (!changes.containsKey("id")) {
-				mapResponse.setHttp_status(HttpStatus.METHOD_NOT_ALLOWED);
+				mapResponse.setHttp_status(HttpStatus.BAD_REQUEST);
 				mapResponse.setMessage("ID parameter is required");
 
 				responseList.add(mapResponse);
@@ -234,7 +232,7 @@ public class VehicleRestController {
 				Object idObj = changes.get("id");
 
 				if (!(idObj instanceof Integer)) {
-					mapResponse.setHttp_status(HttpStatus.METHOD_NOT_ALLOWED);
+					mapResponse.setHttp_status(HttpStatus.BAD_REQUEST);
 					mapResponse.setMessage("ID parameter is invalid");
 
 					responseList.add(mapResponse);
@@ -255,28 +253,28 @@ public class VehicleRestController {
 						}
 					});
 
+					RestResponse<Vehicle> restResponse = new RestResponse<>();
+					restResponse.setBody(vehicleFromDatabase);
+					
 					ValidationResponse response = vehicleService.validate(vehicleFromDatabase, Mapping.PATCH);
 
-					RestResponse<Vehicle> userResponse = new RestResponse<>();
-					userResponse.setBody(vehicleFromDatabase);
-
 					if (!response.isValid()) {
-						userResponse.setHttp_status(HttpStatus.NOT_ACCEPTABLE);
-						userResponse.setMessage(response.getMessage());
+						restResponse.setHttp_status(HttpStatus.BAD_REQUEST);
+						restResponse.setMessage(response.getMessage());
 
 						errorOccurred = true;
 					} else {
-						userResponse.setHttp_status(HttpStatus.OK);
-						userResponse.setMessage(ENTITY + "patched successfully");
+						restResponse.setHttp_status(HttpStatus.OK);
+						restResponse.setMessage(ENTITY + "patched successfully");
 					}
 
-					responseList.add(userResponse);
+					responseList.add(restResponse);
 				}
 			}
 		}
 
 		if (errorOccurred) {
-			return ResponseEntity.status(HttpStatus.PARTIAL_CONTENT).body(responseList);
+			return ResponseEntity.status(HttpStatus.MULTI_STATUS).body(responseList);
 		} else {
 			return ResponseEntity.status(HttpStatus.OK).body(responseList);
 		}
@@ -292,7 +290,6 @@ public class VehicleRestController {
 		}
 
 		changes.remove("id");
-		changes.remove("password");
 
 		changes.forEach((key, value) -> {
 			Field field = ReflectionUtils.findField(Vehicle.class, key);
@@ -302,28 +299,30 @@ public class VehicleRestController {
 			}
 		});
 
-		RestResponse<Vehicle> responseHandler = new RestResponse<>();
-
+		RestResponse<Vehicle> restResponse = new RestResponse<>();
+		restResponse.setBody(vehicleFromDatabase);
+		
 		ValidationResponse response = vehicleService.validate(vehicleFromDatabase, Mapping.PATCH);
-		responseHandler.setBody(vehicleFromDatabase);
 
 		if (!response.isValid()) {
-			responseHandler.setHttp_status(HttpStatus.NOT_ACCEPTABLE);
-			responseHandler.setMessage(response.getMessage());
-			return ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE).body(responseHandler);
+			restResponse.setHttp_status(HttpStatus.BAD_REQUEST);
+			restResponse.setMessage(response.getMessage());
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(restResponse);
 		}
 
 		Vehicle patchedVehicle = vehicleService.save(vehicleFromDatabase);
-		responseHandler.setBody(patchedVehicle);
+		restResponse.setBody(patchedVehicle);
 
 		if (patchedVehicle == null) {
-			responseHandler.setHttp_status(HttpStatus.UNPROCESSABLE_ENTITY);
-			responseHandler.setMessage("failed to save " + ENTITY + " in database");
-			return ResponseEntity.status(HttpStatus.EXPECTATION_FAILED).body(responseHandler);
+			restResponse.setHttp_status(HttpStatus.INTERNAL_SERVER_ERROR);
+			restResponse.setMessage("failed to save " + ENTITY + " in database");
+
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(restResponse);
 		} else {
-			responseHandler.setHttp_status(HttpStatus.OK);
-			responseHandler.setMessage(ENTITY + " saved successfully");
-			return ResponseEntity.status(HttpStatus.OK).body(responseHandler);
+			restResponse.setHttp_status(HttpStatus.OK);
+			restResponse.setMessage(ENTITY + " saved successfully");
+
+			return ResponseEntity.status(HttpStatus.OK).body(restResponse);
 		}
 	}
 
@@ -337,35 +336,37 @@ public class VehicleRestController {
 		List<RestResponse<Vehicle>> responseList = new ArrayList<>();
 
 		for (Vehicle vehicle : vehicles) {
+			RestResponse<Vehicle> restResponse = new RestResponse<>();
+			restResponse.setBody(vehicle);
+			
 			ValidationResponse response = vehicleService.validate(vehicle, Mapping.DELETE);
 
-			RestResponse<Vehicle> responseHandler = new RestResponse<>();
-			responseHandler.setBody(vehicle);
-
 			if (!response.isValid()) {
-				responseHandler.setHttp_status(HttpStatus.NOT_ACCEPTABLE);
-				responseHandler.setMessage(response.getMessage());
+				restResponse.setHttp_status(HttpStatus.BAD_REQUEST);
+				restResponse.setMessage(response.getMessage());
 
-				responseList.add(responseHandler);
+				responseList.add(restResponse);
 
 				errorOccurred = true;
 			} else {
 				try {
 					vehicleService.delete(vehicle);
 
-					responseHandler.setHttp_status(HttpStatus.OK);
-					responseHandler.setMessage(ENTITY + " deleted successfully");
+					restResponse.setHttp_status(HttpStatus.OK);
+					restResponse.setMessage(ENTITY + " deleted successfully");
 				} catch (Exception e) {
-					responseHandler.setHttp_status(HttpStatus.UNPROCESSABLE_ENTITY);
-					responseHandler.setMessage("failed to delete " + ENTITY + " from database \n" + e.getMessage());
+					restResponse.setHttp_status(HttpStatus.INTERNAL_SERVER_ERROR);
+					restResponse.setMessage("failed to delete " + ENTITY + " from database \n" + e.getMessage());
+
+					errorOccurred = true;
 				}
 
-				responseList.add(responseHandler);
+				responseList.add(restResponse);
 			}
 		}
 
 		if (errorOccurred) {
-			return ResponseEntity.status(HttpStatus.EXPECTATION_FAILED).body(responseList);
+			return ResponseEntity.status(HttpStatus.MULTI_STATUS).body(responseList);
 		} else {
 			return ResponseEntity.status(HttpStatus.OK).body(responseList);
 		}
@@ -383,15 +384,15 @@ public class VehicleRestController {
 		try {
 			vehicleService.delete(vehicleFromDatabase);
 		} catch (Exception e) {
-			throw new ResponseStatusException(HttpStatus.METHOD_NOT_ALLOWED, "method not allowed");
+			throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "failed to delete " + ENTITY + " from database \n" + e.getMessage());
 		}
 
-		RestResponse<Vehicle> responseHandler = new RestResponse<>();
-		responseHandler.setMessage("vehicle deleted successfully");
-		responseHandler.setBody(vehicleFromDatabase);
-		responseHandler.setHttp_status(HttpStatus.OK);
+		RestResponse<Vehicle> restResponse = new RestResponse<>();
+		restResponse.setBody(vehicleFromDatabase);
+		restResponse.setHttp_status(HttpStatus.OK);
+		restResponse.setMessage(ENTITY + "successfully deleted");
 
-		return ResponseEntity.ok(responseHandler);
+		return ResponseEntity.ok(restResponse);
 	}
 
 

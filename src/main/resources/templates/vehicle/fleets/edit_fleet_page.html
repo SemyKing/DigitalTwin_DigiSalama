@@ -39,8 +39,19 @@
 						</select>
 					</div>
 
-					<button type="submit" class="btn btn-primary mx-auto mt-4">Save</button>
+					<input type="submit" id="submit-form" class="" hidden/>
 				</form>
+
+
+				<form action="#" th:action="${'/api1/fleets/'+ fleet.id +'/set_vehicles'}" hidden method="GET">
+					<input type="submit" id="set-fleets-form"/>
+				</form>
+
+				<div class="row">
+					<label for="submit-form" tabindex="0" class="btn btn-primary mt-4">Save</label>
+					<label for="set-fleets-form" tabindex="1" class="btn btn-success mt-4 ml-auto">Set Vehicles</label>
+				</div>
+
 			</div>
 		</div>
 	</body>

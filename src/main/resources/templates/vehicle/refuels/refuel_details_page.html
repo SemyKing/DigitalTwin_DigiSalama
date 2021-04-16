@@ -37,14 +37,16 @@
 							<td> <span th:text="*{price}"></span> </td>
 						</tr>
 						<tr>
+							<td> Description </td>
+							<td>
+								<textarea id="description" style="min-height: 200px;" class="form-control" aria-label="Description" readonly th:field="*{description}"></textarea>
+							</td>
+						</tr>
+						<tr>
 							<td> Vehicle </td>
 							<td>
 								<span th:text="${refuel.vehicle == null ? 'NOT SELECTED' : refuel.vehicle.registration_number}"></span>
 							</td>
-						</tr>
-						<tr>
-							<td> Date & Time </td>
-							<td> <span th:text="${#dates.format(refuel.timestamp, 'dd/MM/yyyy HH:mm')}"></span> </td>
 						</tr>
 						<tr>
 							<td> Files </td>
@@ -55,10 +57,8 @@
 							</td>
 						</tr>
 						<tr>
-							<td> Description </td>
-							<td>
-								<textarea id="description" style="min-height: 200px;" class="form-control" aria-label="Description" readonly th:field="*{description}"></textarea>
-							</td>
+							<td> Date & Time </td>
+							<td> <span th:text="${#dates.format(refuel.timestamp, 'dd/MM/yyyy HH:mm')}"></span> </td>
 						</tr>
 					</tbody>
 				</table>

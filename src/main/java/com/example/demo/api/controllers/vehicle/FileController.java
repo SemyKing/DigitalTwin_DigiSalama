@@ -1,12 +1,13 @@
 package com.example.demo.api.controllers.vehicle;
 
+import com.example.demo.database.models.utils.Mapping;
+import com.example.demo.database.models.utils.ValidationResponse;
 import com.example.demo.database.models.vehicle.FileDB;
 import com.example.demo.database.models.vehicle.Vehicle;
 import com.example.demo.database.services.vehicle.FileService;
 import com.example.demo.database.services.vehicle.VehicleService;
-import com.example.demo.database.models.utils.Mapping;
+import com.example.demo.utils.FieldReflectionUtils;
 import com.example.demo.utils.StringUtils;
-import com.example.demo.database.models.utils.ValidationResponse;
 import lombok.RequiredArgsConstructor;
 import org.apache.tomcat.util.http.fileupload.FileUploadException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -116,7 +117,6 @@ public class FileController {
 	}
 
 
-	// EDIT FILE FORM
 	@GetMapping("/{id}/edit")
 	public String editForm(@PathVariable Long id, Model model) {
 		FileDB fileFromDatabase = fileService.getById(id);
@@ -136,15 +136,9 @@ public class FileController {
 	}
 
 
-	// UPDATE FILE
 	@PostMapping("/update")
 	public String put(@ModelAttribute FileDB fileDB, Model model) {
-
-		if (fileDB.getId() == null) {
-			model.addAttribute(StringUtils.ERROR_TITLE_ATTRIBUTE, "Missing parameter");
-			model.addAttribute(StringUtils.ERROR_MESSAGE_ATTRIBUTE, "ID parameter is required");
-			return StringUtils.ERROR_PAGE;
-		}
+		fileDB = new FieldReflectionUtils<FileDB>().getObjectWithEmptyStringValuesAsNull(fileDB);
 
 		ValidationResponse response = fileService.validate(fileDB, Mapping.PUT);
 
@@ -166,7 +160,6 @@ public class FileController {
 	}
 
 
-	// DELETE FILE
 	@PostMapping("/{id}/delete")
 	public String delete(@PathVariable Long id, Model model) {
 		FileDB fileFromDatabase = fileService.getById(id);

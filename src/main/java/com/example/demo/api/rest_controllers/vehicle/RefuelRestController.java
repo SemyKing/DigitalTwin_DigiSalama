@@ -1,5 +1,6 @@
 package com.example.demo.api.rest_controllers.vehicle;
 
+import com.example.demo.database.models.Organisation;
 import com.example.demo.database.models.utils.Mapping;
 import com.example.demo.database.models.utils.RestResponse;
 import com.example.demo.database.models.utils.ValidationResponse;
@@ -40,38 +41,38 @@ public class RefuelRestController {
 		List<RestResponse<Refuel>> responseList = new ArrayList<>();
 
 		for (Refuel refuel : refuels) {
+			RestResponse<Refuel> restResponse = new RestResponse<>();
+			restResponse.setBody(refuel);
+			
 			ValidationResponse response = refuelService.validate(refuel, Mapping.POST);
 
 			if (!response.isValid()) {
-				RestResponse<Refuel> responseHandler = new RestResponse<>();
-				responseHandler.setBody(refuel);
-				responseHandler.setHttp_status(HttpStatus.BAD_REQUEST);
-				responseHandler.setMessage(response.getMessage());
+				restResponse.setHttp_status(HttpStatus.BAD_REQUEST);
+				restResponse.setMessage(response.getMessage());
 
-				responseList.add(responseHandler);
+				responseList.add(restResponse);
 
 				errorOccurred = true;
 			} else {
 				Refuel refuelFromDatabase = refuelService.save(refuel);
 
-				RestResponse<Refuel> responseHandler = new RestResponse<>();
-				responseHandler.setBody(refuel);
-
 				if (refuelFromDatabase == null) {
-					responseHandler.setHttp_status(HttpStatus.EXPECTATION_FAILED);
-					responseHandler.setMessage("failed to save " + ENTITY + " in database");
+					restResponse.setHttp_status(HttpStatus.INTERNAL_SERVER_ERROR);
+					restResponse.setMessage("failed to save " + ENTITY + " in database");
+
+					errorOccurred = true;
 				} else {
-					responseHandler.setBody(refuelFromDatabase);
-					responseHandler.setHttp_status(HttpStatus.OK);
-					responseHandler.setMessage(ENTITY + " saved successfully");
+					restResponse.setBody(refuelFromDatabase);
+					restResponse.setHttp_status(HttpStatus.OK);
+					restResponse.setMessage(ENTITY + " saved successfully");
 				}
 
-				responseList.add(responseHandler);
+				responseList.add(restResponse);
 			}
 		}
 
 		if (errorOccurred) {
-			return ResponseEntity.status(HttpStatus.PARTIAL_CONTENT).body(responseList);
+			return ResponseEntity.status(HttpStatus.MULTI_STATUS).body(responseList);
 		} else {
 			return ResponseEntity.status(HttpStatus.OK).body(responseList);
 		}
@@ -81,28 +82,31 @@ public class RefuelRestController {
 	@PostMapping(value = {"", "/"}, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<RestResponse<Refuel>> post(@RequestBody Refuel refuel) {
 
+		RestResponse<Refuel> restResponse = new RestResponse<>();
+		restResponse.setBody(refuel);
+		
 		ValidationResponse response = refuelService.validate(refuel, Mapping.POST);
 
-		RestResponse<Refuel> responseHandler = new RestResponse<>();
-		responseHandler.setBody(refuel);
-
 		if (!response.isValid()) {
-			responseHandler.setHttp_status(HttpStatus.NOT_ACCEPTABLE);
-			responseHandler.setMessage(response.getMessage());
-			return ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE).body(responseHandler);
+			restResponse.setHttp_status(HttpStatus.BAD_REQUEST);
+			restResponse.setMessage(response.getMessage());
+
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(restResponse);
 		}
 
 		Refuel refuelFromDatabase = refuelService.save(refuel);
 
 		if (refuelFromDatabase == null) {
-			responseHandler.setHttp_status(HttpStatus.UNPROCESSABLE_ENTITY);
-			responseHandler.setMessage("failed to save " + ENTITY + " in database");
-			return ResponseEntity.status(HttpStatus.EXPECTATION_FAILED).body(responseHandler);
+			restResponse.setHttp_status(HttpStatus.INTERNAL_SERVER_ERROR);
+			restResponse.setMessage("failed to save " + ENTITY + " in database");
+
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(restResponse);
 		} else {
-			responseHandler.setBody(refuelFromDatabase);
-			responseHandler.setHttp_status(HttpStatus.OK);
-			responseHandler.setMessage(ENTITY + " saved successfully");
-			return ResponseEntity.status(HttpStatus.OK).body(responseHandler);
+			restResponse.setBody(refuelFromDatabase);
+			restResponse.setHttp_status(HttpStatus.OK);
+			restResponse.setMessage(ENTITY + " saved successfully");
+
+			return ResponseEntity.status(HttpStatus.OK).body(restResponse);
 		}
 	}
 
@@ -115,12 +119,7 @@ public class RefuelRestController {
 
 	@GetMapping(value = {"", "/"}, produces = MediaType.APPLICATION_JSON_VALUE)
 	public List<Refuel> getAll() {
-		List<Refuel> refuels = refuelService.getAll();
-
-		// TODO: MAYBE REMOVE
-		refuels.sort(Comparator.comparing(Refuel::getId));
-
-		return refuels;
+		return refuelService.getAll();
 	}
 
 	@GetMapping(value = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -144,67 +143,70 @@ public class RefuelRestController {
 		List<RestResponse<Refuel>> responseList = new ArrayList<>();
 
 		for (Refuel refuel : refuels) {
+			RestResponse<Refuel> restResponse = new RestResponse<>();
+			restResponse.setBody(refuel);
+			
 			ValidationResponse response = refuelService.validate(refuel, Mapping.PUT);
 
 			if (!response.isValid()) {
-				RestResponse<Refuel> responseHandler = new RestResponse<>();
-				responseHandler.setBody(refuel);
-				responseHandler.setHttp_status(HttpStatus.BAD_REQUEST);
-				responseHandler.setMessage(response.getMessage());
-
-				responseList.add(responseHandler);
+				restResponse.setHttp_status(HttpStatus.BAD_REQUEST);
+				restResponse.setMessage(response.getMessage());
 
 				errorOccurred = true;
 			} else {
 				Refuel refuelFromDatabase = refuelService.save(refuel);
 
-				RestResponse<Refuel> responseHandler = new RestResponse<>();
-				responseHandler.setBody(refuel);
-
 				if (refuelFromDatabase == null) {
-					responseHandler.setHttp_status(HttpStatus.EXPECTATION_FAILED);
-					responseHandler.setMessage("failed to save " + ENTITY + " in database");
-				} else {
-					responseHandler.setBody(refuelFromDatabase);
-					responseHandler.setHttp_status(HttpStatus.OK);
-					responseHandler.setMessage(ENTITY + " saved successfully");
-				}
+					restResponse.setHttp_status(HttpStatus.INTERNAL_SERVER_ERROR);
+					restResponse.setMessage("failed to save " + ENTITY + " in database");
 
-				responseList.add(responseHandler);
+					errorOccurred = true;
+				} else {
+					restResponse.setBody(refuelFromDatabase);
+					restResponse.setHttp_status(HttpStatus.OK);
+					restResponse.setMessage(ENTITY + " saved successfully");
+				}
 			}
+			
+			responseList.add(restResponse);
 		}
 
 		if (errorOccurred) {
-			return ResponseEntity.status(HttpStatus.PARTIAL_CONTENT).body(responseList);
+			return ResponseEntity.status(HttpStatus.MULTI_STATUS).body(responseList);
 		} else {
 			return ResponseEntity.status(HttpStatus.OK).body(responseList);
 		}
 	}
 
 	@PutMapping(value = "/{id}", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-	public ResponseEntity<Refuel> putById(@RequestBody Refuel refuel, @PathVariable Long id) {
+	public ResponseEntity<RestResponse<Refuel>> putById(@RequestBody Refuel refuel, @PathVariable Long id) {
 
-		if (refuel == null) {
-			throw new ResponseStatusException(HttpStatus.NO_CONTENT, "no content was provided");
-		}
-
+		RestResponse<Refuel> restResponse = new RestResponse<>();
+		restResponse.setBody(refuel);
+		
 		ValidationResponse response = refuelService.validate(refuel, Mapping.PUT);
 
 		if (!response.isValid()) {
-			throw new ResponseStatusException(HttpStatus.METHOD_NOT_ALLOWED, response.getMessage());
+			restResponse.setHttp_status(HttpStatus.BAD_REQUEST);
+			restResponse.setMessage(response.getMessage());
+
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(restResponse);
 		}
 
-		Refuel refuelFromDatabase = refuelService.getById(id);
+		Refuel refuelFromDatabase = refuelService.save(refuel);
 
 		if (refuelFromDatabase == null) {
-			throw new ResponseStatusException(HttpStatus.NOT_FOUND, ENTITY + " with ID: '" + id + "' not found");
+			restResponse.setHttp_status(HttpStatus.INTERNAL_SERVER_ERROR);
+			restResponse.setMessage("failed to save " + ENTITY + " in database");
+
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(restResponse);
+		} else {
+			restResponse.setBody(refuelFromDatabase);
+			restResponse.setHttp_status(HttpStatus.OK);
+			restResponse.setMessage(ENTITY + " saved successfully");
+
+			return ResponseEntity.status(HttpStatus.OK).body(restResponse);
 		}
-
-		refuel.setId(refuelFromDatabase.getId());
-
-		refuelService.save(refuel);
-
-		return ResponseEntity.status(HttpStatus.OK).body(refuel);
 	}
 
 
@@ -217,13 +219,11 @@ public class RefuelRestController {
 
 		for (Map<String, Object> changes : changesList) {
 
-			changes.remove("password");
-
 			RestResponse<Map<String, Object>> mapResponse = new RestResponse<>();
 			mapResponse.setBody(changes);
 
 			if (!changes.containsKey("id")) {
-				mapResponse.setHttp_status(HttpStatus.METHOD_NOT_ALLOWED);
+				mapResponse.setHttp_status(HttpStatus.BAD_REQUEST);
 				mapResponse.setMessage("ID parameter is required");
 
 				responseList.add(mapResponse);
@@ -233,7 +233,7 @@ public class RefuelRestController {
 				Object idObj = changes.get("id");
 
 				if (!(idObj instanceof Integer)) {
-					mapResponse.setHttp_status(HttpStatus.METHOD_NOT_ALLOWED);
+					mapResponse.setHttp_status(HttpStatus.BAD_REQUEST);
 					mapResponse.setMessage("ID parameter is invalid");
 
 					responseList.add(mapResponse);
@@ -254,28 +254,28 @@ public class RefuelRestController {
 						}
 					});
 
+					RestResponse<Refuel> restResponse = new RestResponse<>();
+					restResponse.setBody(refuelFromDatabase);
+					
 					ValidationResponse response = refuelService.validate(refuelFromDatabase, Mapping.PATCH);
 
-					RestResponse<Refuel> userResponse = new RestResponse<>();
-					userResponse.setBody(refuelFromDatabase);
-
 					if (!response.isValid()) {
-						userResponse.setHttp_status(HttpStatus.NOT_ACCEPTABLE);
-						userResponse.setMessage(response.getMessage());
+						restResponse.setHttp_status(HttpStatus.BAD_REQUEST);
+						restResponse.setMessage(response.getMessage());
 
 						errorOccurred = true;
 					} else {
-						userResponse.setHttp_status(HttpStatus.OK);
-						userResponse.setMessage(ENTITY + "patched successfully");
+						restResponse.setHttp_status(HttpStatus.OK);
+						restResponse.setMessage(ENTITY + "patched successfully");
 					}
 
-					responseList.add(userResponse);
+					responseList.add(restResponse);
 				}
 			}
 		}
 
 		if (errorOccurred) {
-			return ResponseEntity.status(HttpStatus.PARTIAL_CONTENT).body(responseList);
+			return ResponseEntity.status(HttpStatus.MULTI_STATUS).body(responseList);
 		} else {
 			return ResponseEntity.status(HttpStatus.OK).body(responseList);
 		}
@@ -291,7 +291,6 @@ public class RefuelRestController {
 		}
 
 		changes.remove("id");
-		changes.remove("password");
 
 		changes.forEach((key, value) -> {
 			Field field = ReflectionUtils.findField(Refuel.class, key);
@@ -301,28 +300,31 @@ public class RefuelRestController {
 			}
 		});
 
-		RestResponse<Refuel> responseHandler = new RestResponse<>();
-
+		RestResponse<Refuel> restResponse = new RestResponse<>();
+		restResponse.setBody(refuelFromDatabase);
+		
 		ValidationResponse response = refuelService.validate(refuelFromDatabase, Mapping.PATCH);
-		responseHandler.setBody(refuelFromDatabase);
-
+		
 		if (!response.isValid()) {
-			responseHandler.setHttp_status(HttpStatus.NOT_ACCEPTABLE);
-			responseHandler.setMessage(response.getMessage());
-			return ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE).body(responseHandler);
+			restResponse.setHttp_status(HttpStatus.BAD_REQUEST);
+			restResponse.setMessage(response.getMessage());
+
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(restResponse);
 		}
 
 		Refuel patchedRefuel = refuelService.save(refuelFromDatabase);
-		responseHandler.setBody(patchedRefuel);
+		restResponse.setBody(patchedRefuel);
 
 		if (patchedRefuel == null) {
-			responseHandler.setHttp_status(HttpStatus.UNPROCESSABLE_ENTITY);
-			responseHandler.setMessage("failed to save " + ENTITY + " in database");
-			return ResponseEntity.status(HttpStatus.EXPECTATION_FAILED).body(responseHandler);
+			restResponse.setHttp_status(HttpStatus.INTERNAL_SERVER_ERROR);
+			restResponse.setMessage("failed to save " + ENTITY + " in database");
+
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(restResponse);
 		} else {
-			responseHandler.setHttp_status(HttpStatus.OK);
-			responseHandler.setMessage(ENTITY + " saved successfully");
-			return ResponseEntity.status(HttpStatus.OK).body(responseHandler);
+			restResponse.setHttp_status(HttpStatus.OK);
+			restResponse.setMessage(ENTITY + " saved successfully");
+
+			return ResponseEntity.status(HttpStatus.OK).body(restResponse);
 		}
 	}
 
@@ -336,35 +338,37 @@ public class RefuelRestController {
 		List<RestResponse<Refuel>> responseList = new ArrayList<>();
 
 		for (Refuel refuel : refuels) {
+			RestResponse<Refuel> restResponse = new RestResponse<>();
+			restResponse.setBody(refuel);
+			
 			ValidationResponse response = refuelService.validate(refuel, Mapping.DELETE);
 
-			RestResponse<Refuel> responseHandler = new RestResponse<>();
-			responseHandler.setBody(refuel);
-
 			if (!response.isValid()) {
-				responseHandler.setHttp_status(HttpStatus.NOT_ACCEPTABLE);
-				responseHandler.setMessage(response.getMessage());
+				restResponse.setHttp_status(HttpStatus.BAD_REQUEST);
+				restResponse.setMessage(response.getMessage());
 
-				responseList.add(responseHandler);
+				responseList.add(restResponse);
 
 				errorOccurred = true;
 			} else {
 				try {
 					refuelService.delete(refuel);
 
-					responseHandler.setHttp_status(HttpStatus.OK);
-					responseHandler.setMessage(ENTITY + " deleted successfully");
+					restResponse.setHttp_status(HttpStatus.OK);
+					restResponse.setMessage(ENTITY + " deleted successfully");
 				} catch (Exception e) {
-					responseHandler.setHttp_status(HttpStatus.UNPROCESSABLE_ENTITY);
-					responseHandler.setMessage("failed to delete " + ENTITY + " from database \n" + e.getMessage());
+					restResponse.setHttp_status(HttpStatus.INTERNAL_SERVER_ERROR);
+					restResponse.setMessage("failed to delete " + ENTITY + " from database \n" + e.getMessage());
+
+					errorOccurred = true;
 				}
 
-				responseList.add(responseHandler);
+				responseList.add(restResponse);
 			}
 		}
 
 		if (errorOccurred) {
-			return ResponseEntity.status(HttpStatus.EXPECTATION_FAILED).body(responseList);
+			return ResponseEntity.status(HttpStatus.MULTI_STATUS).body(responseList);
 		} else {
 			return ResponseEntity.status(HttpStatus.OK).body(responseList);
 		}
@@ -381,15 +385,15 @@ public class RefuelRestController {
 		try {
 			refuelService.delete(refuelFromDatabase);
 		} catch (Exception e) {
-			throw new ResponseStatusException(HttpStatus.METHOD_NOT_ALLOWED, "method not allowed");
+			throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "failed to delete " + ENTITY + " from database \n" + e.getMessage());
 		}
 
-		RestResponse<Refuel> responseHandler = new RestResponse<>();
-		responseHandler.setMessage(ENTITY + " deleted successfully");
-		responseHandler.setBody(refuelFromDatabase);
-		responseHandler.setHttp_status(HttpStatus.OK);
+		RestResponse<Refuel> restResponse = new RestResponse<>();
+		restResponse.setBody(refuelFromDatabase);
+		restResponse.setHttp_status(HttpStatus.OK);
+		restResponse.setMessage(ENTITY + " deleted successfully");
 
-		return ResponseEntity.ok(responseHandler);
+		return ResponseEntity.ok(restResponse);
 	}
 
 

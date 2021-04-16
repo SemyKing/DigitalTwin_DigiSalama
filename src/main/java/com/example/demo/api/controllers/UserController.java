@@ -1,15 +1,16 @@
 package com.example.demo.api.controllers;
 
-import com.example.demo.database.models.*;
+import com.example.demo.database.models.Organisation;
 import com.example.demo.database.models.user.Role;
 import com.example.demo.database.models.user.User;
 import com.example.demo.database.models.user.UserPassword;
+import com.example.demo.database.models.utils.Mapping;
+import com.example.demo.database.models.utils.ValidationResponse;
 import com.example.demo.database.repositories.RoleRepository;
 import com.example.demo.database.services.OrganisationService;
 import com.example.demo.database.services.UserService;
-import com.example.demo.database.models.utils.Mapping;
+import com.example.demo.utils.FieldReflectionUtils;
 import com.example.demo.utils.StringUtils;
-import com.example.demo.database.models.utils.ValidationResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -38,6 +39,7 @@ public class UserController {
 
 	@Autowired
 	private final OrganisationService organisationService;
+
 
 
 	@GetMapping({"", "/"})
@@ -94,7 +96,6 @@ public class UserController {
 	}
 
 
-	// NEW USER FORM
 	@GetMapping("/new")
 	public String newForm(Model model, boolean alreadySet) {
 //		ResponseEntity<Organisation[]> response = this.restTemplate.getForEntity(ORGANISATION_JSON_URL, Organisation[].class);
@@ -125,7 +126,6 @@ public class UserController {
 	}
 
 
-	// EDIT USER FORM
 	@GetMapping("/{id}/edit")
 	public String editForm(@PathVariable Long id, Model model) {
 //		if (!alreadySet) {
@@ -260,7 +260,6 @@ public class UserController {
 	}
 
 
-	// POST USER
 	@PostMapping({"", "/"})
 	public String post(@ModelAttribute User user, Model model) {
 //		try {
@@ -291,6 +290,8 @@ public class UserController {
 //			}
 //		}
 
+		user = new FieldReflectionUtils<User>().getObjectWithEmptyStringValuesAsNull(user);
+
 		ValidationResponse response = userService.validate(user, Mapping.POST);
 
 		if (!response.isValid()) {
@@ -311,7 +312,6 @@ public class UserController {
 	}
 
 
-	// UPDATE USER
 	@PostMapping("/update")
 	public String put(@ModelAttribute User user, Model model, HttpServletRequest request) {
 //		try {
@@ -349,11 +349,7 @@ public class UserController {
 //			}
 //		}
 
-		if (user.getId() == null) {
-			model.addAttribute(StringUtils.ERROR_TITLE_ATTRIBUTE, "Missing parameter");
-			model.addAttribute(StringUtils.ERROR_MESSAGE_ATTRIBUTE, "ID parameter is required");
-			return StringUtils.ERROR_PAGE;
-		}
+		user = new FieldReflectionUtils<User>().getObjectWithEmptyStringValuesAsNull(user);
 
 		ValidationResponse response = userService.validate(user, Mapping.PUT);
 
@@ -379,7 +375,6 @@ public class UserController {
 	}
 
 
-	// DELETE USER
 	@PostMapping("/{id}/delete")
 	public String delete(@PathVariable Long id, Model model) {
 		User userFromDatabase = userService.getById(id);
@@ -387,6 +382,14 @@ public class UserController {
 		if (userFromDatabase == null) {
 			model.addAttribute(StringUtils.ERROR_TITLE_ATTRIBUTE, "Not found");
 			model.addAttribute(StringUtils.ERROR_MESSAGE_ATTRIBUTE, ENTITY + " with ID " + id + " not found");
+			return StringUtils.ERROR_PAGE;
+		}
+
+		ValidationResponse response = userService.validate(userFromDatabase, Mapping.DELETE);
+
+		if (!response.isValid()) {
+			model.addAttribute(StringUtils.ERROR_TITLE_ATTRIBUTE, "Validation error");
+			model.addAttribute(StringUtils.ERROR_MESSAGE_ATTRIBUTE, response.getMessage());
 			return StringUtils.ERROR_PAGE;
 		}
 

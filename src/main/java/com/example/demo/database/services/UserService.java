@@ -1,11 +1,11 @@
 package com.example.demo.database.services;
 
 import com.example.demo.database.models.user.User;
+import com.example.demo.database.models.utils.Mapping;
+import com.example.demo.database.models.utils.ValidationResponse;
 import com.example.demo.database.repositories.RoleRepository;
 import com.example.demo.database.repositories.UserRepository;
-import com.example.demo.database.models.utils.Mapping;
 import com.example.demo.utils.StringUtils;
-import com.example.demo.database.models.utils.ValidationResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.GrantedAuthority;
@@ -18,14 +18,15 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import javax.transaction.Transactional;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
 @Service
 @Transactional
 @RequiredArgsConstructor
 public class UserService implements UserDetailsService {
-
-
 
 	@Autowired
 	private PasswordEncoder bcryptEncoder;
@@ -131,6 +132,10 @@ public class UserService implements UserDetailsService {
 		return (user != null);
 	}
 
+	public int getSystemAdminsCount() {
+		return repository.findSystemAdmins().size();
+	}
+
 	public boolean systemAdminExists() {
 		List<User> systemAdmins = repository.findSystemAdmins();
 		return (systemAdmins.size() > 0);
@@ -199,7 +204,6 @@ public class UserService implements UserDetailsService {
 
 		if (mapping.equals(Mapping.POST)) {
 			user.setId(null);
-			user.setPassword(getBcryptEncoder().encode(user.getPassword()));
 
 			if (user.getUsername() == null) {
 				return new ValidationResponse(false, "username is required");
@@ -223,6 +227,8 @@ public class UserService implements UserDetailsService {
 				if (user.getPassword().length() <= 0) {
 					return new ValidationResponse(false, "password cannot be empty");
 				}
+
+				user.setPassword(getBcryptEncoder().encode(user.getPassword()));
 			}
 		}
 
@@ -269,49 +275,18 @@ public class UserService implements UserDetailsService {
 				}
 			}
 
-			/*
-				USER MUST BE IN ORGANISATION
-				ORGANISATION MUST HAVE AT LEAST ID OR NAME
-			 */
-//			if (user.getOrganisation() != null) {
-//
-//				if (user.getOrganisation().getId() == null && user.getOrganisation().getName() == null) {
-//					return new ValidationResponse(false, "organisation must have at least ID or Name");
-//				}
-//
-//				boolean set = false;
-//
-//				if (user.getOrganisation().getId() != null) {
-//
-//					Organisation organisationFromDatabase = organisationService.getById(user.getOrganisation().getId());
-//
-//					if (organisationFromDatabase != null) {
-//						user.setOrganisation(organisationFromDatabase);
-//					} else {
-//						user.getOrganisation().setId(null);
-//					}
-//
-//					set = true;
-//				}
-//
-//				if (user.getOrganisation().getName() != null && user.getOrganisation().getName().length() > 0) {
-//					if (!set) {
-//						Organisation organisationFromDatabase = organisationService.getByName(user.getOrganisation().getName());
-//
-//						if (organisationFromDatabase != null) {
-//							user.setOrganisation(organisationFromDatabase);
-//						}
-//					}
-//				}
-//			} else {
-//				return new ValidationResponse(false, "user must be in organisation");
-//			}
-
 			if (user.getRole() == null || user.getRole().getId() == null) {
 				user.setRole(roleRepository.findByName(StringUtils.ROLE_USER));
 			}
 		}
 
+		if (mapping.equals(Mapping.DELETE)) {
+			if (isUserSystemAdmin(user.getId())) {
+				if (getSystemAdminsCount() <= 1) {
+					return new ValidationResponse(false, "cannot delete last System Administrator");
+				}
+			}
+		}
 
 		return new ValidationResponse(true, "validation success");
     }
@@ -326,7 +301,7 @@ public class UserService implements UserDetailsService {
 
 		User userFromDatabase = getByUsername(username);
 		if (userFromDatabase == null) {
-			throw new UsernameNotFoundException("invalid credentials");
+			throw new UsernameNotFoundException("Invalid credentials");
 		}
 
 		List<GrantedAuthority> authorities = new ArrayList<>();

@@ -1,21 +1,21 @@
 package com.example.demo.api.controllers.vehicle;
 
+import com.example.demo.database.models.utils.Mapping;
+import com.example.demo.database.models.utils.ValidationResponse;
 import com.example.demo.database.models.vehicle.Equipment;
 import com.example.demo.database.models.vehicle.EquipmentType;
 import com.example.demo.database.models.vehicle.Vehicle;
 import com.example.demo.database.services.vehicle.EquipmentService;
 import com.example.demo.database.services.vehicle.EquipmentTypeService;
 import com.example.demo.database.services.vehicle.VehicleService;
-import com.example.demo.database.models.utils.Mapping;
+import com.example.demo.utils.FieldReflectionUtils;
 import com.example.demo.utils.StringUtils;
-import com.example.demo.database.models.utils.ValidationResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Comparator;
 import java.util.List;
 
 @Controller
@@ -39,10 +39,6 @@ public class EquipmentController {
 	@GetMapping({"", "/"})
 	public String getAll(Model model) {
 		List<Equipment> equipment = equipmentService.getAll();
-
-		//TODO: MAYBE REMOVE
-		equipment.sort(Comparator.comparing(Equipment::getId));
-
 		model.addAttribute(ENTITY, equipment);
 
 		return "vehicle/equipment/equipment_list_page";
@@ -65,8 +61,6 @@ public class EquipmentController {
 	}
 
 
-
-	// NEW EQUIPMENT FORM
 	@GetMapping("/new")
 	public String newForm(Model model) {
 		model.addAttribute(ENTITY, new Equipment());
@@ -81,7 +75,6 @@ public class EquipmentController {
 	}
 
 
-	// EDIT EQUIPMENT FORM
 	@GetMapping("/{id}/edit")
 	public String editForm(@PathVariable Long id, Model model) {
 		Equipment equipment = equipmentService.getById(id);
@@ -104,9 +97,10 @@ public class EquipmentController {
 	}
 
 
-	// POST EQUIPMENT
 	@PostMapping({"", "/"})
 	public String post(@ModelAttribute Equipment equipment, Model model) {
+		equipment = new FieldReflectionUtils<Equipment>().getObjectWithEmptyStringValuesAsNull(equipment);
+
 		ValidationResponse response = equipmentService.validate(equipment, Mapping.POST);
 
 		if (!response.isValid()) {
@@ -127,14 +121,9 @@ public class EquipmentController {
 	}
 
 
-	// UPDATE EQUIPMENT
 	@PostMapping("/update")
 	public String put(@ModelAttribute Equipment equipment, Model model) {
-		if (equipment.getId() == null) {
-			model.addAttribute(StringUtils.ERROR_TITLE_ATTRIBUTE, "Missing parameter");
-			model.addAttribute(StringUtils.ERROR_MESSAGE_ATTRIBUTE, "ID parameter is required");
-			return StringUtils.ERROR_PAGE;
-		}
+		equipment = new FieldReflectionUtils<Equipment>().getObjectWithEmptyStringValuesAsNull(equipment);
 
 		ValidationResponse response = equipmentService.validate(equipment, Mapping.PUT);
 
@@ -156,7 +145,6 @@ public class EquipmentController {
 	}
 
 
-	// DELETE EQUIPMENT
 	@PostMapping("/{id}/delete")
 	public String delete(@PathVariable Long id, Model model) {
 

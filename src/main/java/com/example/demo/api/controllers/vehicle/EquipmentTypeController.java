@@ -1,17 +1,17 @@
 package com.example.demo.api.controllers.vehicle;
 
+import com.example.demo.database.models.utils.Mapping;
+import com.example.demo.database.models.utils.ValidationResponse;
 import com.example.demo.database.models.vehicle.EquipmentType;
 import com.example.demo.database.services.vehicle.EquipmentTypeService;
-import com.example.demo.database.models.utils.Mapping;
+import com.example.demo.utils.FieldReflectionUtils;
 import com.example.demo.utils.StringUtils;
-import com.example.demo.database.models.utils.ValidationResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Comparator;
 import java.util.List;
 
 @Controller
@@ -29,10 +29,6 @@ public class EquipmentTypeController {
 	@GetMapping({"", "/"})
 	public String getAll(Model model) {
 		List<EquipmentType> types = typeService.getAll();
-
-		//TODO: MAYBE REMOVE
-		types.sort(Comparator.comparing(EquipmentType::getId));
-
 		model.addAttribute("equipment_types", types);
 
 		return "vehicle/equipment_type/equipment_type_list_page";
@@ -55,7 +51,6 @@ public class EquipmentTypeController {
 	}
 
 
-	// NEW EQUIPMENT FORM
 	@GetMapping("/new")
 	public String newForm(Model model) {
 		model.addAttribute(ENTITY, new EquipmentType());
@@ -64,7 +59,6 @@ public class EquipmentTypeController {
 	}
 
 
-	// EDIT EQUIPMENT FORM
 	@GetMapping("/{id}/edit")
 	public String editForm(@PathVariable Long id, Model model) {
 		EquipmentType type = typeService.getById(id);
@@ -81,9 +75,10 @@ public class EquipmentTypeController {
 	}
 
 
-	// POST EQUIPMENT TYPE
 	@PostMapping({"", "/"})
 	public String post(@ModelAttribute EquipmentType type, Model model) {
+		type = new FieldReflectionUtils<EquipmentType>().getObjectWithEmptyStringValuesAsNull(type);
+
 		ValidationResponse response = typeService.validate(type, Mapping.POST);
 
 		if (!response.isValid()) {
@@ -104,9 +99,9 @@ public class EquipmentTypeController {
 	}
 
 
-	// UPDATE EQUIPMENT TYPE
 	@PostMapping("/update")
 	public String put(@ModelAttribute EquipmentType type, Model model) {
+		type = new FieldReflectionUtils<EquipmentType>().getObjectWithEmptyStringValuesAsNull(type);
 
 		ValidationResponse response = typeService.validate(type, Mapping.PUT);
 
@@ -128,7 +123,6 @@ public class EquipmentTypeController {
 	}
 
 
-	// DELETE EQUIPMENT
 	@PostMapping("/{id}/delete")
 	public String delete(@PathVariable Long id, Model model) {
 		EquipmentType typeFromDatabase = typeService.getById(id);

@@ -1,13 +1,16 @@
 package com.example.demo.database.services.vehicle;
 
-import com.example.demo.database.models.vehicle.*;
-import com.example.demo.database.repositories.vehicle.*;
 import com.example.demo.database.models.utils.Mapping;
 import com.example.demo.database.models.utils.ValidationResponse;
+import com.example.demo.database.models.vehicle.*;
+import com.example.demo.database.repositories.vehicle.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.util.ReflectionUtils;
 
 import javax.transaction.Transactional;
+import java.lang.reflect.Field;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -17,6 +20,8 @@ import java.util.Optional;
 public class VehicleService {
 
 	private final VehicleRepository vehicleRepository;
+
+	private final FleetRepository fleetRepository;
 
 	private final EquipmentRepository equipmentRepository;
 
@@ -45,12 +50,28 @@ public class VehicleService {
 		return vehicle.get();
 	}
 
-	public List<Vehicle> getAllByFleetId(Long id) {
-		if (id == null) {
+	public List<Vehicle> getVehiclesNotInFleet(Long fleetId) {
+		if (fleetId == null) {
 			return null;
 		}
 
-		return vehicleRepository.findAllByFleetId(id);
+		Optional<Fleet> fleetFromDatabase = fleetRepository.findById(fleetId);
+
+		if (fleetFromDatabase.isEmpty()) {
+			return null;
+		}
+
+		List<Vehicle> vehiclesNotInFleet = new ArrayList<>();
+
+		List<Vehicle> allVehicles = getAll();
+
+		for (Vehicle vehicle : allVehicles) {
+			if (vehicle.getFleets() == null || !vehicle.getFleets().contains(fleetFromDatabase.get())) {
+				vehiclesNotInFleet.add(vehicle);
+			}
+		}
+
+		return vehiclesNotInFleet;
 	}
 
 	public Vehicle save(Vehicle vehicle) {
@@ -176,21 +197,26 @@ public class VehicleService {
 		}
 
 		if (mapping.equals(Mapping.POST) || mapping.equals(Mapping.PUT) || mapping.equals(Mapping.PATCH)) {
-			if (vehicle.getName() != null) {
-				if (vehicle.getName().length() <= 0) {
-					return new ValidationResponse(false, "name cannot be empty");
+
+			List<Field> stringFields = new ArrayList<>();
+
+			Field[] allFields = Vehicle.class.getDeclaredFields();
+			for (Field field : allFields) {
+				if (field.getType().equals(String.class)) {
+					stringFields.add(field);
 				}
 			}
 
-			if (vehicle.getVin() != null) {
-				if (vehicle.getVin().length() <= 0) {
-					return new ValidationResponse(false, "vin cannot be empty");
-				}
-			}
+			for (Field field : stringFields) {
+				field.setAccessible(true);
+				Object object = ReflectionUtils.getField(field, vehicle);
 
-			if (vehicle.getRegistration_number() != null) {
-				if (vehicle.getRegistration_number().length() <= 0) {
-					return new ValidationResponse(false, "registration number cannot be empty");
+				if (object != null) {
+					if (object instanceof String) {
+						if (((String) object).length() <= 0) {
+							return new ValidationResponse(false, "'" + field.getName() + "' cannot be empty");
+						}
+					}
 				}
 			}
 		}

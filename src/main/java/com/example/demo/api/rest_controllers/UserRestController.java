@@ -1,18 +1,17 @@
 package com.example.demo.api.rest_controllers;
 
-import com.example.demo.database.models.utils.RestResponse;
 import com.example.demo.database.models.Organisation;
 import com.example.demo.database.models.user.PasswordUpdateRequest;
 import com.example.demo.database.models.user.PasswordUpdateResponse;
 import com.example.demo.database.models.user.User;
+import com.example.demo.database.models.utils.Mapping;
+import com.example.demo.database.models.utils.RestResponse;
+import com.example.demo.database.models.utils.ValidationResponse;
 import com.example.demo.database.repositories.RoleRepository;
-import com.example.demo.database.repositories.UserRepository;
 import com.example.demo.database.services.OrganisationService;
 import com.example.demo.database.services.UserService;
-import com.example.demo.database.models.utils.Mapping;
+import com.example.demo.utils.FieldReflectionUtils;
 import com.example.demo.utils.StringUtils;
-import com.example.demo.database.models.utils.ValidationResponse;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -29,7 +28,6 @@ import org.springframework.web.server.ResponseStatusException;
 import javax.servlet.http.HttpServletRequest;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 
@@ -41,7 +39,7 @@ public class UserRestController {
 
 	protected final Log logger = LogFactory.getLog(getClass());
 
-	private final String ENTITY =  "user";
+	private final String ENTITY = "user";
 
 
 	@Autowired
@@ -54,10 +52,6 @@ public class UserRestController {
 	private final RoleRepository roleRepository;
 
 
-	@Autowired
-	private final UserRepository userRepository;
-
-
 	@PostMapping(value = {"/batch"}, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<List<RestResponse<User>>> postList(@RequestBody List<User> users) {
 
@@ -66,66 +60,69 @@ public class UserRestController {
 		List<RestResponse<User>> responseList = new ArrayList<>();
 
 		for (User user : users) {
+			RestResponse<User> restResponse = new RestResponse<>();
+			restResponse.setBody(user);
+
 			ValidationResponse response = userService.validate(user, Mapping.POST);
 
-			RestResponse<User> responseHandler = new RestResponse<>();
-			responseHandler.setBody(user);
-
 			if (!response.isValid()) {
-				responseHandler.setHttp_status(HttpStatus.NOT_ACCEPTABLE);
-				responseHandler.setMessage(response.getMessage());
-
-				responseList.add(responseHandler);
+				restResponse.setHttp_status(HttpStatus.BAD_REQUEST);
+				restResponse.setMessage(response.getMessage());
 
 				errorOccurred = true;
 			} else {
 				User userFromDatabase = userService.save(user);
 
 				if (userFromDatabase == null) {
-					responseHandler.setHttp_status(HttpStatus.UNPROCESSABLE_ENTITY);
-					responseHandler.setMessage("failed to save " + ENTITY + " in database");
-				} else {
-					responseHandler.setBody(userFromDatabase);
-					responseHandler.setHttp_status(HttpStatus.OK);
-					responseHandler.setMessage(ENTITY + " saved successfully");
-				}
+					restResponse.setHttp_status(HttpStatus.INTERNAL_SERVER_ERROR);
+					restResponse.setMessage("failed to save " + ENTITY + " in database");
 
-				responseList.add(responseHandler);
+					errorOccurred = true;
+				} else {
+					restResponse.setBody(userFromDatabase);
+					restResponse.setHttp_status(HttpStatus.OK);
+					restResponse.setMessage(ENTITY + " saved successfully");
+				}
 			}
+
+			responseList.add(restResponse);
 		}
 
 		if (errorOccurred) {
-			return ResponseEntity.status(HttpStatus.EXPECTATION_FAILED).body(responseList);
+			return ResponseEntity.status(HttpStatus.MULTI_STATUS).body(responseList);
 		} else {
-			return ResponseEntity.status(HttpStatus.OK).body(responseList);
+			return ResponseEntity.ok(responseList);
 		}
 	}
 
 	@PostMapping(value = {"", "/"}, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<RestResponse<User>> post(@RequestBody User user) {
 
+		RestResponse<User> restResponse = new RestResponse<>();
+		restResponse.setBody(user);
+
 		ValidationResponse response = userService.validate(user, Mapping.POST);
 
-		RestResponse<User> responseHandler = new RestResponse<>();
-		responseHandler.setBody(user);
-
 		if (!response.isValid()) {
-			responseHandler.setHttp_status(HttpStatus.NOT_ACCEPTABLE);
-			responseHandler.setMessage(response.getMessage());
-			return ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE).body(responseHandler);
+			restResponse.setHttp_status(HttpStatus.BAD_REQUEST);
+			restResponse.setMessage(response.getMessage());
+
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(restResponse);
 		}
 
 		User userFromDatabase = userService.save(user);
 
 		if (userFromDatabase == null) {
-			responseHandler.setHttp_status(HttpStatus.UNPROCESSABLE_ENTITY);
-			responseHandler.setMessage("failed to save " + ENTITY + " in database");
-			return ResponseEntity.status(HttpStatus.EXPECTATION_FAILED).body(responseHandler);
+			restResponse.setHttp_status(HttpStatus.INTERNAL_SERVER_ERROR);
+			restResponse.setMessage("failed to save " + ENTITY + " in database");
+
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(restResponse);
 		} else {
-			responseHandler.setBody(userFromDatabase);
-			responseHandler.setHttp_status(HttpStatus.OK);
-			responseHandler.setMessage(ENTITY + " saved successfully");
-			return ResponseEntity.status(HttpStatus.OK).body(responseHandler);
+			restResponse.setBody(userFromDatabase);
+			restResponse.setHttp_status(HttpStatus.OK);
+			restResponse.setMessage(ENTITY + " saved successfully");
+
+			return ResponseEntity.ok(restResponse);
 		}
 	}
 
@@ -138,12 +135,7 @@ public class UserRestController {
 
 	@GetMapping(value = {"", "/"}, produces = MediaType.APPLICATION_JSON_VALUE)
 	public List<User> getAll() {
-		List<User> users = userService.getAll();
-
-		// TODO: MAYBE REMOVE
-		users.sort(Comparator.comparing(User::getId));
-
-		return users;
+		return userService.getAll();
 	}
 
 	@GetMapping(value = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -167,66 +159,71 @@ public class UserRestController {
 		List<RestResponse<User>> responseList = new ArrayList<>();
 
 		for (User user : users) {
+			RestResponse<User> restResponse = new RestResponse<>();
+			restResponse.setBody(user);
+
 			ValidationResponse response = userService.validate(user, Mapping.PUT);
 
-			RestResponse<User> responseHandler = new RestResponse<>();
-			responseHandler.setBody(user);
-
 			if (!response.isValid()) {
-				responseHandler.setHttp_status(HttpStatus.NOT_ACCEPTABLE);
-				responseHandler.setMessage(response.getMessage());
-
-				responseList.add(responseHandler);
+				restResponse.setHttp_status(HttpStatus.BAD_REQUEST);
+				restResponse.setMessage(response.getMessage());
 
 				errorOccurred = true;
 			} else {
 				User userFromDatabase = userService.save(user);
 
 				if (userFromDatabase == null) {
-					responseHandler.setHttp_status(HttpStatus.UNPROCESSABLE_ENTITY);
-					responseHandler.setMessage("failed to save " + ENTITY + " in database");
-				} else {
-					responseHandler.setBody(userFromDatabase);
-					responseHandler.setHttp_status(HttpStatus.OK);
-					responseHandler.setMessage(ENTITY + " saved successfully");
-				}
+					restResponse.setHttp_status(HttpStatus.INTERNAL_SERVER_ERROR);
+					restResponse.setMessage("failed to save " + ENTITY + " in database");
 
-				responseList.add(responseHandler);
+					errorOccurred = true;
+				} else {
+					restResponse.setBody(userFromDatabase);
+					restResponse.setHttp_status(HttpStatus.OK);
+					restResponse.setMessage(ENTITY + " saved successfully");
+				}
 			}
+
+			responseList.add(restResponse);
 		}
 
 		if (errorOccurred) {
-			return ResponseEntity.status(HttpStatus.PARTIAL_CONTENT).body(responseList);
+			return ResponseEntity.status(HttpStatus.MULTI_STATUS).body(responseList);
 		} else {
-			return ResponseEntity.status(HttpStatus.OK).body(responseList);
+			return ResponseEntity.ok(responseList);
 		}
 	}
 
 	@PutMapping(value = "/{id}", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<RestResponse<User>> putById(@RequestBody User user, @PathVariable Long id) {
 
+		RestResponse<User> restResponse = new RestResponse<>();
+		restResponse.setBody(user);
+
+		user.setId(id);
+
 		ValidationResponse response = userService.validate(user, Mapping.PUT);
 
-		RestResponse<User> responseHandler = new RestResponse<>();
-		responseHandler.setBody(user);
-
 		if (!response.isValid()) {
-			responseHandler.setHttp_status(HttpStatus.NOT_ACCEPTABLE);
-			responseHandler.setMessage(response.getMessage());
-			return ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE).body(responseHandler);
+			restResponse.setHttp_status(HttpStatus.BAD_REQUEST);
+			restResponse.setMessage(response.getMessage());
+
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(restResponse);
 		}
 
 		User userFromDatabase = userService.save(user);
 
 		if (userFromDatabase == null) {
-			responseHandler.setHttp_status(HttpStatus.UNPROCESSABLE_ENTITY);
-			responseHandler.setMessage("failed to save " + ENTITY + " in database");
-			return ResponseEntity.status(HttpStatus.EXPECTATION_FAILED).body(responseHandler);
+			restResponse.setHttp_status(HttpStatus.INTERNAL_SERVER_ERROR);
+			restResponse.setMessage("failed to save " + ENTITY + " in database");
+
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(restResponse);
 		} else {
-			responseHandler.setBody(userFromDatabase);
-			responseHandler.setHttp_status(HttpStatus.OK);
-			responseHandler.setMessage(ENTITY + " saved successfully");
-			return ResponseEntity.status(HttpStatus.OK).body(responseHandler);
+			restResponse.setBody(userFromDatabase);
+			restResponse.setHttp_status(HttpStatus.OK);
+			restResponse.setMessage(ENTITY + " saved successfully");
+
+			return ResponseEntity.ok(restResponse);
 		}
 	}
 
@@ -235,8 +232,9 @@ public class UserRestController {
 	@PatchMapping(value = {"", "/"}, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<List<RestResponse<?>>> patchList(@RequestBody List<Map<String, Object>> changesList) {
 
-		List<RestResponse<?>> responseList = new ArrayList<>();
 		boolean errorOccurred = false;
+
+		List<RestResponse<?>> responseList = new ArrayList<>();
 
 		for (Map<String, Object> changes : changesList) {
 
@@ -246,7 +244,7 @@ public class UserRestController {
 			mapResponse.setBody(changes);
 
 			if (!changes.containsKey("id")) {
-				mapResponse.setHttp_status(HttpStatus.METHOD_NOT_ALLOWED);
+				mapResponse.setHttp_status(HttpStatus.BAD_REQUEST);
 				mapResponse.setMessage("ID parameter is required");
 
 				responseList.add(mapResponse);
@@ -256,7 +254,7 @@ public class UserRestController {
 				Object idObj = changes.get("id");
 
 				if (!(idObj instanceof Integer)) {
-					mapResponse.setHttp_status(HttpStatus.METHOD_NOT_ALLOWED);
+					mapResponse.setHttp_status(HttpStatus.BAD_REQUEST);
 					mapResponse.setMessage("ID parameter is invalid");
 
 					responseList.add(mapResponse);
@@ -277,13 +275,14 @@ public class UserRestController {
 						}
 					});
 
-					ValidationResponse response = userService.validate(userFromDatabase, Mapping.PATCH);
-
 					RestResponse<User> userResponse = new RestResponse<>();
 					userResponse.setBody(userFromDatabase);
 
+					ValidationResponse response = userService.validate(userFromDatabase, Mapping.PATCH);
+
+
 					if (!response.isValid()) {
-						userResponse.setHttp_status(HttpStatus.NOT_ACCEPTABLE);
+						userResponse.setHttp_status(HttpStatus.BAD_REQUEST);
 						userResponse.setMessage(response.getMessage());
 
 						errorOccurred = true;
@@ -298,9 +297,9 @@ public class UserRestController {
 		}
 
 		if (errorOccurred) {
-			return ResponseEntity.status(HttpStatus.PARTIAL_CONTENT).body(responseList);
+			return ResponseEntity.status(HttpStatus.MULTI_STATUS).body(responseList);
 		} else {
-			return ResponseEntity.status(HttpStatus.OK).body(responseList);
+			return ResponseEntity.ok(responseList);
 		}
 	}
 
@@ -324,28 +323,31 @@ public class UserRestController {
 			}
 		});
 
-		RestResponse<User> responseHandler = new RestResponse<>();
+		RestResponse<User> restResponse = new RestResponse<>();
 
 		ValidationResponse response = userService.validate(userFromDatabase, Mapping.PATCH);
-		responseHandler.setBody(userFromDatabase);
+		restResponse.setBody(userFromDatabase);
 
 		if (!response.isValid()) {
-			responseHandler.setHttp_status(HttpStatus.NOT_ACCEPTABLE);
-			responseHandler.setMessage(response.getMessage());
-			return ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE).body(responseHandler);
+			restResponse.setHttp_status(HttpStatus.BAD_REQUEST);
+			restResponse.setMessage(response.getMessage());
+
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(restResponse);
 		}
 
 		User patchedUser = userService.save(userFromDatabase);
-		responseHandler.setBody(patchedUser);
+		restResponse.setBody(patchedUser);
 
 		if (patchedUser == null) {
-			responseHandler.setHttp_status(HttpStatus.UNPROCESSABLE_ENTITY);
-			responseHandler.setMessage("failed to save " + ENTITY + " in database");
-			return ResponseEntity.status(HttpStatus.EXPECTATION_FAILED).body(responseHandler);
+			restResponse.setHttp_status(HttpStatus.INTERNAL_SERVER_ERROR);
+			restResponse.setMessage("failed to save " + ENTITY + " in database");
+
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(restResponse);
 		} else {
-			responseHandler.setHttp_status(HttpStatus.OK);
-			responseHandler.setMessage(ENTITY + " saved successfully");
-			return ResponseEntity.status(HttpStatus.OK).body(responseHandler);
+			restResponse.setHttp_status(HttpStatus.OK);
+			restResponse.setMessage(ENTITY + " patched successfully");
+
+			return ResponseEntity.ok(restResponse);
 		}
 	}
 
@@ -353,11 +355,11 @@ public class UserRestController {
 	@PostMapping(value = "/forgot_password", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<?> forgotPassword(@RequestBody User user, HttpServletRequest request) {
 		if (user == null) {
-			throw new ResponseStatusException(HttpStatus.NO_CONTENT, "no content was provided");
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "no content was provided");
 		}
 
 		if (user.getEmail() == null || user.getEmail().length() <= 0) {
-			throw new ResponseStatusException(HttpStatus.NOT_ACCEPTABLE, "email is required");
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "email is required");
 		}
 
 		User userFromDatabase = userService.getByEmail(user.getEmail());
@@ -375,80 +377,72 @@ public class UserRestController {
 			// CURRENTLY WILL WORK BY CREATING POST REQUEST TO /update_password WITH passwordUpdateToken and NEW PASSWORD
 		}
 
+		// DEFAULT RESPONSE DESPITE OF RESULT
 		return ResponseEntity.ok("Password reset link was sent to provided email");
 	}
 
 	@PostMapping(value = "/request_update_password", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<RestResponse<PasswordUpdateResponse>> requestPasswordUpdate(@RequestBody User user) {
 		if (user == null) {
-			throw new ResponseStatusException(HttpStatus.NO_CONTENT, "no content was provided");
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "no content was provided");
 		}
 
 		if (user.getUsername() == null || user.getUsername().length() <= 0) {
-			throw new ResponseStatusException(HttpStatus.NOT_ACCEPTABLE, "username is required");
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "username is required");
 		}
 
 		if (user.getPassword() == null || user.getPassword().length() <= 0) {
-			throw new ResponseStatusException(HttpStatus.NOT_ACCEPTABLE, "password is required");
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "password is required");
 		}
 
 		User userFromDatabase = userService.getByUsername(user.getUsername());
 
 		if (userFromDatabase == null) {
-			throw new ResponseStatusException(HttpStatus.NOT_ACCEPTABLE, "credentials invalid");
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "credentials invalid");
 		}
 
 		if (!userService.getBcryptEncoder().matches(user.getPassword(), userFromDatabase.getPassword())) {
-			throw new ResponseStatusException(HttpStatus.NOT_ACCEPTABLE, "credentials invalid");
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "credentials invalid");
 		}
 
 		ObjectMapper objectMapper = new ObjectMapper();
 
 		String passwordUpdateToken = userService.generatePasswordUpdateToken(userFromDatabase);
 
-		RestResponse<PasswordUpdateResponse> responseHandler = new RestResponse<>();
-		responseHandler.setBody(new PasswordUpdateResponse(passwordUpdateToken));
-		responseHandler.setHttp_status(HttpStatus.OK);
+		RestResponse<PasswordUpdateResponse> restResponse = new RestResponse<>();
 
-		String jsonValue = "";
-		try {
-			jsonValue = objectMapper.writeValueAsString(new PasswordUpdateRequest());
-			jsonValue = jsonValue.replaceAll("\\\\", "");
-			jsonValue = ": " + jsonValue;
-		} catch (JsonProcessingException e) {
-			e.printStackTrace();
-		}
+		restResponse.setBody(new PasswordUpdateResponse(passwordUpdateToken));
+		restResponse.setHttp_status(HttpStatus.OK);
+		restResponse.setMessage("please create new POST request to: '/update_password' with 'password_update_token' and 'new_password'");
 
-		responseHandler.setMessage("please create new POST request with following information and provided token" + jsonValue);
-
-		return ResponseEntity.ok(responseHandler);
+		return ResponseEntity.ok(restResponse);
 	}
 
 	@PostMapping(value = "/update_password", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<String> updatePassword(@RequestBody PasswordUpdateRequest passwordUpdateRequest) {
 
 		if (passwordUpdateRequest == null) {
-			throw new ResponseStatusException(HttpStatus.NO_CONTENT, "no content was provided");
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "no content was provided");
 		}
 
 		if (passwordUpdateRequest.getPassword_update_token() == null || passwordUpdateRequest.getPassword_update_token().length() <= 0) {
-			throw new ResponseStatusException(HttpStatus.NOT_ACCEPTABLE, "token is required");
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "token is required");
 		}
 
 		if (passwordUpdateRequest.getNew_password() == null || passwordUpdateRequest.getNew_password().length() <= 0) {
-			throw new ResponseStatusException(HttpStatus.NOT_ACCEPTABLE, "password is required");
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "password is required");
 		}
 
 		User userFromDatabase = userService.getByPasswordUpdateToken(passwordUpdateRequest.getPassword_update_token());
 		if (userFromDatabase == null) {
-			throw new ResponseStatusException(HttpStatus.NOT_ACCEPTABLE, "token is invalid or not found");
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "token is invalid or not found");
 		}
 
 		userFromDatabase.setPassword(userService.getBcryptEncoder().encode(passwordUpdateRequest.getNew_password()));
 		userFromDatabase.setPassword_update_token(null);
 		userService.save(userFromDatabase);
 
-		return ResponseEntity.status(HttpStatus.OK).body("password updated successfully");
+		return ResponseEntity.ok("password updated successfully");
 	}
 
 
@@ -463,37 +457,35 @@ public class UserRestController {
 		for (User user : users) {
 			ValidationResponse response = userService.validate(user, Mapping.DELETE);
 
-			RestResponse<User> responseHandler = new RestResponse<>();
-			responseHandler.setBody(user);
+			RestResponse<User> restResponse = new RestResponse<>();
+			restResponse.setBody(user);
 
 			if (!response.isValid()) {
-				responseHandler.setHttp_status(HttpStatus.NOT_ACCEPTABLE);
-				responseHandler.setMessage(response.getMessage());
-
-				responseList.add(responseHandler);
+				restResponse.setHttp_status(HttpStatus.BAD_REQUEST);
+				restResponse.setMessage(response.getMessage());
 
 				errorOccurred = true;
 			} else {
 				try {
 					userService.delete(user);
 
-					responseHandler.setHttp_status(HttpStatus.OK);
-					responseHandler.setMessage(ENTITY + " deleted successfully");
+					restResponse.setHttp_status(HttpStatus.OK);
+					restResponse.setMessage(ENTITY + " deleted successfully");
 				} catch (Exception e) {
-					responseHandler.setHttp_status(HttpStatus.UNPROCESSABLE_ENTITY);
-					responseHandler.setMessage("failed to delete " + ENTITY + " from database \n" + e.getMessage());
+					restResponse.setHttp_status(HttpStatus.INTERNAL_SERVER_ERROR);
+					restResponse.setMessage("failed to delete " + ENTITY + " from database \n" + e.getMessage());
 
 					errorOccurred = true;
 				}
-
-				responseList.add(responseHandler);
 			}
+
+			responseList.add(restResponse);
 		}
 
 		if (errorOccurred) {
-			return ResponseEntity.status(HttpStatus.EXPECTATION_FAILED).body(responseList);
+			return ResponseEntity.status(HttpStatus.MULTI_STATUS).body(responseList);
 		} else {
-			return ResponseEntity.status(HttpStatus.OK).body(responseList);
+			return ResponseEntity.ok(responseList);
 		}
 	}
 
@@ -508,15 +500,16 @@ public class UserRestController {
 		try {
 			userService.delete(userFromDatabase);
 		} catch (Exception e) {
-			throw new ResponseStatusException(HttpStatus.METHOD_NOT_ALLOWED, "method not allowed");
+			throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "could not delete " + ENTITY + " with ID: " + id);
 		}
 
-		RestResponse<User> responseHandler = new RestResponse<>();
-		responseHandler.setMessage(ENTITY + " deleted successfully");
-		responseHandler.setBody(userFromDatabase);
-		responseHandler.setHttp_status(HttpStatus.OK);
+		RestResponse<User> restResponse = new RestResponse<>();
 
-		return ResponseEntity.ok(responseHandler);
+		restResponse.setBody(userFromDatabase);
+		restResponse.setHttp_status(HttpStatus.OK);
+		restResponse.setMessage(ENTITY + " deleted successfully");
+
+		return ResponseEntity.ok(restResponse);
 	}
 
 

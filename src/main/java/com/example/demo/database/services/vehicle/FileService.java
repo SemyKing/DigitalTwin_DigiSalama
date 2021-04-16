@@ -1,10 +1,9 @@
 package com.example.demo.database.services.vehicle;
 
-import com.example.demo.database.models.user.User;
-import com.example.demo.database.models.vehicle.FileDB;
-import com.example.demo.database.repositories.vehicle.FileRepository;
 import com.example.demo.database.models.utils.Mapping;
 import com.example.demo.database.models.utils.ValidationResponse;
+import com.example.demo.database.models.vehicle.FileDB;
+import com.example.demo.database.repositories.vehicle.FileRepository;
 import lombok.RequiredArgsConstructor;
 import org.apache.tomcat.util.http.fileupload.FileUploadException;
 import org.springframework.stereotype.Service;
@@ -48,6 +47,14 @@ public class FileService {
 		}
 
 		return repository.findAllByVehicleId(id);
+	}
+
+	public List<FileDB> getAllByRefuelId(Long id) {
+		if (id == null) {
+			return null;
+		}
+
+		return repository.findAllByRefuelId(id);
 	}
 
 	public FileDB save(FileDB file) {
@@ -97,13 +104,13 @@ public class FileService {
 			return new ValidationResponse(false, "provided NULL entity");
 		}
 
-		if (mapping.equals(Mapping.POST)) {
-			file.setId(null);
-
-			if (file.getMultipart_file() == null) {
-				return new ValidationResponse(false, "multipart_file is required");
-			}
-		}
+//		if (mapping.equals(Mapping.POST)) {
+//			file.setId(null);
+//
+//			if (file.getMultipart_file() == null) {
+//				return new ValidationResponse(false, "multipart_file is required");
+//			}
+//		}
 
 		if (mapping.equals(Mapping.PUT) || mapping.equals(Mapping.PATCH)) {
 			if (file.getId() == null) {

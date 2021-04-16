@@ -1,10 +1,12 @@
 package com.example.demo.api.controllers;
 
 import com.example.demo.database.models.Organisation;
-import com.example.demo.database.services.OrganisationService;
 import com.example.demo.database.models.utils.Mapping;
-import com.example.demo.utils.StringUtils;
 import com.example.demo.database.models.utils.ValidationResponse;
+import com.example.demo.database.models.vehicle.Vehicle;
+import com.example.demo.database.services.OrganisationService;
+import com.example.demo.utils.FieldReflectionUtils;
+import com.example.demo.utils.StringUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -50,7 +52,6 @@ public class OrganisationController {
 	}
 
 
-	// NEW ORGANISATION FORM
 	@GetMapping("/new")
 	public String newForm(Model model) {
 		model.addAttribute(ENTITY, new Organisation());
@@ -58,7 +59,6 @@ public class OrganisationController {
 	}
 
 
-	// EDIT ORGANISATION FORM
 	@GetMapping("/{id}/edit")
 	public String editForm(@PathVariable Long id, Model model) {
 		Organisation organisationFromDatabase = organisationService.getById(id);
@@ -75,9 +75,10 @@ public class OrganisationController {
 	}
 
 
-	// POST ORGANISATION
 	@PostMapping({"", "/"})
 	public String post(@ModelAttribute Organisation organisation, Model model) {
+		organisation = new FieldReflectionUtils<Organisation>().getObjectWithEmptyStringValuesAsNull(organisation);
+
 		ValidationResponse response = organisationService.validate(organisation, Mapping.POST);
 
 		if (!response.isValid()) {
@@ -98,14 +99,9 @@ public class OrganisationController {
 	}
 
 
-	// UPDATE ORGANISATION
 	@PostMapping("/update")
 	public String put(@ModelAttribute Organisation organisation, Model model) {
-		if (organisation.getId() == null) {
-			model.addAttribute(StringUtils.ERROR_TITLE_ATTRIBUTE, "Missing parameter");
-			model.addAttribute(StringUtils.ERROR_MESSAGE_ATTRIBUTE, "ID parameter is required");
-			return StringUtils.ERROR_PAGE;
-		}
+		organisation = new FieldReflectionUtils<Organisation>().getObjectWithEmptyStringValuesAsNull(organisation);
 
 		ValidationResponse response = organisationService.validate(organisation, Mapping.PUT);
 
@@ -127,7 +123,6 @@ public class OrganisationController {
 	}
 
 
-	// DELETE ORGANISATION
 	@PostMapping("/{id}/delete")
 	public String delete(@PathVariable Long id, Model model) {
 		Organisation organisationFromDatabase = organisationService.getById(id);

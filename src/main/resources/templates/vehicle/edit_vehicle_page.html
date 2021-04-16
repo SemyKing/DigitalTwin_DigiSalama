@@ -8,60 +8,538 @@
 	</head>
 
 	<body>
+		<div id="main-content" class="container pt-2">
 
-	<div id="main-content" class="container pt-2">
-
-		<h1>Edit Vehicle Details</h1>
-
-		<h3 th:text="${error_message_attribute}" class="text-danger"></h3>
-
-		<form action="#" th:action="${'/api1/vehicles/update'}" th:object="${vehicle}" method="post">
-
-			<div class="form-group">
-				<label for="id">ID</label>
-				<input type="text" class="form-control" id="id" readonly th:field="*{id}">
+			<div class="row">
+				<h1>Edit Vehicle Details</h1>
+				<label for="submit-form" tabindex="0" class="btn btn-primary my-auto ml-auto">Save</label>
+				<label for="set-fleets-form" tabindex="1" class="btn btn-success my-auto ml-4">Set Fleets</label>
 			</div>
 
-			<div class="form-group">
-				<label for="name">Vehicle Name</label>
-				<input type="text" class="form-control" id="name" placeholder="Name" th:field="*{name}">
+			<h3 th:text="${error_message_attribute}" class="text-danger"></h3>
+
+			<div class="col">
+				<form action="#" th:action="${'/api1/vehicles/update'}" th:object="${vehicle}" method="post">
+
+					<div class="">
+						<label th:text="${'ID: ' + vehicle.id}"></label>
+						<input type="hidden" th:field="*{id}" />
+					</div>
+
+					<div class="accordion" id="accordionMain">
+						<div class="card">
+							<div class="card-header" id="heading1">
+								<h2 class="mb-0">
+									<button class="btn btn-link" type="button" data-toggle="collapse" data-target="#collapse1" aria-expanded="true" aria-controls="collapse1">
+										M1, 1+4 AND COMMON PARAMETERS
+									</button>
+								</h2>
+							</div>
+
+							<div id="collapse1" class="collapse show" aria-labelledby="heading1" data-parent="#accordionMain">
+								<div class="card-body">
+
+									<div class="form-group">
+										<label for="name">Vehicle Name</label>
+										<input type="text" class="form-control" id="name" placeholder="Name" th:field="*{name}">
+									</div>
+
+									<div class="form-group">
+										<label for="organisationSelect">Organisation</label>
+										<select class="form-control" id="organisationSelect" th:field="${vehicle.organisation}">
+											<option value=""></option>
+											<option th:each="organisation : ${organisations}"
+													th:value="${organisation.id}"
+													th:utext="${organisation.name}">
+											</option>
+										</select>
+									</div>
+
+									<div class="form-group">
+										<label for="registration_number">Registration Number</label>
+										<input type="text" class="form-control" id="registration_number" placeholder="Registration Number" th:field="*{registration_number}">
+									</div>
+
+									<div class="form-group">
+										<label for="vin">VIN</label>
+										<input type="text" class="form-control" id="vin" placeholder="VIN" th:field="*{vin}">
+									</div>
+
+									<div class="form-group">
+										<label for="purity_marking">Purity Marking</label>
+										<input type="text" class="form-control" id="purity_marking" placeholder="Purity Marking" th:field="*{purity_marking}">
+									</div>
+
+									<div class="form-group">
+										<label for="required_driving_licence">Required Driving Licence</label>
+										<input type="text" class="form-control" id="required_driving_licence" placeholder="Required Driving Licence" th:field="*{required_driving_licence}">
+									</div>
+
+									<div class="form-group">
+										<label for="first_commissioning_date">First Commissioning Date</label>
+										<input type="date" class="form-control" id="first_commissioning_date" placeholder="First Commissioning Date" th:field="*{{first_commissioning_date}}">
+									</div>
+
+									<div class="form-group">
+										<label for="commissioning_check_performed_date">Commissioning Check Performed Date</label>
+										<input type="date" class="form-control" id="commissioning_check_performed_date" placeholder="Commissioning Check Performed Date" th:field="*{{commissioning_check_performed_date}}">
+									</div>
+
+									<div class="form-group">
+										<label for="brand">Brand</label>
+										<input type="text" class="form-control" id="brand" placeholder="Brand" th:field="*{brand}">
+									</div>
+
+									<div class="form-group">
+										<label for="model">Model</label>
+										<input type="text" class="form-control" id="model" placeholder="Model" th:field="*{model}">
+									</div>
+
+									<div class="form-group">
+										<label for="color">Color</label>
+										<input type="text" class="form-control" id="color" placeholder="Color" th:field="*{color}">
+									</div>
+
+									<div class="form-group">
+										<label for="color">Propulsion</label>
+										<input type="text" class="form-control" id="propulsion" placeholder="Propulsion" th:field="*{propulsion}">
+									</div>
+
+									<div class="form-group">
+										<label for="nedc">NEDC</label>
+										<input type="text" class="form-control" id="nedc" placeholder="NEDC" th:field="*{nedc}">
+									</div>
+
+									<div class="form-group">
+										<label for="wltp">WLTP</label>
+										<input type="text" class="form-control" id="wltp" placeholder="WLTP" th:field="*{wltp}">
+									</div>
+
+									<div class="form-group">
+										<label for="combined_vehicle_consumption">Combined Vehicle Consumption</label>
+										<input type="text" class="form-control" id="combined_vehicle_consumption" placeholder="Combined Vehicle Consumption" th:field="*{combined_vehicle_consumption}">
+									</div>
+
+									<div class="form-group">
+										<label for="euro_emission_class">EURO Emission Class</label>
+										<input type="text" class="form-control" id="euro_emission_class" placeholder="EURO Emission Class" th:field="*{euro_emission_class}">
+									</div>
+
+									<div class="form-group">
+										<label for="next_inspection_date">Next Inspection Date</label>
+										<input type="date" class="form-control" id="next_inspection_date" placeholder="Next Inspection Date" th:field="*{{next_inspection_date}}">
+									</div>
+
+									<div class="form-group">
+										<label for="engine_capacity">Engine Capacity</label>
+										<input type="text" class="form-control" id="engine_capacity" placeholder="Engine Capacity" th:field="*{engine_capacity}">
+									</div>
+
+									<div class="form-group">
+										<label for="power">Power (kW)</label>
+										<input type="text" class="form-control" id="power" placeholder="Power (kW)" th:field="*{power}">
+									</div>
+
+									<div class="form-group">
+										<label for="torque">Torque (Nm)</label>
+										<input type="text" class="form-control" id="torque" placeholder="Torque (Nm)" th:field="*{torque}">
+									</div>
+
+									<div class="form-group">
+										<label for="gearing">Gearing</label>
+										<input type="text" class="form-control" id="gearing" placeholder="Gearing" th:field="*{gearing}">
+									</div>
+
+									<div class="form-group">
+										<label for="traction">Traction</label>
+										<input type="text" class="form-control" id="traction" placeholder="Traction" th:field="*{traction}">
+									</div>
+
+									<div class="form-group">
+										<label for="turbo">Turbo</label>
+										<input type="text" class="form-control" id="turbo" placeholder="Turbo" th:field="*{turbo}">
+									</div>
+
+									<div class="form-group">
+										<label for="vehicle_body_model">Vehicle Body Model</label>
+										<input type="text" class="form-control" id="vehicle_body_model" placeholder="Vehicle Body Model" th:field="*{vehicle_body_model}">
+									</div>
+
+									<div class="form-group">
+										<label for="total_amount_of_seats">Total Amount of Seats</label>
+										<input type="text" class="form-control" id="total_amount_of_seats" placeholder="Total Amount of Seats" th:field="*{total_amount_of_seats}">
+									</div>
+
+									<div class="form-group">
+										<label for="total_amount_of_doors">Total Amount of Doors</label>
+										<input type="text" class="form-control" id="total_amount_of_doors" placeholder="Total Amount of Doors" th:field="*{total_amount_of_doors}">
+									</div>
+
+									<div class="form-group">
+										<label for="total_amount_of_high_voltage_locks">Total Amount of High Voltage Locks</label>
+										<input type="text" class="form-control" id="total_amount_of_high_voltage_locks" placeholder="Total Amount of High Voltage Locks" th:field="*{total_amount_of_high_voltage_locks}">
+									</div>
+
+									<div class="form-group">
+										<label for="battery_capacity">Battery Capacity (kWh)</label>
+										<input type="text" class="form-control" id="battery_capacity" placeholder="Battery Capacity (kWh)" th:field="*{battery_capacity}">
+									</div>
+
+									<div class="form-group">
+										<label for="fast_charging_capability">Fast Charging Capability</label>
+										<input type="text" class="form-control" id="fast_charging_capability" placeholder="Fast Charging Capability" th:field="*{fast_charging_capability}">
+									</div>
+
+									<div class="form-group">
+										<label for="charging_time_80_percent">Charging Time 80 %</label>
+										<input type="text" class="form-control" id="charging_time_80_percent" placeholder="Charging Time 80 %" th:field="*{charging_time_80_percent}">
+									</div>
+
+									<div class="form-group">
+										<label for="charging_time_100_percent">Charging Time 100 %</label>
+										<input type="text" class="form-control" id="charging_time_100_percent" placeholder="Charging Time 100 %" th:field="*{charging_time_100_percent}">
+									</div>
+
+									<div class="form-group">
+										<label for="full_charge_distance">Full Charge Distance</label>
+										<input type="text" class="form-control" id="full_charge_distance" placeholder="Full Charge Distance" th:field="*{full_charge_distance}">
+									</div>
+
+									<div class="form-group">
+										<label for="own_mass">Own Mass</label>
+										<input type="text" class="form-control" id="own_mass" placeholder="Own Mass" th:field="*{own_mass}">
+									</div>
+
+									<div class="form-group">
+										<label for="total_mass">Total Mass</label>
+										<input type="text" class="form-control" id="total_mass" placeholder="Total Mass" th:field="*{total_mass}">
+									</div>
+
+									<div class="form-group">
+										<label for="towing_mass">Towing Mass</label>
+										<input type="text" class="form-control" id="towing_mass" placeholder="Towing Mass" th:field="*{towing_mass}">
+									</div>
+
+									<div class="form-group">
+										<label for="height">Height</label>
+										<input type="text" class="form-control" id="height" placeholder="Height" th:field="*{height}">
+									</div>
+
+									<div class="form-group">
+										<label for="width">Width</label>
+										<input type="text" class="form-control" id="width" placeholder="Width" th:field="*{width}">
+									</div>
+
+									<div class="form-group">
+										<label for="length">Length</label>
+										<input type="text" class="form-control" id="length" placeholder="Length" th:field="*{length}">
+									</div>
+
+									<div class="form-group">
+										<label for="tire_size">Tire Size</label>
+										<input type="text" class="form-control" id="tire_size" placeholder="Tire Size" th:field="*{tire_size}">
+									</div>
+
+									<div class="form-group">
+										<label for="rim_size">Rim Size</label>
+										<input type="text" class="form-control" id="rim_size" placeholder="Rim Size" th:field="*{rim_size}">
+									</div>
+
+									<div class="form-group">
+										<label for="tire_location">Tire Location</label>
+										<input type="text" class="form-control" id="tire_location" placeholder="Tire Location" th:field="*{tire_location}">
+									</div>
+
+									<div class="form-group">
+										<label for="tire_speed_class">Tire Speed Class</label>
+										<input type="text" class="form-control" id="tire_speed_class" placeholder="Tire Speed Class" th:field="*{tire_speed_class}">
+									</div>
+
+									<div class="form-group">
+										<label for="tire_carrying_capacity">Tire Carrying Capacity</label>
+										<input type="text" class="form-control" id="tire_carrying_capacity" placeholder="Tire Carrying Capacity" th:field="*{tire_carrying_capacity}">
+									</div>
+
+									<div class="form-group">
+										<label for="tire_offset">Tire Offset</label>
+										<input type="text" class="form-control" id="tire_offset" placeholder="Tire Offset" th:field="*{tire_offset}">
+									</div>
+								</div>
+							</div>
+						</div>
+
+						<div class="card">
+							<div class="card-header" id="heading2">
+								<h2 class="mb-0">
+									<button class="btn btn-link collapsed" type="button" data-toggle="collapse" data-target="#collapse2" aria-expanded="false" aria-controls="collapse2">
+										M1, 1+8
+									</button>
+								</h2>
+							</div>
+
+							<div id="collapse2" class="collapse" aria-labelledby="heading2" data-parent="#accordionMain">
+								<div class="card-body">
+									<div class="form-group">
+										<label for="amount_of_pupil_seats">Amount Of Pupil Seats</label>
+										<input type="text" class="form-control" id="amount_of_pupil_seats" placeholder="Amount Of Pupil Seats" th:field="*{amount_of_pupil_seats}">
+									</div>
+
+									<div class="form-group">
+										<label for="differential_lock">Differential Lock</label>
+										<input type="text" class="form-control" id="differential_lock" placeholder="Differential Lock" th:field="*{differential_lock}">
+									</div>
+								</div>
+							</div>
+						</div>
+
+
+						<div class="card">
+							<div class="card-header" id="heading3">
+								<h2 class="mb-0">
+									<button class="btn btn-link collapsed" type="button" data-toggle="collapse" data-target="#collapse3" aria-expanded="false" aria-controls="collapse3">
+										N1, VANS LOWER THAN 3500 KG
+									</button>
+								</h2>
+							</div>
+
+							<div id="collapse3" class="collapse" aria-labelledby="heading3" data-parent="#accordionMain">
+								<div class="card-body">
+									<div class="form-group">
+										<label for="trunk_size">Trunk Size</label>
+										<input type="text" class="form-control" id="trunk_size" placeholder="Trunk Size" th:field="*{trunk_size}">
+									</div>
+
+									<div class="form-group">
+										<label for="transport_capacity">Transport Capacity</label>
+										<input type="text" class="form-control" id="transport_capacity" placeholder="Transport Capacity" th:field="*{transport_capacity}">
+									</div>
+
+									<div class="form-group form-check">
+										<input type="checkbox" class="form-check-input" id="is_refrigerated_transport" th:field="*{is_refrigerated_transport}">
+										<label class="form-check-label" for="is_refrigerated_transport">Refrigerated Transport</label>
+									</div>
+								</div>
+							</div>
+						</div>
+
+
+						<div class="card">
+							<div class="card-header" id="heading4">
+								<h2 class="mb-0">
+									<button class="btn btn-link collapsed" type="button" data-toggle="collapse" data-target="#collapse4" aria-expanded="false" aria-controls="collapse4">
+										M2, SMALL BUSSES LOWER THAN 5000 KG
+									</button>
+								</h2>
+							</div>
+
+							<div id="collapse4" class="collapse" aria-labelledby="heading4" data-parent="#accordionMain">
+								<div class="card-body">
+									<div class="form-group">
+										<label for="motor_location">Motor Location</label>
+										<input type="text" class="form-control" id="motor_location" placeholder="Motor Location" th:field="*{motor_location}">
+									</div>
+
+									<div class="form-group">
+										<label for="turning_radius">Turning Radius (m)</label>
+										<input type="text" class="form-control" id="turning_radius" placeholder="Turning Radius (m)" th:field="*{turning_radius}">
+									</div>
+
+									<div class="form-group">
+										<label for="door_control_type">Door Control Type</label>
+										<input type="text" class="form-control" id="door_control_type" placeholder="Door Control Type" th:field="*{door_control_type}">
+									</div>
+
+									<div class="form-group">
+										<label for="total_amount_of_axles">Total Amount of Axles</label>
+										<input type="text" class="form-control" id="total_amount_of_axles" placeholder="Total Amount of Axles" th:field="*{total_amount_of_axles}">
+									</div>
+
+									<div class="form-group">
+										<label for="total_amount_and_location_of_twin_wheels_axles">Total Amount and Location of Twin Wheel Axles</label>
+										<input type="text" class="form-control" id="total_amount_and_location_of_twin_wheels_axles" placeholder="Total Amount and Location of Twin Wheel Axles" th:field="*{total_amount_and_location_of_twin_wheels_axles}">
+									</div>
+
+									<div class="form-group">
+										<label for="total_amount_and_location_of_driving_axles">Total Amount and Location of Driving Axles</label>
+										<input type="text" class="form-control" id="total_amount_and_location_of_driving_axles" placeholder="Total Amount and Location of Driving Axles" th:field="*{total_amount_and_location_of_driving_axles}">
+									</div>
+
+									<div class="form-group">
+										<label for="total_amount_and_location_of_braking_axles">Total Amount and Location of Braking Axles</label>
+										<input type="text" class="form-control" id="total_amount_and_location_of_braking_axles" placeholder="Total Amount and Location of Braking Axles" th:field="*{total_amount_and_location_of_braking_axles}">
+									</div>
+
+									<div class="form-group">
+										<label for="total_amount_and_location_of_steering_axles">Total Amount and Location of Steering Axles</label>
+										<input type="text" class="form-control" id="total_amount_and_location_of_steering_axles" placeholder="Total Amount and Location of Steering Axles" th:field="*{total_amount_and_location_of_steering_axles}">
+									</div>
+								</div>
+							</div>
+						</div>
+
+
+						<div class="card">
+							<div class="card-header" id="heading5">
+								<h2 class="mb-0">
+									<button class="btn btn-link collapsed" type="button" data-toggle="collapse" data-target="#collapse5" aria-expanded="false" aria-controls="collapse5">
+										M3, BUSSES OVER 5000 KG
+									</button>
+								</h2>
+							</div>
+
+							<div id="collapse5" class="collapse" aria-labelledby="heading5" data-parent="#accordionMain">
+								<div class="card-body">
+									<div class="form-group">
+										<label for="total_amount_of_passengers">Total Amount of Passengers</label>
+										<input type="text" class="form-control" id="total_amount_of_passengers" placeholder="Total Amount of Passengers" th:field="*{total_amount_of_passengers}">
+									</div>
+
+									<div class="form-group">
+										<label for="total_amount_of_double_doors">Total Amount of Double Doors</label>
+										<input type="text" class="form-control" id="total_amount_of_double_doors" placeholder="Total Amount of Double Doors" th:field="*{total_amount_of_double_doors}">
+									</div>
+
+									<div class="form-group">
+										<label for="floor_type">Floor Type</label>
+										<input type="text" class="form-control" id="floor_type" placeholder="Floor Type" th:field="*{floor_type}">
+									</div>
+
+									<div class="form-group">
+										<label for="location_of_doors">Location of Doors</label>
+										<input type="text" class="form-control" id="location_of_doors" placeholder="Location of Doors" th:field="*{location_of_doors}">
+									</div>
+
+									<div class="form-group">
+										<label for="vmax">Vmax (km/h)</label>
+										<input type="text" class="form-control" id="vmax" placeholder="Vmax (km/h)" th:field="*{vmax}">
+									</div>
+
+									<div class="form-group form-check">
+										<input type="checkbox" class="form-check-input" id="is_double_decker_bus" th:field="*{is_double_decker_bus}">
+										<label class="form-check-label" for="is_double_decker_bus">Double Decker Bus</label>
+									</div>
+
+									<div class="form-group">
+										<label for="crossing_in_front">Crossing in Front (m)</label>
+										<input type="text" class="form-control" id="crossing_in_front" placeholder="Crossing in Front (m)" th:field="*{crossing_in_front}">
+									</div>
+
+									<div class="form-group">
+										<label for="crossing_in_back">Crossing in Back (m)</label>
+										<input type="text" class="form-control" id="crossing_in_back" placeholder="Crossing in Back (m)" th:field="*{crossing_in_back}">
+									</div>
+
+									<div class="form-group">
+										<label for="standing_height_front_and_back">Standing Height in Front and Back</label>
+										<input type="text" class="form-control" id="standing_height_front_and_back" placeholder="Standing Height in Front and Back" th:field="*{standing_height_front_and_back}">
+									</div>
+								</div>
+							</div>
+						</div>
+
+
+						<div class="card">
+							<div class="card-header" id="heading6">
+								<h2 class="mb-0">
+									<button class="btn btn-link collapsed" type="button" data-toggle="collapse" data-target="#collapse6" aria-expanded="false" aria-controls="collapse6">
+										N2, LIGHT-WEIGHT TRUCKS AND TRUCKS 3500 - 12000 KG
+									</button>
+								</h2>
+							</div>
+
+							<div id="collapse6" class="collapse" aria-labelledby="heading6" data-parent="#accordionMain">
+								<div class="card-body">
+									<div class="form-group">
+										<label for="total_amount_of_side_doors">Total Amount of Side Doors</label>
+										<input type="text" class="form-control" id="total_amount_of_side_doors" placeholder="Total Amount of Side Doors" th:field="*{total_amount_of_side_doors}">
+									</div>
+
+									<div class="form-group form-check">
+										<input type="checkbox" class="form-check-input" id="is_whole_side_openable" th:field="*{is_whole_side_openable}">
+										<label class="form-check-label" for="is_whole_side_openable">Whole Side Openable</label>
+									</div>
+
+									<div class="form-group">
+										<label for="cargo_space_type">Cargo Space Type</label>
+										<input type="text" class="form-control" id="cargo_space_type" placeholder="Cargo Space Type" th:field="*{cargo_space_type}">
+									</div>
+
+									<div class="form-group form-check">
+										<input type="checkbox" class="form-check-input" id="is_extended_cab" th:field="*{is_extended_cab}">
+										<label class="form-check-label" for="is_extended_cab">Extended Cab</label>
+									</div>
+
+									<div class="form-group">
+										<label for="height_of_cab_floor_from_ground">Height of Cab Floor from Ground</label>
+										<input type="text" class="form-control" id="height_of_cab_floor_from_ground" placeholder="Height of Cab Floor from Ground" th:field="*{height_of_cab_floor_from_ground}">
+									</div>
+
+									<div class="form-group">
+										<label for="pantograph">Pantograph</label>
+										<input type="text" class="form-control" id="pantograph" placeholder="Pantograph" th:field="*{pantograph}">
+									</div>
+								</div>
+							</div>
+						</div>
+
+
+						<div class="card">
+							<div class="card-header" id="heading7">
+								<h2 class="mb-0">
+									<button class="btn btn-link collapsed" type="button" data-toggle="collapse" data-target="#collapse7" aria-expanded="false" aria-controls="collapse7">
+										N3, TRUCKS OVER 12000 KG
+									</button>
+								</h2>
+							</div>
+
+							<div id="collapse7" class="collapse" aria-labelledby="heading7" data-parent="#accordionMain">
+								<div class="card-body">
+									<div class="form-group">
+										<label for="amount_of_gears">Amount of Gears</label>
+										<input type="text" class="form-control" id="amount_of_gears" placeholder="Amount of Gears" th:field="*{amount_of_gears}">
+									</div>
+
+									<div class="form-group">
+										<label for="power_of_motor_brake">Power of Motor Brake (kW)</label>
+										<input type="text" class="form-control" id="power_of_motor_brake" placeholder="Power of Motor Brake (kW)" th:field="*{power_of_motor_brake}">
+									</div>
+
+									<div class="form-group">
+										<label for="high_power_engine_brake">High Power Engine Brake (kW)</label>
+										<input type="text" class="form-control" id="high_power_engine_brake" placeholder="High Power Engine Brake (kW)" th:field="*{high_power_engine_brake}">
+									</div>
+
+									<div class="form-group">
+										<label for="amount_of_high_voltage_batteries">Amount of High Voltage Batteries</label>
+										<input type="text" class="form-control" id="amount_of_high_voltage_batteries" placeholder="Amount of High Voltage Batteries" th:field="*{amount_of_high_voltage_batteries}">
+									</div>
+
+									<div class="form-group">
+										<label for="rear_axle_tilt_stabilizer">Rear Axle Tilt Stabilizer</label>
+										<input type="text" class="form-control" id="rear_axle_tilt_stabilizer" placeholder="Rear Axle Tilt Stabilizer" th:field="*{rear_axle_tilt_stabilizer}">
+									</div>
+
+									<div class="form-group">
+										<label for="rear_axle_support">Rear Axle Support</label>
+										<input type="text" class="form-control" id="rear_axle_support" placeholder="Rear Axle Support" th:field="*{rear_axle_support}">
+									</div>
+
+									<div class="form-group">
+										<label for="differential_locks_on_drive_shaft">Differential Locks on Drive Shaft</label>
+										<input type="text" class="form-control" id="differential_locks_on_drive_shaft" placeholder="Differential Locks on Drive Shaft" th:field="*{differential_locks_on_drive_shaft}">
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<input type="submit" id="submit-form" class="" hidden/>
+				</form>
+
+				<form action="#" th:action="${'/api1/vehicles/'+ vehicle.id +'/set_fleets'}" hidden method="GET">
+					<input type="submit" id="set-fleets-form"/>
+				</form>
 			</div>
-
-			<div class="form-group">
-				<label for="registration_number">Registration Number</label>
-				<input type="text" class="form-control" id="registration_number" placeholder="Registration Number" th:field="*{registration_number}">
-			</div>
-
-			<div class="form-group">
-				<label for="vin">VIN</label>
-				<input type="text" class="form-control" id="vin" placeholder="VIN" th:field="*{vin}">
-			</div>
-
-
-			<div class="form-group">
-				<label for="organisationSelect">Organisation</label>
-				<select class="form-control" id="organisationSelect" th:field="${vehicle.organisation}">
-					<option value=""></option>
-					<option th:each="org : ${organisations}"
-							th:value="${org.id}"
-							th:utext="${org.name}">
-					</option>
-				</select>
-			</div>
-
-			<div class="form-group">
-				<label for="fleetSelect">Fleet</label>
-				<select class="form-control" id="fleetSelect" th:field="${vehicle.fleet}">
-					<option value=""></option>
-					<option th:each="fleet : ${fleets}"
-							th:value="${fleet.id}"
-							th:utext="${fleet.name}">
-					</option>
-				</select>
-			</div>
-
-			<button type="submit" class="btn btn-primary mx-auto mt-4">Save</button>
-		</form>
-	</div>
+		</div>
 	</body>
 </html>

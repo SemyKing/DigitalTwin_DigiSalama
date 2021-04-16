@@ -1,13 +1,17 @@
 package com.example.demo.database.services.vehicle;
 
-import com.example.demo.database.models.vehicle.Trip;
-import com.example.demo.database.repositories.vehicle.TripRepository;
 import com.example.demo.database.models.utils.Mapping;
 import com.example.demo.database.models.utils.ValidationResponse;
+import com.example.demo.database.models.vehicle.Trip;
+import com.example.demo.database.models.vehicle.Vehicle;
+import com.example.demo.database.repositories.vehicle.TripRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.util.ReflectionUtils;
 
 import javax.transaction.Transactional;
+import java.lang.reflect.Field;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -87,26 +91,30 @@ public class TripService {
 		}
 
 		if (mapping.equals(Mapping.POST) || mapping.equals(Mapping.PUT) || mapping.equals(Mapping.PATCH)) {
-			if (trip.getOrigin() != null) {
-				if (trip.getOrigin().length() <= 0) {
-					return new ValidationResponse(false, "origin cannot be empty");
+
+			// EMPTY STRING CHECK
+			List<Field> stringFields = new ArrayList<>();
+
+			Field[] allFields = Trip.class.getDeclaredFields();
+			for (Field field : allFields) {
+				if (field.getType().equals(String.class)) {
+					stringFields.add(field);
 				}
 			}
 
-			if (trip.getDestination() != null) {
-				if (trip.getDestination().length() <= 0) {
-					return new ValidationResponse(false, "destination cannot be empty");
+			for (Field field : stringFields) {
+				field.setAccessible(true);
+				Object object = ReflectionUtils.getField(field, trip);
+
+				if (object != null) {
+					if (object instanceof String) {
+						if (((String) object).length() <= 0) {
+							return new ValidationResponse(false, "'" + field.getName() + "' cannot be empty");
+						}
+					}
 				}
 			}
 
-			if (trip.getKilometres_driven() != null) {
-				if (trip.getKilometres_driven() < 0) {
-					return new ValidationResponse(false, "invalid kilometres value");
-				}
-			}
-
-
-			// OTHER BASIC VALIDATION
 		}
 
 		if (mapping.equals(Mapping.DELETE)) {

@@ -26,6 +26,7 @@
 					<th scope="col">Origin</th>
 					<th scope="col">Destination</th>
 					<th scope="col">Kilometres Driven</th>
+					<th scope="col">Date</th>
 				</tr>
 				</thead>
 				<tbody>
@@ -44,6 +45,9 @@
 					</td>
 					<td>
 						<span th:text="${trip.kilometres_driven}"></span>
+					</td>
+					<td>
+						<span th:text="${#dates.format(trip.date, 'dd/MM/yyyy')}"></span>
 					</td>
 					<td style="width: 1px;">
 						<form action="#" th:action="${'/api1/trips/' + trip.id}" class="m-0 p-0" method="get">

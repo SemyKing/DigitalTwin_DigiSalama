@@ -21,37 +21,38 @@
 
 				<table class="table table-hover table-sm table-bordered">
 					<thead>
-					<tr>
-						<th scope="col">ID</th>
-						<th scope="col">Description</th>
-						<th scope="col">Equipment Type</th>
-						<th scope="col">Vehicle</th>
-					</tr>
+						<tr>
+							<th scope="col">ID</th>
+							<th scope="col">Description</th>
+							<th scope="col">Equipment Type</th>
+							<th scope="col">Vehicle</th>
+						</tr>
 					</thead>
-					<tbody>
-					<tr th:if="${equipment.empty}">
-						<td colspan="4"> No Equipment Available </td>
-					</tr>
 
-					<tr th:each="e : ${equipment}">
-						<td>
-							<span th:text="${e.id}"></span>
-						</td>
-						<td>
-							<span th:text="${e.description}"></span>
-						</td>
-						<td>
-							<span th:text="${e.equipment_type == null ? 'NOT SELECTED' : e.equipment_type.name}"></span>
-						</td>
-						<td>
-							<span th:text="${e.vehicle == null ? 'NOT SELECTED' : e.vehicle.registration_number}"></span>
-						</td>
-						<td style="width: 1px;">
-							<form action="#" th:action="${'/api1/equipment/' + e.id}" class="m-0 p-0" method="get">
-								<button type="submit" class="btn btn-primary btn-sm">View</button>
-							</form>
-						</td>
-					</tr>
+					<tbody>
+						<tr th:if="${equipment.empty}">
+							<td colspan="4"> No Equipment Available </td>
+						</tr>
+
+						<tr th:each="e : ${equipment}">
+							<td>
+								<span th:text="${e.id}"></span>
+							</td>
+							<td>
+								<span th:text="${e.description}"></span>
+							</td>
+							<td>
+								<span th:text="${e.equipment_type == null ? 'NOT SELECTED' : e.equipment_type.name}"></span>
+							</td>
+							<td>
+								<span th:text="${e.vehicle == null ? 'NOT SELECTED' : e.vehicle.registration_number}"></span>
+							</td>
+							<td style="width: 1px;">
+								<form action="#" th:action="${'/api1/equipment/' + e.id}" class="m-0 p-0" method="get">
+									<button type="submit" class="btn btn-primary btn-sm">View</button>
+								</form>
+							</td>
+						</tr>
 					</tbody>
 				</table>
 			</div>

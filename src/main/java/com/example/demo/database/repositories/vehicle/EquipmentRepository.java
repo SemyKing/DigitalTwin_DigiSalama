@@ -1,7 +1,6 @@
 package com.example.demo.database.repositories.vehicle;
 
 import com.example.demo.database.models.vehicle.Equipment;
-import com.example.demo.database.models.vehicle.Trip;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;

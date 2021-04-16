@@ -11,85 +11,533 @@
 
 		<div id="main-content" class="container pt-2">
 
-			<h1>Vehicle Details</h1>
 
-			<div class="col">
-				<table class="table table-hover table-sm table-bordered" th:object="${vehicle}">
-					<tbody>
-						<tr>
-							<td> ID </td>
-							<td> <span th:text="*{id}"></span> </td>
-						</tr>
-						<tr>
-							<td> Name </td>
-							<td> <span th:text="*{name}"></span> </td>
-						</tr>
-						<tr>
-							<td> Registration Number </td>
-							<td> <span th:text="*{registration_number}"></span> </td>
-						</tr>
-						<tr>
-							<td> VIN </td>
-							<td> <span th:text="*{vin}"></span> </td>
-						</tr>
-						<tr>
-							<td> Fleet </td>
-							<td>
-								<span th:text="${vehicle.fleet == null ? 'NOT SELECTED' : vehicle.fleet.name}"></span>
-							</td>
-						</tr>
 
-						<tr>
-							<td> Organisation </td>
-							<td>
-								<span th:text="${vehicle.organisation == null ? 'NOT SELECTED' : vehicle.organisation.name}"></span>
-							</td>
-						</tr>
-						<tr>
-							<td> Equipment </td>
-							<td>
-								<form action="#" th:action="${'/api1/vehicles/' + vehicle.id + '/equipment'}" class="m-0 p-0"  method="GET">
-									<button type="submit" class="btn btn-secondary btn-sm">View</button>
-								</form>
-							</td>
-						</tr>
+			<div class="row px-4">
+				<h1>Vehicle Details</h1>
 
-						<tr>
-							<td> Trips </td>
-							<td>
-								<form action="#" th:action="${'/api1/vehicles/' + vehicle.id + '/trips'}" class="m-0 p-0" method="GET">
-									<button type="submit" class="btn btn-secondary btn-sm">View</button>
-								</form>
-							</td>
-						</tr>
-						<tr>
-							<td> Files </td>
-							<td>
-								<form action="#" th:action="${'/api1/vehicles/' + vehicle.id + '/files'}" class="m-0 p-0" method="GET">
-									<button type="submit" class="btn btn-secondary btn-sm">View</button>
-								</form>
-							</td>
-						</tr>
-						<tr>
-							<td> Events </td>
-							<td>
-								<form action="#" th:action="${'/api1/vehicles/' + vehicle.id + '/events'}" class="m-0 p-0" method="GET">
-									<button type="submit" class="btn btn-secondary btn-sm">View</button>
-								</form>
-							</td>
-						</tr>
-					</tbody>
-				</table>
+				<label for="edit" tabindex="0" class="btn btn-primary my-auto ml-auto">Edit</label>
+				<label for="delete" tabindex="1" class="btn btn-danger my-auto ml-4">Delete</label>
+			</div>
 
-				<div class="row">
-					<form action="#" th:action="${'/api1/vehicles/' + vehicle.id + '/edit'}" class="m-0 p-0" method="GET">
-						<button type="submit" class="btn btn-primary">Edit</button>
-					</form>
+			<div class="col" th:object="${vehicle}">
 
-					<form action="#" th:action="${'/api1/vehicles/' + vehicle.id + '/delete'}" class="m-0 ml-auto p-0" method="POST">
-						<button type="submit" class="btn btn-danger">Delete</button>
-					</form>
+				<div class="">
+					<label th:text="${'ID: ' + vehicle.id}"></label>
 				</div>
+
+				<div class="accordion" id="accordionMain">
+					<div class="card">
+						<div class="card-header" id="heading1">
+							<h2 class="mb-0">
+								<button class="btn btn-link" type="button" data-toggle="collapse" data-target="#collapse1" aria-expanded="true" aria-controls="collapse1">
+									M1, 1+4 AND COMMON PARAMETERS
+								</button>
+							</h2>
+						</div>
+
+						<div id="collapse1" class="collapse show" aria-labelledby="heading1" data-parent="#accordionMain">
+							<div class="card-body">
+								<table class="table table-hover table-sm table-bordered w-100 m-0">
+									<tbody>
+										<tr>
+											<td> Name </td>
+											<td> <span th:text="*{name}"></span> </td>
+										</tr>
+
+										<tr>
+											<td> Organisation </td>
+											<td>
+												<span th:text="${vehicle.organisation == null ? 'NOT SELECTED' : vehicle.organisation.name}"></span>
+											</td>
+										</tr>
+										<tr>
+											<td> Fleets </td>
+											<td>
+												<form action="#" th:action="${'/api1/vehicles/' + vehicle.id + '/fleets'}" class="m-0 p-0"  method="GET">
+													<button type="submit" class="btn btn-secondary btn-sm">View</button>
+												</form>
+											</td>
+										</tr>
+										<tr>
+											<td> Equipment </td>
+											<td>
+												<form action="#" th:action="${'/api1/vehicles/' + vehicle.id + '/equipment'}" class="m-0 p-0"  method="GET">
+													<button type="submit" class="btn btn-secondary btn-sm">View</button>
+												</form>
+											</td>
+										</tr>
+
+										<tr>
+											<td> Trips </td>
+											<td>
+												<form action="#" th:action="${'/api1/vehicles/' + vehicle.id + '/trips'}" class="m-0 p-0" method="GET">
+													<button type="submit" class="btn btn-secondary btn-sm">View</button>
+												</form>
+											</td>
+										</tr>
+										<tr>
+											<td> Files </td>
+											<td>
+												<form action="#" th:action="${'/api1/vehicles/' + vehicle.id + '/files'}" class="m-0 p-0" method="GET">
+													<button type="submit" class="btn btn-secondary btn-sm">View</button>
+												</form>
+											</td>
+										</tr>
+										<tr>
+											<td> Events </td>
+											<td>
+												<form action="#" th:action="${'/api1/vehicles/' + vehicle.id + '/events'}" class="m-0 p-0" method="GET">
+													<button type="submit" class="btn btn-secondary btn-sm">View</button>
+												</form>
+											</td>
+										</tr>
+
+
+										<tr>
+											<td> Registration Number </td>
+											<td> <span th:text="*{registration_number}"></span> </td>
+										</tr>
+										<tr>
+											<td> VIN </td>
+											<td> <span th:text="*{vin}"></span> </td>
+										</tr>
+										<tr>
+											<td> Total KM Driven </td>
+											<td> <span th:text="${totalKmDriven}"></span> </td>
+										</tr>
+										<tr>
+											<td> Purity Marking </td>
+											<td> <span th:text="*{purity_marking}"></span> </td>
+										</tr>
+										<tr>
+											<td> Required Driving Licence </td>
+											<td> <span th:text="*{required_driving_licence}"></span> </td>
+										</tr>
+										<tr>
+											<td> First Commissioning Date </td>
+											<td> <span th:text="${#dates.format(vehicle.first_commissioning_date, 'dd/MM/yyyy')}"></span> </td>
+										</tr>
+										<tr>
+											<td> Commissioning Check Performed Date </td>
+											<td> <span th:text="${#dates.format(vehicle.commissioning_check_performed_date, 'dd/MM/yyyy')}"></span> </td>
+										</tr>
+										<tr>
+											<td> Brand </td>
+											<td> <span th:text="*{brand}"></span> </td>
+										</tr>
+										<tr>
+											<td> Model </td>
+											<td> <span th:text="*{model}"></span> </td>
+										</tr>
+										<tr>
+											<td> Color </td>
+											<td> <span th:text="*{color}"></span> </td>
+										</tr>
+										<tr>
+											<td> Propulsion </td>
+											<td> <span th:text="*{propulsion}"></span> </td>
+										</tr>
+										<tr>
+											<td> NEDC </td>
+											<td> <span th:text="*{nedc}"></span> </td>
+										</tr>
+										<tr>
+											<td> WLTP </td>
+											<td> <span th:text="*{wltp}"></span> </td>
+										</tr>
+										<tr>
+											<td> Combined Vehicle Consumption </td>
+											<td> <span th:text="*{combined_vehicle_consumption}"></span> </td>
+										</tr>
+										<tr>
+											<td> EURO Emission Class </td>
+											<td> <span th:text="*{euro_emission_class}"></span> </td>
+										</tr>
+										<tr>
+											<td> Next Inspection Date </td>
+											<td> <span th:text="${#dates.format(vehicle.next_inspection_date, 'dd/MM/yyyy')}"></span> </td>
+										</tr>
+										<tr>
+											<td> Engine Capacity </td>
+											<td> <span th:text="*{engine_capacity}"></span> </td>
+										</tr>
+										<tr>
+											<td> Power (kW) </td>
+											<td> <span th:text="*{power}"></span> </td>
+										</tr>
+										<tr>
+											<td> Torque (Nm) </td>
+											<td> <span th:text="*{torque}"></span> </td>
+										</tr>
+										<tr>
+											<td> Gearing </td>
+											<td> <span th:text="*{gearing}"></span> </td>
+										</tr>
+										<tr>
+											<td> Traction </td>
+											<td> <span th:text="*{traction}"></span> </td>
+										</tr>
+										<tr>
+											<td> Turbo </td>
+											<td> <span th:text="*{turbo}"></span> </td>
+										</tr>
+										<tr>
+											<td> Vehicle Body Model </td>
+											<td> <span th:text="*{vehicle_body_model}"></span> </td>
+										</tr>
+										<tr>
+											<td> Total Amount of Seats </td>
+											<td> <span th:text="*{total_amount_of_seats}"></span> </td>
+										</tr>
+										<tr>
+											<td> Total Amount of Doors </td>
+											<td> <span th:text="*{total_amount_of_doors}"></span> </td>
+										</tr>
+										<tr>
+											<td> Total Amount of High Voltage Locks </td>
+											<td> <span th:text="*{total_amount_of_high_voltage_locks}"></span> </td>
+										</tr>
+										<tr>
+											<td> Battery Capacity (kWh) </td>
+											<td> <span th:text="*{battery_capacity}"></span> </td>
+										</tr>
+										<tr>
+											<td> Fast Charging Capability </td>
+											<td> <span th:text="*{fast_charging_capability}"></span> </td>
+										</tr>
+										<tr>
+											<td> Charging Time 80 % </td>
+											<td> <span th:text="*{charging_time_80_percent}"></span> </td>
+										</tr>
+										<tr>
+											<td> Charging Time 100 % </td>
+											<td> <span th:text="*{charging_time_100_percent}"></span> </td>
+										</tr>
+										<tr>
+											<td> Full Charge Distance </td>
+											<td> <span th:text="*{full_charge_distance}"></span> </td>
+										</tr>
+										<tr>
+											<td> Own Mass </td>
+											<td> <span th:text="*{own_mass}"></span> </td>
+										</tr>
+										<tr>
+											<td> Total Mass </td>
+											<td> <span th:text="*{total_mass}"></span> </td>
+										</tr>
+										<tr>
+											<td> Towing Mass </td>
+											<td> <span th:text="*{towing_mass}"></span> </td>
+										</tr>
+										<tr>
+											<td> Height </td>
+											<td> <span th:text="*{height}"></span> </td>
+										</tr>
+										<tr>
+											<td> Width </td>
+											<td> <span th:text="*{width}"></span> </td>
+										</tr>
+										<tr>
+											<td> Length </td>
+											<td> <span th:text="*{length}"></span> </td>
+										</tr>
+										<tr>
+											<td> Tire Size </td>
+											<td> <span th:text="*{tire_size}"></span> </td>
+										</tr>
+										<tr>
+											<td> Rim Size </td>
+											<td> <span th:text="*{rim_size}"></span> </td>
+										</tr>
+										<tr>
+											<td> Tire Location </td>
+											<td> <span th:text="*{tire_location}"></span> </td>
+										</tr>
+										<tr>
+											<td> Tire Speed Class </td>
+											<td> <span th:text="*{tire_speed_class}"></span> </td>
+										</tr>
+										<tr>
+											<td> Tire Carrying Capacity </td>
+											<td> <span th:text="*{tire_carrying_capacity}"></span> </td>
+										</tr>
+										<tr>
+											<td> Tire Offset </td>
+											<td> <span th:text="*{tire_offset}"></span> </td>
+										</tr>
+									</tbody>
+								</table>
+							</div>
+						</div>
+					</div>
+
+					<div class="card">
+						<div class="card-header" id="heading2">
+							<h2 class="mb-0">
+								<button class="btn btn-link collapsed" type="button" data-toggle="collapse" data-target="#collapse2" aria-expanded="false" aria-controls="collapse2">
+									M1, 1+8
+								</button>
+							</h2>
+						</div>
+
+						<div id="collapse2" class="collapse" aria-labelledby="heading2" data-parent="#accordionMain">
+							<div class="card-body">
+								<table class="table table-hover table-sm table-bordered w-100 m-0">
+									<tbody>
+										<tr>
+											<td> Amount Of Pupil Seats </td>
+											<td> <span th:text="*{amount_of_pupil_seats}"></span> </td>
+										</tr>
+										<tr>
+											<td> Differential Lock </td>
+											<td> <span th:text="*{differential_lock}"></span> </td>
+										</tr>
+									</tbody>
+								</table>
+							</div>
+						</div>
+					</div>
+
+					<div class="card">
+						<div class="card-header" id="heading3">
+							<h2 class="mb-0">
+								<button class="btn btn-link collapsed" type="button" data-toggle="collapse" data-target="#collapse3" aria-expanded="false" aria-controls="collapse3">
+									N1, VANS LOWER THAN 3500 KG
+								</button>
+							</h2>
+						</div>
+
+						<div id="collapse3" class="collapse" aria-labelledby="heading3" data-parent="#accordionMain">
+							<div class="card-body">
+								<table class="table table-hover table-sm table-bordered w-100 m-0">
+									<tbody>
+										<tr>
+											<td> Trunk Size </td>
+											<td> <span th:text="*{trunk_size}"></span> </td>
+										</tr>
+										<tr>
+											<td> Transport Capacity </td>
+											<td> <span th:text="*{transport_capacity}"></span> </td>
+										</tr>
+										<tr>
+											<td> Refrigerated Transport </td>
+											<td> <span th:text="*{is_refrigerated_transport}"></span> </td>
+										</tr>
+									</tbody>
+								</table>
+							</div>
+						</div>
+					</div>
+
+					<div class="card">
+						<div class="card-header" id="heading4">
+							<h2 class="mb-0">
+								<button class="btn btn-link collapsed" type="button" data-toggle="collapse" data-target="#collapse4" aria-expanded="false" aria-controls="collapse4">
+									M2, SMALL BUSSES LOWER THAN 5000 KG
+								</button>
+							</h2>
+						</div>
+
+						<div id="collapse4" class="collapse" aria-labelledby="heading4" data-parent="#accordionMain">
+							<div class="card-body">
+								<table class="table table-hover table-sm table-bordered w-100 m-0">
+									<tbody>
+										<tr>
+											<td> Motor Location </td>
+											<td> <span th:text="*{motor_location}"></span> </td>
+										</tr>
+										<tr>
+											<td> Turning Radius (m) </td>
+											<td> <span th:text="*{turning_radius}"></span> </td>
+										</tr>
+										<tr>
+											<td> Door Control Type </td>
+											<td> <span th:text="*{door_control_type}"></span> </td>
+										</tr>
+										<tr>
+											<td> Total Amount of Axles </td>
+											<td> <span th:text="*{total_amount_of_axles}"></span> </td>
+										</tr>
+										<tr>
+											<td> Total Amount and Location of Twin Wheel Axles </td>
+											<td> <span th:text="*{total_amount_and_location_of_twin_wheels_axles}"></span> </td>
+										</tr>
+										<tr>
+											<td> Total Amount and Location of Driving Axles </td>
+											<td> <span th:text="*{total_amount_and_location_of_driving_axles}"></span> </td>
+										</tr>
+										<tr>
+											<td> Total Amount and Location of Braking Axles </td>
+											<td> <span th:text="*{total_amount_and_location_of_braking_axles}"></span> </td>
+										</tr>
+										<tr>
+											<td> Total Amount and Location of Steering Axles </td>
+											<td> <span th:text="*{total_amount_and_location_of_steering_axles}"></span> </td>
+										</tr>
+									</tbody>
+								</table>
+							</div>
+						</div>
+					</div>
+
+					<div class="card">
+						<div class="card-header" id="heading5">
+							<h2 class="mb-0">
+								<button class="btn btn-link collapsed" type="button" data-toggle="collapse" data-target="#collapse5" aria-expanded="false" aria-controls="collapse5">
+									M3, BUSSES OVER 5000 KG
+								</button>
+							</h2>
+						</div>
+
+						<div id="collapse5" class="collapse" aria-labelledby="heading5" data-parent="#accordionMain">
+							<div class="card-body">
+								<table class="table table-hover table-sm table-bordered w-100 m-0">
+									<tbody>
+										<tr>
+											<td> Total Amount of Passengers </td>
+											<td> <span th:text="*{total_amount_of_passengers}"></span> </td>
+										</tr>
+										<tr>
+											<td> Total Amount of Double Doors </td>
+											<td> <span th:text="*{total_amount_of_double_doors}"></span> </td>
+										</tr>
+										<tr>
+											<td> Floor Type </td>
+											<td> <span th:text="*{floor_type}"></span> </td>
+										</tr>
+										<tr>
+											<td> Location of Doors </td>
+											<td> <span th:text="*{location_of_doors}"></span> </td>
+										</tr>
+										<tr>
+											<td> Vmax (km/h) </td>
+											<td> <span th:text="*{vmax}"></span> </td>
+										</tr>
+										<tr>
+											<td> Double Decker Bus </td>
+											<td> <span th:text="*{is_double_decker_bus}"></span> </td>
+										</tr>
+										<tr>
+											<td> Crossing in Front (m) </td>
+											<td> <span th:text="*{crossing_in_front}"></span> </td>
+										</tr>
+										<tr>
+											<td> Crossing in Back (m) </td>
+											<td> <span th:text="*{crossing_in_back}"></span> </td>
+										</tr>
+										<tr>
+											<td> Standing Height in Front and Back </td>
+											<td> <span th:text="*{standing_height_front_and_back}"></span> </td>
+										</tr>
+									</tbody>
+								</table>
+							</div>
+						</div>
+					</div>
+
+					<div class="card">
+						<div class="card-header" id="heading6">
+							<h2 class="mb-0">
+								<button class="btn btn-link collapsed" type="button" data-toggle="collapse" data-target="#collapse6" aria-expanded="false" aria-controls="collapse6">
+									N2, LIGHT-WEIGHT TRUCKS AND TRUCKS 3500 - 12000 KG
+								</button>
+							</h2>
+						</div>
+
+						<div id="collapse6" class="collapse" aria-labelledby="heading6" data-parent="#accordionMain">
+							<div class="card-body">
+								<table class="table table-hover table-sm table-bordered w-100 m-0">
+									<tbody>
+										<tr>
+											<td> Total Amount of Side Doors </td>
+											<td> <span th:text="*{total_amount_of_side_doors}"></span> </td>
+										</tr>
+										<tr>
+											<td> Whole Side Openable </td>
+											<td> <span th:text="*{is_whole_side_openable}"></span> </td>
+										</tr>
+										<tr>
+											<td> Cargo Space Type </td>
+											<td> <span th:text="*{cargo_space_type}"></span> </td>
+										</tr>
+										<tr>
+											<td> Extended Cab </td>
+											<td> <span th:text="*{is_extended_cab}"></span> </td>
+										</tr>
+										<tr>
+											<td> Height of Cab Floor from Ground </td>
+											<td> <span th:text="*{height_of_cab_floor_from_ground}"></span> </td>
+										</tr>
+										<tr>
+											<td> Pantograph </td>
+											<td> <span th:text="*{pantograph}"></span> </td>
+										</tr>
+									</tbody>
+								</table>
+							</div>
+						</div>
+					</div>
+
+					<div class="card">
+						<div class="card-header" id="heading7">
+							<h2 class="mb-0">
+								<button class="btn btn-link collapsed" type="button" data-toggle="collapse" data-target="#collapse7" aria-expanded="false" aria-controls="collapse7">
+									N3, TRUCKS OVER 12000 KG
+								</button>
+							</h2>
+						</div>
+
+						<div id="collapse7" class="collapse" aria-labelledby="heading7" data-parent="#accordionMain">
+							<div class="card-body">
+								<table class="table table-hover table-sm table-bordered w-100 m-0">
+									<tbody>
+										<tr>
+											<td> Amount of Gears </td>
+											<td> <span th:text="*{amount_of_gears}"></span> </td>
+										</tr>
+										<tr>
+											<td> Power of Motor Brake (kW) </td>
+											<td> <span th:text="*{power_of_motor_brake}"></span> </td>
+										</tr>
+										<tr>
+											<td> High Power Engine Brake (kW) </td>
+											<td> <span th:text="*{high_power_engine_brake}"></span> </td>
+										</tr>
+										<tr>
+											<td> Amount of High Voltage Batteries </td>
+											<td> <span th:text="*{amount_of_high_voltage_batteries}"></span> </td>
+										</tr>
+										<tr>
+											<td> Rear Axle Tilt Stabilizer </td>
+											<td> <span th:text="*{rear_axle_tilt_stabilizer}"></span> </td>
+										</tr>
+										<tr>
+											<td> Rear Axle Support </td>
+											<td> <span th:text="*{rear_axle_support}"></span> </td>
+										</tr>
+										<tr>
+											<td> Differential Locks on Drive Shaft </td>
+											<td> <span th:text="*{differential_locks_on_drive_shaft}"></span> </td>
+										</tr>
+									</tbody>
+								</table>
+							</div>
+						</div>
+					</div>
+				</div>
+
+
+				<!--HIDDEN-->
+				<form action="#" th:action="${'/api1/vehicles/' + vehicle.id + '/edit'}" hidden method="GET">
+					<input type="submit" id="edit"/>
+				</form>
+
+				<!--HIDDEN-->
+				<form action="#" th:action="${'/api1/vehicles/' + vehicle.id + '/delete'}" hidden method="POST">
+					<input type="submit" id="delete"/>
+				</form>
+
 			</div>
 		</div>
 	</body>

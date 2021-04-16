@@ -3,17 +3,17 @@ package com.example.demo.database.services.vehicle;
 import com.example.demo.database.models.utils.Mapping;
 import com.example.demo.database.models.utils.ValidationResponse;
 import com.example.demo.database.models.vehicle.FileDB;
-import com.example.demo.database.models.vehicle.Refuel;
-import com.example.demo.database.models.vehicle.Vehicle;
+import com.example.demo.database.models.vehicle.Trip;
 import com.example.demo.database.models.vehicle.VehicleEvent;
 import com.example.demo.database.repositories.vehicle.EventRepository;
 import com.example.demo.database.repositories.vehicle.FileRepository;
-import com.example.demo.database.repositories.vehicle.RefuelRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.util.ReflectionUtils;
 
 import javax.transaction.Transactional;
-import java.text.SimpleDateFormat;
+import java.lang.reflect.Field;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -65,8 +65,6 @@ public class EventService {
 			for (FileDB file : files) {
 				file.setVehicle(null);
 				fileRepository.save(file);
-
-//				fileRepository.delete(file);
 			}
 		}
 
@@ -75,9 +73,6 @@ public class EventService {
 
 	public void deleteAll() {
 		List<FileDB> files = fileRepository.findAll();
-
-		//TODO: MAYBE HARD DELETE INSTEAD OF SET NULL
-//		fileRepository.deleteAll();
 
 		for (FileDB file : files) {
 			file.setEvent(null);
@@ -111,19 +106,29 @@ public class EventService {
 		}
 
 		if (mapping.equals(Mapping.POST) || mapping.equals(Mapping.PUT) || mapping.equals(Mapping.PATCH)) {
-			if (event.getName() != null) {
-				if (event.getName().length() <= 0) {
-					return new ValidationResponse(false, "name cannot be empty");
+
+			// EMPTY STRING CHECK
+			List<Field> stringFields = new ArrayList<>();
+
+			Field[] allFields = VehicleEvent.class.getDeclaredFields();
+			for (Field field : allFields) {
+				if (field.getType().equals(String.class)) {
+					stringFields.add(field);
 				}
 			}
 
-			if (event.getDescription() != null) {
-				if (event.getDescription().length() <= 0) {
-					return new ValidationResponse(false, "description cannot be empty");
+			for (Field field : stringFields) {
+				field.setAccessible(true);
+				Object object = ReflectionUtils.getField(field, event);
+
+				if (object != null) {
+					if (object instanceof String) {
+						if (((String) object).length() <= 0) {
+							return new ValidationResponse(false, "'" + field.getName() + "' cannot be empty");
+						}
+					}
 				}
 			}
-
-			// OTHER VALIDATION
 		}
 
 		if (mapping.equals(Mapping.DELETE)) {

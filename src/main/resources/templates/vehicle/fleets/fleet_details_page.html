@@ -27,8 +27,12 @@
 							<td> <span th:text="${fleet.organisation == null ? 'NOT SELECTED' : fleet.organisation.name}"></span> </td>
 						</tr>
 						<tr>
-							<td> Vehicles in Fleet </td>
-							<td> <span th:text="${vehicles_count}"></span> </td>
+							<td> Vehicles </td>
+							<td>
+								<form action="#" th:action="${'/api1/fleets/' + fleet.id + '/vehicles'}" class="m-0 p-0"  method="GET">
+									<button type="submit" class="btn btn-secondary btn-sm">View</button>
+								</form>
+							</td>
 						</tr>
 					</tbody>
 				</table>
