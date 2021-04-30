@@ -9,7 +9,6 @@ import com.example.demo.database.services.EventHistoryLogService;
 import com.example.demo.database.services.vehicle.EquipmentTypeService;
 import com.example.demo.utils.Constants;
 import com.example.demo.utils.DateUtils;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -278,7 +277,16 @@ public class EquipmentTypeRestController {
 					changes.remove("id");
 
 					String oldEquipmentTypeFromDatabase = equipmentTypeService.getById(idLong).toString();
-					EquipmentType equipmentTypeFromDatabase = handlePatchChanges(idLong, changes);
+					EquipmentType equipmentTypeFromDatabase;
+
+					try {
+						equipmentTypeFromDatabase = handlePatchChanges(idLong, changes);
+					} catch (Exception e) {
+						mapResponse.setHttp_status(HttpStatus.BAD_REQUEST);
+						mapResponse.setMessage(e.getMessage());
+						responseList.add(mapResponse);
+						continue;
+					}
 
 					RestResponse<EquipmentType> restResponse = new RestResponse<>();
 					restResponse.setBody(equipmentTypeFromDatabase);
@@ -337,9 +345,18 @@ public class EquipmentTypeRestController {
 
 		changes.remove("id");
 
-		equipmentTypeFromDatabase = handlePatchChanges(id, changes);
-		
 		RestResponse<EquipmentType> restResponse = new RestResponse<>();
+
+		try {
+			equipmentTypeFromDatabase = handlePatchChanges(id, changes);
+		} catch (Exception e) {
+			restResponse.setBody(equipmentTypeFromDatabase);
+			restResponse.setHttp_status(HttpStatus.BAD_REQUEST);
+			restResponse.setMessage(e.getMessage());
+
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(restResponse);
+		}
+
 		restResponse.setBody(equipmentTypeFromDatabase);
 		
 		ValidationResponse response = equipmentTypeService.validate(equipmentTypeFromDatabase, Mapping.PATCH);
@@ -459,7 +476,7 @@ public class EquipmentTypeRestController {
 		}
 	}
 
-	private EquipmentType handlePatchChanges(Long id, Map<String, Object> changes) {
+	private EquipmentType  handlePatchChanges(Long id, Map<String, Object> changes) throws Exception {
 		EquipmentType entity = equipmentTypeService.getById(id);
 
 		if (entity != null) {
@@ -473,8 +490,15 @@ public class EquipmentTypeRestController {
 						ReflectionUtils.setField(field, entity, value);
 					} else {
 
-						if (field.getType().equals(Date.class)) {
-							LocalDateTime localDateTime = LocalDateTime.parse((String) value, DateUtils.getFormat());
+						if (field.getType().equals(LocalDateTime.class)) {
+							LocalDateTime localDateTime = null;
+
+							try {
+								localDateTime = DateUtils.stringToLocalDateTime((String) value);
+							} catch (Exception e) {
+								throw new StringIndexOutOfBoundsException(e.getMessage());
+							}
+
 							ReflectionUtils.setField(field, entity, localDateTime);
 						}
 

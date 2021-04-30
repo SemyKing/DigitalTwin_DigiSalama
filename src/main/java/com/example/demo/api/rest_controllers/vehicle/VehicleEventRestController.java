@@ -14,6 +14,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.json.JsonParseException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -283,7 +284,16 @@ public class VehicleEventRestController {
 					changes.remove("id");
 
 					String oldEventFromDatabase = vehicleEventService.getById(idLong).toString();
-					VehicleEvent eventFromDatabase = handlePatchChanges(idLong, changes);
+					VehicleEvent eventFromDatabase;
+
+					try {
+						eventFromDatabase = handlePatchChanges(idLong, changes);
+					} catch (Exception e) {
+						mapResponse.setHttp_status(HttpStatus.BAD_REQUEST);
+						mapResponse.setMessage(e.getMessage());
+						responseList.add(mapResponse);
+						continue;
+					}
 
 					RestResponse<VehicleEvent> restResponse = new RestResponse<>();
 					restResponse.setBody(eventFromDatabase);
@@ -342,9 +352,18 @@ public class VehicleEventRestController {
 
 		changes.remove("id");
 
-		eventFromDatabase = handlePatchChanges(id, changes);
-
 		RestResponse<VehicleEvent> restResponse = new RestResponse<>();
+
+		try {
+			eventFromDatabase = handlePatchChanges(id, changes);
+		} catch (Exception e) {
+			restResponse.setBody(eventFromDatabase);
+			restResponse.setHttp_status(HttpStatus.BAD_REQUEST);
+			restResponse.setMessage(e.getMessage());
+
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(restResponse);
+		}
+
 		restResponse.setBody(eventFromDatabase);
 		
 		ValidationResponse response = vehicleEventService.validate(eventFromDatabase, Mapping.PATCH);
@@ -463,7 +482,7 @@ public class VehicleEventRestController {
 		}
 	}
 
-	private VehicleEvent handlePatchChanges(Long id, Map<String, Object> changes) {
+	private VehicleEvent handlePatchChanges(Long id, Map<String, Object> changes) throws Exception {
 		VehicleEvent entity = vehicleEventService.getById(id);
 
 		if (entity != null) {
@@ -477,8 +496,15 @@ public class VehicleEventRestController {
 						ReflectionUtils.setField(field, entity, value);
 					} else {
 
-						if (field.getType().equals(Date.class)) {
-							LocalDateTime localDateTime = LocalDateTime.parse((String) value, DateUtils.getFormat());
+						if (field.getType().equals(LocalDateTime.class)) {
+							LocalDateTime localDateTime = null;
+
+							try {
+								localDateTime = DateUtils.stringToLocalDateTime((String) value);
+							} catch (Exception e) {
+								throw new StringIndexOutOfBoundsException(e.getMessage());
+							}
+
 							ReflectionUtils.setField(field, entity, localDateTime);
 						}
 

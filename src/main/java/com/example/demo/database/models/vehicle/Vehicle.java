@@ -1,6 +1,7 @@
 package com.example.demo.database.models.vehicle;
 
 import com.example.demo.database.models.Organisation;
+import com.example.demo.utils.DateUtils;
 import com.example.demo.utils.LocalDateTimeConverter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.*;
@@ -128,7 +129,6 @@ public class Vehicle {
 	@Column
 	@DateTimeFormat(pattern = "yyyy-MM-dd'T'HH:mm")
 	@Convert(converter = LocalDateTimeConverter.class)
-//	private Date next_inspection_date = new Date();
 	private LocalDateTime next_inspection_date = LocalDateTime.now();
 
 	@Column

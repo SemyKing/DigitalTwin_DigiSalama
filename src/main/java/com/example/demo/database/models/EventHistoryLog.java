@@ -1,9 +1,9 @@
 package com.example.demo.database.models;
 
+import com.example.demo.utils.DateUtils;
 import com.example.demo.utils.LocalDateTimeConverter;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import lombok.*;
 import org.springframework.format.annotation.DateTimeFormat;
 
 import javax.persistence.*;

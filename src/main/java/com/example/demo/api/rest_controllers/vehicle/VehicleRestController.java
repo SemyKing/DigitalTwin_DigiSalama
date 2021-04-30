@@ -14,6 +14,7 @@ import com.example.demo.utils.Constants;
 import com.example.demo.utils.DateUtils;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -278,7 +279,17 @@ public class VehicleRestController {
 						changes.remove("id");
 
 						String oldVehicleFromDatabase = vehicleService.getById(idLong).toString();
-						Vehicle vehicleFromDatabase = handlePatchChanges(idLong, changes);
+
+						Vehicle vehicleFromDatabase;
+
+						try {
+							vehicleFromDatabase = handlePatchChanges(idLong, changes);
+						} catch (Exception e) {
+							mapResponse.setHttp_status(HttpStatus.BAD_REQUEST);
+							mapResponse.setMessage(e.getMessage());
+							responseList.add(mapResponse);
+							continue;
+						}
 
 						RestResponse<Vehicle> restResponse = new RestResponse<>();
 						restResponse.setBody(vehicleFromDatabase);
@@ -339,9 +350,18 @@ public class VehicleRestController {
 
 		changes.remove("id");
 
-		vehicleFromDatabase = handlePatchChanges(id, changes);
-
 		RestResponse<Vehicle> restResponse = new RestResponse<>();
+
+		try {
+			vehicleFromDatabase = handlePatchChanges(id, changes);
+		} catch (Exception e) {
+			restResponse.setBody(vehicleFromDatabase);
+			restResponse.setHttp_status(HttpStatus.BAD_REQUEST);
+			restResponse.setMessage(e.getMessage());
+
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(restResponse);
+		}
+
 		restResponse.setBody(vehicleFromDatabase);
 
 		ValidationResponse response = vehicleService.validate(vehicleFromDatabase, Mapping.PATCH);
@@ -464,29 +484,45 @@ public class VehicleRestController {
 		}
 	}
 
-	private Vehicle handlePatchChanges(Long id, Map<String, Object> changes) {
+	private Vehicle handlePatchChanges(Long id, Map<String, Object> changes) throws Exception {
 		Vehicle entity = vehicleService.getById(id);
 
 		if (entity != null) {
-			changes.forEach((key, value) -> {
+				changes.forEach((key, value) -> {
 				Field field = ReflectionUtils.findField(entity.getClass(), key);
-
 
 				if (field != null) {
 					field.setAccessible(true);
 
 					if (field.getType().equals(String.class)) {
-						ReflectionUtils.setField(field, entity, value.toString());
+						if (value == null) {
+							ReflectionUtils.setField(field, entity, null);
+						} else {
+							ReflectionUtils.setField(field, entity, value.toString());
+						}
 					} else {
 
 						if (field.getType().equals(LocalDateTime.class)) {
-							LocalDateTime localDateTime = LocalDateTime.parse((String) value, DateUtils.getFormat());
+							LocalDateTime localDateTime = null;
+
+							try {
+								localDateTime = DateUtils.stringToLocalDateTime((String) value);
+							} catch (Exception e) {
+								throw new StringIndexOutOfBoundsException(e.getMessage());
+							}
+
 							ReflectionUtils.setField(field, entity, localDateTime);
 						}
 
 						if (field.getType().equals(Organisation.class)) {
 							try {
-								entity.setOrganisation(objectMapper.readValue((String) value, Organisation.class));
+								Organisation organisation = null;
+
+								if (value != null) {
+									organisation = objectMapper.readValue((String) value, Organisation.class);
+								}
+
+								entity.setOrganisation(organisation);
 							} catch (JsonProcessingException e) {
 								System.err.println("VehicleRestController -> handlePatchChanges(): Organisation json parsing error: " + e.getMessage());
 							}

@@ -1,27 +1,33 @@
 package com.example.demo.api.rest_controllers.vehicle;
 
 import com.example.demo.database.models.Organisation;
+import com.example.demo.database.models.user.User;
+import com.example.demo.database.models.utils.JwtResponse;
 import com.example.demo.database.models.vehicle.Fleet;
 import com.example.demo.database.models.vehicle.Vehicle;
 import com.example.demo.database.repositories.EventHistoryLogRepository;
 import com.example.demo.database.repositories.OrganisationRepository;
 import com.example.demo.database.repositories.vehicle.FleetRepository;
 import com.example.demo.database.repositories.vehicle.VehicleRepository;
+import com.example.demo.database.services.UserService;
 import com.example.demo.utils.Constants;
 import com.example.demo.utils.DateUtils;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.hamcrest.core.IsNull;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
 import java.time.LocalDateTime;
@@ -44,6 +50,9 @@ class VehicleRestControllerTest {
 	@Autowired
 	private ObjectMapper objectMapper;
 
+	@Autowired
+	private UserService userService;
+
 	@MockBean
 	private VehicleRepository vehicleRepository;
 	@MockBean
@@ -57,23 +66,58 @@ class VehicleRestControllerTest {
 
 	private final String ENTITY = "vehicle";
 	private final String URL = Constants.JSON_API + "/vehicles";
+	private final String AUTHENTICATE =  Constants.JSON_API + "/authenticate";
 
-	private List<Vehicle> vehicleList;
 
+	@Value("${tests.username}")
+	private String REAL_USER;
+
+	@Value("${tests.password}")
+	private String REAL_PASSWORD;
+
+
+	private String JWT_TOKEN = "";
 
 	private final Long ID_NOT_FOUND = 0L;
 	private final Long ID_FOUND = 1L;
 
+	private List<Vehicle> vehicleList;
+
+
+
 	@BeforeAll
-	public void init() {
+	public void init() throws Exception {
 		vehicleList = new ArrayList<>();
+	}
+
+	@BeforeEach
+	public void getJWT_Token() throws Exception {
+		if (JWT_TOKEN.length() <= 0) {
+
+			User validUser = new User();
+			validUser.setUsername(REAL_USER);
+			validUser.setPassword(REAL_PASSWORD);
+
+			MvcResult result = mockMvc.perform(MockMvcRequestBuilders
+					.post(AUTHENTICATE)
+					.content(objectMapper.writeValueAsString(validUser))
+					.contentType(MediaType.APPLICATION_JSON)
+					.accept(MediaType.APPLICATION_JSON))
+					.andExpect(status().is(200))
+					.andExpect(jsonPath("$.jwt_token").exists())
+					.andDo(print())
+					.andReturn();
+
+			JwtResponse jwtResponse = objectMapper.readValue(result.getResponse().getContentAsString(), JwtResponse.class);
+			JWT_TOKEN = jwtResponse.getJwt_token();
+		}
 	}
 
 
 	@Test
 	public void testPostList_EmptyList() throws Exception {
 		this.mockMvc.perform(MockMvcRequestBuilders
-				.post(URL + "/batch")
+				.post(URL + "/batch").header("Authorization", "Bearer " + JWT_TOKEN)
 				.content(objectMapper.writeValueAsString(new ArrayList<>()))
 				.contentType(MediaType.APPLICATION_JSON)
 				.accept(MediaType.APPLICATION_JSON))
@@ -85,7 +129,7 @@ class VehicleRestControllerTest {
 	@Test
 	public void testPostList_NullList() throws Exception {
 		this.mockMvc.perform(MockMvcRequestBuilders
-				.post(URL + "/batch")
+				.post(URL + "/batch").header("Authorization", "Bearer " + JWT_TOKEN)
 				.content(objectMapper.writeValueAsString(null))
 				.contentType(MediaType.APPLICATION_JSON)
 				.accept(MediaType.APPLICATION_JSON))
@@ -103,7 +147,7 @@ class VehicleRestControllerTest {
 		vehicleList.add(toBeSaved);
 
 		this.mockMvc.perform(MockMvcRequestBuilders
-				.post(URL + "/batch")
+				.post(URL + "/batch").header("Authorization", "Bearer " + JWT_TOKEN)
 				.content(objectMapper.writeValueAsString(vehicleList))
 				.contentType(MediaType.APPLICATION_JSON)
 				.accept(MediaType.APPLICATION_JSON))
@@ -125,7 +169,7 @@ class VehicleRestControllerTest {
 		vehicleList.add(getVehicle(null, "vehicle_name"));
 
 		this.mockMvc.perform(MockMvcRequestBuilders
-				.post(URL + "/batch")
+				.post(URL + "/batch").header("Authorization", "Bearer " + JWT_TOKEN)
 				.content(objectMapper.writeValueAsString(vehicleList))
 				.contentType(MediaType.APPLICATION_JSON)
 				.accept(MediaType.APPLICATION_JSON))
@@ -140,7 +184,7 @@ class VehicleRestControllerTest {
 	@Test
 	public void testPost_Null() throws Exception {
 		this.mockMvc.perform(MockMvcRequestBuilders
-				.post(URL)
+				.post(URL).header("Authorization", "Bearer " + JWT_TOKEN)
 				.content(objectMapper.writeValueAsString(null))
 				.contentType(MediaType.APPLICATION_JSON)
 				.accept(MediaType.APPLICATION_JSON))
@@ -154,7 +198,7 @@ class VehicleRestControllerTest {
 		Mockito.when(vehicleRepository.save(toBeSaved)).thenReturn(toBeSaved);
 
 		this.mockMvc.perform(MockMvcRequestBuilders
-				.post(URL)
+				.post(URL).header("Authorization", "Bearer " + JWT_TOKEN)
 				.content(objectMapper.writeValueAsString(getVehicle(null, "")))
 				.contentType(MediaType.APPLICATION_JSON)
 				.accept(MediaType.APPLICATION_JSON))
@@ -171,7 +215,7 @@ class VehicleRestControllerTest {
 		Mockito.when(vehicleRepository.save(toBeSaved)).thenReturn(toBeSaved);
 
 		this.mockMvc.perform(MockMvcRequestBuilders
-				.post(URL)
+				.post(URL).header("Authorization", "Bearer " + JWT_TOKEN)
 				.content(objectMapper.writeValueAsString(toBeSaved))
 				.contentType(MediaType.APPLICATION_JSON)
 				.accept(MediaType.APPLICATION_JSON))
@@ -184,7 +228,7 @@ class VehicleRestControllerTest {
 	@Test
 	public void testPost_InternalServerError() throws Exception {
 		this.mockMvc.perform(MockMvcRequestBuilders
-				.post(URL)
+				.post(URL).header("Authorization", "Bearer " + JWT_TOKEN)
 				.content(objectMapper.writeValueAsString(getVehicle(null, "vehicle_name")))
 				.contentType(MediaType.APPLICATION_JSON)
 				.accept(MediaType.APPLICATION_JSON))
@@ -197,7 +241,7 @@ class VehicleRestControllerTest {
 	@Test
 	public void testPost_ById() throws Exception {
 		this.mockMvc.perform(MockMvcRequestBuilders
-				.post(URL + "/1")
+				.post(URL + "/1").header("Authorization", "Bearer " + JWT_TOKEN)
 				.content(objectMapper.writeValueAsString(getVehicle(null, "vehicle_name")))
 				.contentType(MediaType.APPLICATION_JSON)
 				.accept(MediaType.APPLICATION_JSON))
@@ -211,7 +255,7 @@ class VehicleRestControllerTest {
 	@Test
 	public void testGet_ByIdNotFound() throws Exception {
 		this.mockMvc.perform(MockMvcRequestBuilders
-				.get(URL + "/" + ID_NOT_FOUND)
+				.get(URL + "/" + ID_NOT_FOUND).header("Authorization", "Bearer " + JWT_TOKEN)
 				.contentType(MediaType.APPLICATION_JSON)
 				.accept(MediaType.APPLICATION_JSON))
 				.andExpect(status().is(HttpStatus.NOT_FOUND.value()))
@@ -225,7 +269,7 @@ class VehicleRestControllerTest {
 		Mockito.when(vehicleRepository.findById(ID_FOUND)).thenReturn(vehicle);
 
 		this.mockMvc.perform(MockMvcRequestBuilders
-				.get(URL + "/" + ID_FOUND)
+				.get(URL + "/" + ID_FOUND).header("Authorization", "Bearer " + JWT_TOKEN)
 				.contentType(MediaType.APPLICATION_JSON)
 				.accept(MediaType.APPLICATION_JSON))
 				.andExpect(jsonPath("$.name").value("found"))
@@ -237,7 +281,7 @@ class VehicleRestControllerTest {
 	@Test
 	public void testPutList_EmptyList() throws Exception {
 		this.mockMvc.perform(MockMvcRequestBuilders
-				.put(URL)
+				.put(URL).header("Authorization", "Bearer " + JWT_TOKEN)
 				.content(objectMapper.writeValueAsString(new ArrayList<>()))
 				.contentType(MediaType.APPLICATION_JSON)
 				.accept(MediaType.APPLICATION_JSON))
@@ -249,7 +293,7 @@ class VehicleRestControllerTest {
 	@Test
 	public void testPutList_NullList() throws Exception {
 		this.mockMvc.perform(MockMvcRequestBuilders
-				.put(URL)
+				.put(URL).header("Authorization", "Bearer " + JWT_TOKEN)
 				.content(objectMapper.writeValueAsString(null))
 				.contentType(MediaType.APPLICATION_JSON)
 				.accept(MediaType.APPLICATION_JSON))
@@ -270,7 +314,7 @@ class VehicleRestControllerTest {
 		vehicleList.add(toBeSaved);
 
 		this.mockMvc.perform(MockMvcRequestBuilders
-				.put(URL)
+				.put(URL).header("Authorization", "Bearer " + JWT_TOKEN)
 				.content(objectMapper.writeValueAsString(vehicleList))
 				.contentType(MediaType.APPLICATION_JSON)
 				.accept(MediaType.APPLICATION_JSON))
@@ -296,7 +340,7 @@ class VehicleRestControllerTest {
 		vehicleList.add(getVehicle(ID_FOUND, "vehicle_name"));
 
 		this.mockMvc.perform(MockMvcRequestBuilders
-				.put(URL)
+				.put(URL).header("Authorization", "Bearer " + JWT_TOKEN)
 				.content(objectMapper.writeValueAsString(vehicleList))
 				.contentType(MediaType.APPLICATION_JSON)
 				.accept(MediaType.APPLICATION_JSON))
@@ -311,7 +355,7 @@ class VehicleRestControllerTest {
 	@Test
 	public void testPut_Null() throws Exception {
 		this.mockMvc.perform(MockMvcRequestBuilders
-				.put(URL + "/" + ID_FOUND)
+				.put(URL + "/" + ID_FOUND).header("Authorization", "Bearer " + JWT_TOKEN)
 				.content(objectMapper.writeValueAsString(null))
 				.contentType(MediaType.APPLICATION_JSON)
 				.accept(MediaType.APPLICATION_JSON))
@@ -322,13 +366,13 @@ class VehicleRestControllerTest {
 	@Test
 	public void testPut_NonNullElementWithoutId() throws Exception {
 		this.mockMvc.perform(MockMvcRequestBuilders
-				.put(URL + "/" + ID_FOUND)
+				.put(URL + "/" + ID_FOUND).header("Authorization", "Bearer " + JWT_TOKEN)
 				.content(objectMapper.writeValueAsString(getVehicle(null, "vehicle_name")))
 				.contentType(MediaType.APPLICATION_JSON)
 				.accept(MediaType.APPLICATION_JSON))
 				.andExpect(status().is(HttpStatus.BAD_REQUEST.value()))
 				.andExpect(jsonPath("$.http_status").value("BAD_REQUEST"))
-				.andExpect(jsonPath("$.message").value("ID parameter is required"))
+				.andExpect(jsonPath("$.message").value("entity ID parameter is required"))
 				.andDo(print())
 				.andReturn();
 	}
@@ -339,7 +383,7 @@ class VehicleRestControllerTest {
 		Mockito.when(vehicleRepository.findById(ID_FOUND)).thenReturn(vehicle);
 
 		this.mockMvc.perform(MockMvcRequestBuilders
-				.put(URL + "/" + ID_FOUND)
+				.put(URL + "/" + ID_FOUND).header("Authorization", "Bearer " + JWT_TOKEN)
 				.content(objectMapper.writeValueAsString(getVehicle(ID_FOUND, "")))
 				.contentType(MediaType.APPLICATION_JSON)
 				.accept(MediaType.APPLICATION_JSON))
@@ -359,7 +403,7 @@ class VehicleRestControllerTest {
 		Mockito.when(vehicleRepository.save(toBeSaved)).thenReturn(toBeSaved);
 
 		this.mockMvc.perform(MockMvcRequestBuilders
-				.put(URL + "/" + ID_FOUND)
+				.put(URL + "/" + ID_FOUND).header("Authorization", "Bearer " + JWT_TOKEN)
 				.content(objectMapper.writeValueAsString(toBeSaved))
 				.contentType(MediaType.APPLICATION_JSON)
 				.accept(MediaType.APPLICATION_JSON))
@@ -375,7 +419,7 @@ class VehicleRestControllerTest {
 		Mockito.when(vehicleRepository.findById(ID_FOUND)).thenReturn(vehicle);
 
 		this.mockMvc.perform(MockMvcRequestBuilders
-				.put(URL + "/" + ID_FOUND)
+				.put(URL + "/" + ID_FOUND).header("Authorization", "Bearer " + JWT_TOKEN)
 				.content(objectMapper.writeValueAsString(getVehicle(ID_FOUND, "vehicle_name")))
 				.contentType(MediaType.APPLICATION_JSON)
 				.accept(MediaType.APPLICATION_JSON))
@@ -390,7 +434,7 @@ class VehicleRestControllerTest {
 	@Test
 	public void testPatchList_EmptyList() throws Exception {
 		this.mockMvc.perform(MockMvcRequestBuilders
-				.patch(URL)
+				.patch(URL).header("Authorization", "Bearer " + JWT_TOKEN)
 				.content(objectMapper.writeValueAsString(new ArrayList<>()))
 				.contentType(MediaType.APPLICATION_JSON)
 				.accept(MediaType.APPLICATION_JSON))
@@ -402,7 +446,7 @@ class VehicleRestControllerTest {
 	@Test
 	public void testPatchList_NullList() throws Exception {
 		this.mockMvc.perform(MockMvcRequestBuilders
-				.patch(URL)
+				.patch(URL).header("Authorization", "Bearer " + JWT_TOKEN)
 				.content(objectMapper.writeValueAsString(null))
 				.contentType(MediaType.APPLICATION_JSON)
 				.accept(MediaType.APPLICATION_JSON))
@@ -416,7 +460,7 @@ class VehicleRestControllerTest {
 		vehicleList.add(null);
 
 		this.mockMvc.perform(MockMvcRequestBuilders
-				.patch(URL)
+				.patch(URL).header("Authorization", "Bearer " + JWT_TOKEN)
 				.content(objectMapper.writeValueAsString(vehicleList))
 				.contentType(MediaType.APPLICATION_JSON)
 				.accept(MediaType.APPLICATION_JSON))
@@ -433,13 +477,13 @@ class VehicleRestControllerTest {
 		changes.put("id", ID_FOUND);
 		changes.put("name", "vehicle_name_put");
 		changes.put("required_driving_licence", "A");
-		changes.put("commissioning_check_performed_date", "1855-02-25 11:25");
+		changes.put("commissioning_check_performed_date", "1855-02-25T11:25");
 
 		Optional<Vehicle> vehicle = Optional.of(getVehicle(ID_FOUND, "found"));
 
 		Vehicle toBeSaved = getVehicle(ID_FOUND, "vehicle_name_patch");
 		toBeSaved.setRequired_driving_licence("A");
-		toBeSaved.setCommissioning_check_performed_date(LocalDateTime.parse("1855-02-25 11:25"));
+		toBeSaved.setCommissioning_check_performed_date(LocalDateTime.parse("1855-02-25T11:25", DateUtils.getDatabaseFormat()));
 
 		Mockito.when(vehicleRepository.findById(ID_FOUND)).thenReturn(vehicle);
 		Mockito.when(vehicleRepository.save(vehicle.get())).thenReturn(toBeSaved);
@@ -449,7 +493,7 @@ class VehicleRestControllerTest {
 		list.add(changes);
 
 		this.mockMvc.perform(MockMvcRequestBuilders
-				.patch(URL)
+				.patch(URL).header("Authorization", "Bearer " + JWT_TOKEN)
 				.content(objectMapper.writeValueAsString(list))
 				.contentType(MediaType.APPLICATION_JSON)
 				.accept(MediaType.APPLICATION_JSON))
@@ -471,7 +515,7 @@ class VehicleRestControllerTest {
 	@Test
 	public void testPatch_Null() throws Exception {
 		this.mockMvc.perform(MockMvcRequestBuilders
-				.patch(URL + "/" + ID_FOUND)
+				.patch(URL + "/" + ID_FOUND).header("Authorization", "Bearer " + JWT_TOKEN)
 				.content(objectMapper.writeValueAsString(null))
 				.contentType(MediaType.APPLICATION_JSON)
 				.accept(MediaType.APPLICATION_JSON))
@@ -488,7 +532,7 @@ class VehicleRestControllerTest {
 		Mockito.when(vehicleRepository.save(vehicle.get())).thenReturn(toBeSaved);
 
 		this.mockMvc.perform(MockMvcRequestBuilders
-				.patch(URL + "/" + ID_FOUND)
+				.patch(URL + "/" + ID_FOUND).header("Authorization", "Bearer " + JWT_TOKEN)
 				.content(objectMapper.writeValueAsString(toBeSaved))
 				.contentType(MediaType.APPLICATION_JSON)
 				.accept(MediaType.APPLICATION_JSON))
@@ -504,11 +548,11 @@ class VehicleRestControllerTest {
 		Map<String, Object> changes = new HashMap<>();
 		changes.put("name", "vehicle_name_patch");
 		changes.put("required_driving_licence", "A");
-		changes.put("commissioning_check_performed_date", "1999-03-26 12:35");
+		changes.put("commissioning_check_performed_date", "1999-03-26T12:35");
 
 		Vehicle toBeSaved = getVehicle(ID_FOUND, "vehicle_name_patch");
 		toBeSaved.setRequired_driving_licence("A");
-		toBeSaved.setCommissioning_check_performed_date(LocalDateTime.parse("1999-03-26 12:35"));
+		toBeSaved.setCommissioning_check_performed_date(LocalDateTime.parse("1999-03-26T12:35", DateUtils.getDatabaseFormat()));
 
 		Optional<Vehicle> vehicle = Optional.of(getVehicle(ID_FOUND, "found"));
 
@@ -516,13 +560,13 @@ class VehicleRestControllerTest {
 		Mockito.when(vehicleRepository.save(vehicle.get())).thenReturn(toBeSaved);
 
 		this.mockMvc.perform(MockMvcRequestBuilders
-				.patch(URL + "/" + ID_FOUND)
+				.patch(URL + "/" + ID_FOUND).header("Authorization", "Bearer " + JWT_TOKEN)
 				.content(objectMapper.writeValueAsString(changes))
 				.contentType(MediaType.APPLICATION_JSON)
 				.accept(MediaType.APPLICATION_JSON))
 				.andExpect(status().is(HttpStatus.OK.value()))
 				.andExpect(jsonPath("$.http_status").value("OK"))
-				.andExpect(jsonPath("$.message").value(ENTITY + " saved successfully"))
+				.andExpect(jsonPath("$.message").value(ENTITY + " patched successfully"))
 				.andDo(print());
 	}
 
@@ -550,7 +594,7 @@ class VehicleRestControllerTest {
 
 
 		this.mockMvc.perform(MockMvcRequestBuilders
-				.patch(URL + "/" + ID_FOUND)
+				.patch(URL + "/" + ID_FOUND).header("Authorization", "Bearer " + JWT_TOKEN)
 				.content(objectMapper.writeValueAsString(changes))
 				.contentType(MediaType.APPLICATION_JSON)
 				.accept(MediaType.APPLICATION_JSON))
@@ -589,7 +633,7 @@ class VehicleRestControllerTest {
 
 
 		this.mockMvc.perform(MockMvcRequestBuilders
-				.patch(URL + "/" + ID_FOUND)
+				.patch(URL + "/" + ID_FOUND).header("Authorization", "Bearer " + JWT_TOKEN)
 				.content(objectMapper.writeValueAsString(changes))
 				.contentType(MediaType.APPLICATION_JSON)
 				.accept(MediaType.APPLICATION_JSON))
@@ -605,7 +649,7 @@ class VehicleRestControllerTest {
 		Mockito.when(vehicleRepository.findById(ID_FOUND)).thenReturn(vehicle);
 
 		this.mockMvc.perform(MockMvcRequestBuilders
-				.patch(URL + "/" + ID_FOUND)
+				.patch(URL + "/" + ID_FOUND).header("Authorization", "Bearer " + JWT_TOKEN)
 				.content(objectMapper.writeValueAsString(getVehicle(ID_FOUND, "vehicle_name")))
 				.contentType(MediaType.APPLICATION_JSON)
 				.accept(MediaType.APPLICATION_JSON))
@@ -615,12 +659,37 @@ class VehicleRestControllerTest {
 				.andDo(print());
 	}
 
+	@Test
+	public void testPatch_InvalidDate() throws Exception {
+		Map<String, Object> changes = new HashMap<>();
+		changes.put("name", "vehicle_name_patch");
+		changes.put("commissioning_check_performed_date", "1999-03-26T12");
+
+		Vehicle toBeSaved = getVehicle(ID_FOUND, "vehicle_name_patch");
+		toBeSaved.setCommissioning_check_performed_date(LocalDateTime.parse("1999-03-26T12:35", DateUtils.getDatabaseFormat()));
+
+		Optional<Vehicle> vehicle = Optional.of(getVehicle(ID_FOUND, "found"));
+
+		Mockito.when(vehicleRepository.findById(ID_FOUND)).thenReturn(vehicle);
+		Mockito.when(vehicleRepository.save(vehicle.get())).thenReturn(toBeSaved);
+
+		this.mockMvc.perform(MockMvcRequestBuilders
+				.patch(URL + "/" + ID_FOUND).header("Authorization", "Bearer " + JWT_TOKEN)
+				.content(objectMapper.writeValueAsString(changes))
+				.contentType(MediaType.APPLICATION_JSON)
+				.accept(MediaType.APPLICATION_JSON))
+				.andExpect(status().is(HttpStatus.BAD_REQUEST.value()))
+				.andExpect(jsonPath("$.http_status").value("BAD_REQUEST"))
+				.andExpect(jsonPath("$.message").value(containsString("Date: '1999-03-26T12' is invalid")))
+				.andDo(print());
+	}
+
 
 
 	@Test
 	public void testDeleteList_EmptyList() throws Exception {
 		this.mockMvc.perform(MockMvcRequestBuilders
-				.delete(URL)
+				.delete(URL).header("Authorization", "Bearer " + JWT_TOKEN)
 				.content(objectMapper.writeValueAsString(new ArrayList<>()))
 				.contentType(MediaType.APPLICATION_JSON)
 				.accept(MediaType.APPLICATION_JSON))
@@ -632,7 +701,7 @@ class VehicleRestControllerTest {
 	@Test
 	public void testDeleteList_NullList() throws Exception {
 		this.mockMvc.perform(MockMvcRequestBuilders
-				.delete(URL)
+				.delete(URL).header("Authorization", "Bearer " + JWT_TOKEN)
 				.content(objectMapper.writeValueAsString(null))
 				.contentType(MediaType.APPLICATION_JSON)
 				.accept(MediaType.APPLICATION_JSON))
@@ -652,7 +721,7 @@ class VehicleRestControllerTest {
 		vehicleList.add(toBeSaved);
 
 		this.mockMvc.perform(MockMvcRequestBuilders
-				.delete(URL)
+				.delete(URL).header("Authorization", "Bearer " + JWT_TOKEN)
 				.content(objectMapper.writeValueAsString(vehicleList))
 				.contentType(MediaType.APPLICATION_JSON)
 				.accept(MediaType.APPLICATION_JSON))
@@ -680,14 +749,14 @@ class VehicleRestControllerTest {
 		vehicleList.add(toBeSaved);
 
 		this.mockMvc.perform(MockMvcRequestBuilders
-				.delete(URL)
+				.delete(URL).header("Authorization", "Bearer " + JWT_TOKEN)
 				.content(objectMapper.writeValueAsString(vehicleList))
 				.contentType(MediaType.APPLICATION_JSON)
 				.accept(MediaType.APPLICATION_JSON))
 				.andExpect(status().is(HttpStatus.MULTI_STATUS.value()))
 
 				.andExpect(jsonPath("$[0].http_status").value("BAD_REQUEST"))
-				.andExpect(jsonPath("$[0].message").value("ID parameter is required"))
+				.andExpect(jsonPath("$[0].message").value("entity ID parameter is required"))
 
 				.andDo(print());
 	}
@@ -697,7 +766,7 @@ class VehicleRestControllerTest {
 	@Test
 	public void testDelete_IdNotFound() throws Exception {
 		this.mockMvc.perform(MockMvcRequestBuilders
-				.delete(URL + "/" + ID_NOT_FOUND)
+				.delete(URL + "/" + ID_NOT_FOUND).header("Authorization", "Bearer " + JWT_TOKEN)
 				.contentType(MediaType.APPLICATION_JSON)
 				.accept(MediaType.APPLICATION_JSON))
 				.andExpect(status().is(HttpStatus.NOT_FOUND.value()))
@@ -712,7 +781,7 @@ class VehicleRestControllerTest {
 		Mockito.when(vehicleRepository.findById(ID_FOUND)).thenReturn(vehicle);
 
 		this.mockMvc.perform(MockMvcRequestBuilders
-				.delete(URL + "/" + ID_FOUND)
+				.delete(URL + "/" + ID_FOUND).header("Authorization", "Bearer " + JWT_TOKEN)
 				.contentType(MediaType.APPLICATION_JSON)
 				.accept(MediaType.APPLICATION_JSON))
 				.andExpect(status().is(HttpStatus.OK.value()))

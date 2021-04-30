@@ -283,7 +283,16 @@ public class RefuelRestController {
 					changes.remove("id");
 
 					String oldRefuelFromDatabase = refuelService.getById(idLong).toString();
-					Refuel refuelFromDatabase = handlePatchChanges(idLong, changes);
+					Refuel refuelFromDatabase;
+
+					try {
+						refuelFromDatabase = handlePatchChanges(idLong, changes);
+					} catch (Exception e) {
+						mapResponse.setHttp_status(HttpStatus.BAD_REQUEST);
+						mapResponse.setMessage(e.getMessage());
+						responseList.add(mapResponse);
+						continue;
+					}
 
 					RestResponse<Refuel> restResponse = new RestResponse<>();
 					restResponse.setBody(refuelFromDatabase);
@@ -341,9 +350,18 @@ public class RefuelRestController {
 
 		changes.remove("id");
 
-		refuelFromDatabase = handlePatchChanges(id, changes);
-
 		RestResponse<Refuel> restResponse = new RestResponse<>();
+
+		try {
+			refuelFromDatabase = handlePatchChanges(id, changes);
+		} catch (Exception e) {
+			restResponse.setBody(refuelFromDatabase);
+			restResponse.setHttp_status(HttpStatus.BAD_REQUEST);
+			restResponse.setMessage(e.getMessage());
+
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(restResponse);
+		}
+
 		restResponse.setBody(refuelFromDatabase);
 		
 		ValidationResponse response = refuelService.validate(refuelFromDatabase, Mapping.PATCH);
@@ -465,7 +483,7 @@ public class RefuelRestController {
 		}
 	}
 
-	private Refuel handlePatchChanges(Long id, Map<String, Object> changes) {
+	private Refuel  handlePatchChanges(Long id, Map<String, Object> changes) throws Exception {
 		Refuel entity = refuelService.getById(id);
 
 		if (entity != null) {
@@ -479,8 +497,15 @@ public class RefuelRestController {
 						ReflectionUtils.setField(field, entity, value);
 					} else {
 
-						if (field.getType().equals(Date.class)) {
-							LocalDateTime localDateTime = LocalDateTime.parse((String) value, DateUtils.getFormat());
+						if (field.getType().equals(LocalDateTime.class)) {
+							LocalDateTime localDateTime = null;
+
+							try {
+								localDateTime = DateUtils.stringToLocalDateTime((String) value);
+							} catch (Exception e) {
+								throw new StringIndexOutOfBoundsException(e.getMessage());
+							}
+
 							ReflectionUtils.setField(field, entity, localDateTime);
 						}
 

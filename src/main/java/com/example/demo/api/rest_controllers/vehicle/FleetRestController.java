@@ -280,7 +280,16 @@ public class FleetRestController {
 					changes.remove("id");
 
 					String oldFleetFromDatabase = fleetService.getById(idLong).toString();
-					Fleet fleetFromDatabase = handlePatchChanges(idLong, changes);
+					Fleet fleetFromDatabase;
+
+					try {
+						fleetFromDatabase = handlePatchChanges(idLong, changes);
+					} catch (Exception e) {
+						mapResponse.setHttp_status(HttpStatus.BAD_REQUEST);
+						mapResponse.setMessage(e.getMessage());
+						responseList.add(mapResponse);
+						continue;
+					}
 
 					RestResponse<Fleet> restResponse = new RestResponse<>();
 					restResponse.setBody(fleetFromDatabase);
@@ -339,9 +348,18 @@ public class FleetRestController {
 
 		changes.remove("id");
 
-		fleetFromDatabase = handlePatchChanges(id, changes);
-
 		RestResponse<Fleet> restResponse = new RestResponse<>();
+
+		try {
+			fleetFromDatabase = handlePatchChanges(id, changes);
+		} catch (Exception e) {
+			restResponse.setBody(fleetFromDatabase);
+			restResponse.setHttp_status(HttpStatus.BAD_REQUEST);
+			restResponse.setMessage(e.getMessage());
+
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(restResponse);
+		}
+
 		restResponse.setBody(fleetFromDatabase);
 		
 		ValidationResponse response = fleetService.validate(fleetFromDatabase, Mapping.PATCH);
@@ -463,7 +481,7 @@ public class FleetRestController {
 		}
 	}
 
-	private Fleet handlePatchChanges(Long id, Map<String, Object> changes) {
+	private Fleet  handlePatchChanges(Long id, Map<String, Object> changes) throws Exception {
 		Fleet entity = fleetService.getById(id);
 
 		if (entity != null) {
@@ -479,14 +497,27 @@ public class FleetRestController {
 						ReflectionUtils.setField(field, entity, value);
 					} else {
 
-						if (field.getType().equals(Date.class)) {
-							LocalDateTime localDateTime = LocalDateTime.parse((String) value, DateUtils.getFormat());
+						if (field.getType().equals(LocalDateTime.class)) {
+							LocalDateTime localDateTime = null;
+
+							try {
+								localDateTime = DateUtils.stringToLocalDateTime((String) value);
+							} catch (Exception e) {
+								throw new StringIndexOutOfBoundsException(e.getMessage());
+							}
+
 							ReflectionUtils.setField(field, entity, localDateTime);
 						}
 
 						if (field.getType().equals(Organisation.class)) {
 							try {
-								entity.setOrganisation(objectMapper.readValue((String) value, Organisation.class));
+								Organisation organisation = null;
+
+								if (value != null) {
+									organisation = objectMapper.readValue((String) value, Organisation.class);
+								}
+
+								entity.setOrganisation(organisation);
 							} catch (JsonProcessingException e) {
 								e.printStackTrace();
 							}

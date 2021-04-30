@@ -284,7 +284,16 @@ public class EquipmentRestController {
 					changes.remove("id");
 
 					String oldEquipmentFromDatabase = equipmentService.getById(idLong).toString();
-					Equipment equipmentFromDatabase = handlePatchChanges(idLong, changes);
+					Equipment equipmentFromDatabase;
+
+					try {
+						equipmentFromDatabase = handlePatchChanges(idLong, changes);
+					} catch (Exception e) {
+						mapResponse.setHttp_status(HttpStatus.BAD_REQUEST);
+						mapResponse.setMessage(e.getMessage());
+						responseList.add(mapResponse);
+						continue;
+					}
 
 					RestResponse<Equipment> restResponse = new RestResponse<>();
 					restResponse.setBody(equipmentFromDatabase);
@@ -343,9 +352,18 @@ public class EquipmentRestController {
 
 		changes.remove("id");
 
-		equipmentFromDatabase = handlePatchChanges(id, changes);
-
 		RestResponse<Equipment> restResponse = new RestResponse<>();
+
+		try {
+			equipmentFromDatabase = handlePatchChanges(id, changes);
+		} catch (Exception e) {
+			restResponse.setBody(equipmentFromDatabase);
+			restResponse.setHttp_status(HttpStatus.BAD_REQUEST);
+			restResponse.setMessage(e.getMessage());
+
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(restResponse);
+		}
+
 		restResponse.setBody(equipmentFromDatabase);
 		
 		ValidationResponse response = equipmentService.validate(equipmentFromDatabase, Mapping.PATCH);
@@ -468,7 +486,7 @@ public class EquipmentRestController {
 	}
 
 
-	private Equipment handlePatchChanges(Long id, Map<String, Object> changes) {
+	private Equipment  handlePatchChanges(Long id, Map<String, Object> changes) throws Exception {
 		Equipment entity = equipmentService.getById(id);
 
 		if (entity != null) {
@@ -482,8 +500,15 @@ public class EquipmentRestController {
 						ReflectionUtils.setField(field, entity, value);
 					} else {
 
-						if (field.getType().equals(Date.class)) {
-							LocalDateTime localDateTime = LocalDateTime.parse((String) value, DateUtils.getFormat());
+						if (field.getType().equals(LocalDateTime.class)) {
+							LocalDateTime localDateTime = null;
+
+							try {
+								localDateTime = DateUtils.stringToLocalDateTime((String) value);
+							} catch (Exception e) {
+								throw new StringIndexOutOfBoundsException(e.getMessage());
+							}
+
 							ReflectionUtils.setField(field, entity, localDateTime);
 						}
 

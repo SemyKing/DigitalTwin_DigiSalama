@@ -314,7 +314,16 @@ public class FileRestController {
 					changes.remove("id");
 
 					String oldFileFromDatabase = fileService.getById(idLong).toString();
-					FileDB fileFromDatabase = handlePatchChanges(idLong, changes);
+					FileDB fileFromDatabase;
+
+					try {
+						fileFromDatabase = handlePatchChanges(idLong, changes);
+					} catch (Exception e) {
+						mapResponse.setHttp_status(HttpStatus.BAD_REQUEST);
+						mapResponse.setMessage(e.getMessage());
+						responseList.add(mapResponse);
+						continue;
+					}
 
 					ValidationResponse response = fileService.validate(fileFromDatabase, Mapping.PATCH);
 
@@ -373,9 +382,18 @@ public class FileRestController {
 
 		changes.remove("id");
 
-		fileFromDatabase = handlePatchChanges(id, changes);
-
 		RestResponse<FileDB> restResponse = new RestResponse<>();
+
+		try {
+			fileFromDatabase = handlePatchChanges(id, changes);
+		} catch (Exception e) {
+			restResponse.setBody(fileFromDatabase);
+			restResponse.setHttp_status(HttpStatus.BAD_REQUEST);
+			restResponse.setMessage(e.getMessage());
+
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(restResponse);
+		}
+
 		restResponse.setBody(fileFromDatabase);
 		
 		ValidationResponse response = fileService.validate(fileFromDatabase, Mapping.PATCH);
@@ -497,7 +515,7 @@ public class FileRestController {
 		}
 	}
 
-	private FileDB handlePatchChanges(Long id, Map<String, Object> changes) {
+	private FileDB  handlePatchChanges(Long id, Map<String, Object> changes) throws Exception {
 		FileDB entity = fileService.getById(id);
 
 		if (entity != null) {
@@ -511,8 +529,15 @@ public class FileRestController {
 						ReflectionUtils.setField(field, entity, value);
 					} else {
 
-						if (field.getType().equals(Date.class)) {
-							LocalDateTime localDateTime = LocalDateTime.parse((String) value, DateUtils.getFormat());
+						if (field.getType().equals(LocalDateTime.class)) {
+							LocalDateTime localDateTime = null;
+
+							try {
+								localDateTime = DateUtils.stringToLocalDateTime((String) value);
+							} catch (Exception e) {
+								throw new StringIndexOutOfBoundsException(e.getMessage());
+							}
+
 							ReflectionUtils.setField(field, entity, localDateTime);
 						}
 

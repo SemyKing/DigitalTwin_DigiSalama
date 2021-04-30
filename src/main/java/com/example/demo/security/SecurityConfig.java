@@ -16,6 +16,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
 @Configuration
 @EnableWebSecurity
@@ -61,8 +62,8 @@ public class SecurityConfig {
 					.antMatcher(Constants.JSON_API + "/**")
 					.authorizeRequests()
 						.antMatchers(Constants.JSON_API + "/authenticate").permitAll()
-//						.antMatchers(Constants.JSON_API + "/**").authenticated()
-						.antMatchers(Constants.JSON_API + "/**").permitAll()
+						.antMatchers(Constants.JSON_API + "/**").authenticated()
+//						.antMatchers(Constants.JSON_API + "/**").permitAll()
 						.and()
 					.exceptionHandling().authenticationEntryPoint(jwtAuthenticationEntryPoint)
 					.and()
@@ -83,23 +84,23 @@ public class SecurityConfig {
 
 		@Override
 		protected void configure(HttpSecurity http) throws Exception {
-//			http
-//					.authorizeRequests()
-//						.antMatchers("/", "/login", "/signin", "/logout").permitAll()
-//						.antMatchers(Constants.UI_API + "/**").authenticated()
-//						.and()
-//					.formLogin()
-//						.loginProcessingUrl("/signin")
-//						.loginPage("/login").permitAll()
-//						.defaultSuccessUrl(Constants.UI_API + "/", true)
-//						.usernameParameter("username")
-//						.passwordParameter("password")
-//						.and()
-//					.csrf().disable()
-//
-//					.rememberMe().tokenValiditySeconds(SESSION_COOKIE_VALIDITY).key("mySecret!").rememberMeParameter("checkRememberMe")
-//					.and()
-//					.logout().logoutRequestMatcher(new AntPathRequestMatcher("/logout")).logoutSuccessUrl("/login");
+			http
+					.authorizeRequests()
+						.antMatchers("/", "/login", "/signin", "/logout").permitAll()
+						.antMatchers(Constants.UI_API + "/**").authenticated()
+						.and()
+					.formLogin()
+						.loginProcessingUrl("/signin")
+						.loginPage("/login").permitAll()
+						.defaultSuccessUrl(Constants.UI_API + "/", true)
+						.usernameParameter("username")
+						.passwordParameter("password")
+						.and()
+					.csrf().disable()
+
+					.rememberMe().tokenValiditySeconds(SESSION_COOKIE_VALIDITY).key("mySecret!").rememberMeParameter("checkRememberMe")
+					.and()
+					.logout().logoutRequestMatcher(new AntPathRequestMatcher("/logout")).logoutSuccessUrl("/login");
 		}
 	}
 }

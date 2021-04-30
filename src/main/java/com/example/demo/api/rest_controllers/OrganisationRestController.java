@@ -9,7 +9,6 @@ import com.example.demo.database.services.EventHistoryLogService;
 import com.example.demo.database.services.OrganisationService;
 import com.example.demo.utils.Constants;
 import com.example.demo.utils.DateUtils;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -278,7 +277,16 @@ public class OrganisationRestController {
 					long idLong = (long) ((Integer) idObj);
 
 					String oldOrganisationFromDatabase = organisationService.getById(idLong).toString();
-					Organisation organisationFromDatabase = handlePatchChanges(idLong, changes);
+					Organisation organisationFromDatabase;
+
+					try {
+						organisationFromDatabase = handlePatchChanges(idLong, changes);
+					} catch (Exception e) {
+						mapResponse.setHttp_status(HttpStatus.BAD_REQUEST);
+						mapResponse.setMessage(e.getMessage());
+						responseList.add(mapResponse);
+						continue;
+					}
 
 					RestResponse<Organisation> restResponse = new RestResponse<>();
 					restResponse.setBody(organisationFromDatabase);
@@ -337,9 +345,18 @@ public class OrganisationRestController {
 
 		changes.remove("id");
 
-		organisationFromDatabase = handlePatchChanges(id, changes);
-
 		RestResponse<Organisation> restResponse = new RestResponse<>();
+
+		try {
+			organisationFromDatabase = handlePatchChanges(id, changes);
+		} catch (Exception e) {
+			restResponse.setBody(organisationFromDatabase);
+			restResponse.setHttp_status(HttpStatus.BAD_REQUEST);
+			restResponse.setMessage(e.getMessage());
+
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(restResponse);
+		}
+
 		restResponse.setBody(organisationFromDatabase);
 		
 		ValidationResponse response = organisationService.validate(organisationFromDatabase, Mapping.PATCH);
@@ -461,7 +478,7 @@ public class OrganisationRestController {
 		}
 	}
 
-	private Organisation handlePatchChanges(Long id, Map<String, Object> changes) {
+	private Organisation  handlePatchChanges(Long id, Map<String, Object> changes) throws Exception {
 		Organisation entity = organisationService.getById(id);
 
 		if (entity != null) {
@@ -474,8 +491,15 @@ public class OrganisationRestController {
 					if (field.getType().equals(String.class)) {
 						ReflectionUtils.setField(field, entity, value);
 					} else {
-						if (field.getType().equals(Date.class)) {
-							LocalDateTime localDateTime = LocalDateTime.parse((String) value, DateUtils.getFormat());
+						if (field.getType().equals(LocalDateTime.class)) {
+							LocalDateTime localDateTime = null;
+
+							try {
+								localDateTime = DateUtils.stringToLocalDateTime((String) value);
+							} catch (Exception e) {
+								throw new StringIndexOutOfBoundsException(e.getMessage());
+							}
+
 							ReflectionUtils.setField(field, entity, localDateTime);
 						}
 					}

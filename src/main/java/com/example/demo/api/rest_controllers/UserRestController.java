@@ -8,6 +8,7 @@ import com.example.demo.database.models.user.User;
 import com.example.demo.database.models.utils.Mapping;
 import com.example.demo.database.models.utils.RestResponse;
 import com.example.demo.database.models.utils.ValidationResponse;
+import com.example.demo.database.models.vehicle.Vehicle;
 import com.example.demo.database.repositories.RoleRepository;
 import com.example.demo.database.services.EventHistoryLogService;
 import com.example.demo.database.services.OrganisationService;
@@ -308,8 +309,16 @@ public class UserRestController {
 
 					String oldUserFromDatabase = userService.getById(idLong).toString();
 
-					User userFromDatabase = handlePatchChanges(idLong, changes);
+					User userFromDatabase;
 
+					try {
+						userFromDatabase = handlePatchChanges(idLong, changes);
+					} catch (Exception e) {
+						mapResponse.setHttp_status(HttpStatus.BAD_REQUEST);
+						mapResponse.setMessage(e.getMessage());
+						responseList.add(mapResponse);
+						continue;
+					}
 
 					RestResponse<User> userResponse = new RestResponse<>();
 					userResponse.setBody(userFromDatabase);
@@ -369,9 +378,18 @@ public class UserRestController {
 		changes.remove("id");
 		changes.remove("password");
 
-		userFromDatabase = handlePatchChanges(id, changes);
-
 		RestResponse<User> restResponse = new RestResponse<>();
+
+		try {
+			userFromDatabase = handlePatchChanges(id, changes);
+		} catch (Exception e) {
+			restResponse.setBody(userFromDatabase);
+			restResponse.setHttp_status(HttpStatus.BAD_REQUEST);
+			restResponse.setMessage(e.getMessage());
+
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(restResponse);
+		}
+
 		restResponse.setBody(userFromDatabase);
 
 		ValidationResponse response = userService.validate(userFromDatabase, Mapping.PATCH);
@@ -593,7 +611,7 @@ public class UserRestController {
 	}
 
 
-	private User handlePatchChanges(Long id, Map<String, Object> changes) {
+	private User  handlePatchChanges(Long id, Map<String, Object> changes) throws Exception {
 		User entity = userService.getById(id);
 
 		if (entity != null) {
@@ -607,14 +625,27 @@ public class UserRestController {
 						ReflectionUtils.setField(field, entity, value);
 					} else {
 
-						if (field.getType().equals(Date.class)) {
-							LocalDateTime localDateTime = LocalDateTime.parse((String) value, DateUtils.getFormat());
+						if (field.getType().equals(LocalDateTime.class)) {
+							LocalDateTime localDateTime = null;
+
+							try {
+								localDateTime = DateUtils.stringToLocalDateTime((String) value);
+							} catch (Exception e) {
+								throw new StringIndexOutOfBoundsException(e.getMessage());
+							}
+
 							ReflectionUtils.setField(field, entity, localDateTime);
 						}
 
 						if (field.getType().equals(Organisation.class)) {
 							try {
-								entity.setOrganisation(objectMapper.readValue((String) value, Organisation.class));
+								Organisation organisation = null;
+
+								if (value != null) {
+									organisation = objectMapper.readValue((String) value, Organisation.class);
+								}
+
+								entity.setOrganisation(organisation);
 							} catch (JsonProcessingException e) {
 								e.printStackTrace();
 							}
