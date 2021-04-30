@@ -4,8 +4,9 @@ import com.example.demo.database.models.Organisation;
 import com.example.demo.database.models.user.Role;
 import com.example.demo.database.models.user.User;
 import com.example.demo.database.repositories.RoleRepository;
+import com.example.demo.database.services.OrganisationService;
 import com.example.demo.database.services.UserService;
-import com.example.demo.utils.StringUtils;
+import com.example.demo.utils.Constants;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -32,22 +33,23 @@ public class DemoApplication {
 	@Autowired
 	private UserService userService;
 
+	@Autowired
+	private OrganisationService organisationService;
+
 	@EventListener(ApplicationReadyEvent.class)
 	public void runAfterStartup() {
-
-
 		if (!userService.systemAdminExists()) {
 
-			Role userRole = 				createRoleIfNotFound(StringUtils.ROLE_USER,					1);
-			Role organisationAdminRole = 	createRoleIfNotFound(StringUtils.ROLE_ORGANISATION_ADMIN,	2);
-			Role systemAdminRole = 			createRoleIfNotFound(StringUtils.ROLE_SYSTEM_ADMIN,			3);
-
+			Role userRole = 			 createRoleIfNotFound(Constants.ROLE_USER);
+			Role organisationAdminRole = createRoleIfNotFound(Constants.ROLE_ORGANISATION_ADMIN);
+			Role systemAdminRole = 		 createRoleIfNotFound(Constants.ROLE_SYSTEM_ADMIN);
 
 			Organisation organisation = new Organisation();
 			organisation.setName("Vedia");
 
-			PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+			organisationService.save(organisation);
 
+			PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
 			User admin = new User();
 			admin.setUsername("admin");
@@ -63,12 +65,11 @@ public class DemoApplication {
 	}
 
 	@Transactional
-	private Role createRoleIfNotFound(String name, Integer level) {
+	private Role createRoleIfNotFound(String name) {
 		Role role = roleRepository.findByName(name);
 		if (role == null) {
 			role = new Role();
 			role.setName(name);
-			role.setLevel(level);
 			role = roleRepository.save(role);
 		}
 		return role;

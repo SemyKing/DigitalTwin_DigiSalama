@@ -1,12 +1,17 @@
 package com.example.demo.api.rest_controllers.vehicle;
 
-import com.example.demo.database.models.Organisation;
+import com.example.demo.database.models.EventHistoryLog;
 import com.example.demo.database.models.utils.Mapping;
 import com.example.demo.database.models.utils.RestResponse;
 import com.example.demo.database.models.utils.ValidationResponse;
 import com.example.demo.database.models.vehicle.Refuel;
+import com.example.demo.database.models.vehicle.Vehicle;
+import com.example.demo.database.services.EventHistoryLogService;
 import com.example.demo.database.services.vehicle.RefuelService;
-import com.example.demo.utils.StringUtils;
+import com.example.demo.utils.Constants;
+import com.example.demo.utils.DateUtils;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -17,24 +22,35 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.lang.reflect.Field;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Comparator;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping(StringUtils.JSON_API + "/refuels")
+@RequestMapping(Constants.JSON_API + "/refuels")
 public class RefuelRestController {
 
 	private final String ENTITY = "refuel";
 
 	@Autowired
+	private final EventHistoryLogService eventHistoryLogService;
+
+	@Autowired
 	private final RefuelService refuelService;
+
+	@Autowired
+	private ObjectMapper objectMapper;
 
 
 	@PostMapping(value = {"/batch"}, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<List<RestResponse<Refuel>>> postList(@RequestBody List<Refuel> refuels) {
+
+		if (refuels == null || refuels.isEmpty()) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "NULL or empty array was provided");
+		}
 
 		boolean errorOccurred = false;
 
@@ -50,8 +66,6 @@ public class RefuelRestController {
 				restResponse.setHttp_status(HttpStatus.BAD_REQUEST);
 				restResponse.setMessage(response.getMessage());
 
-				responseList.add(restResponse);
-
 				errorOccurred = true;
 			} else {
 				Refuel refuelFromDatabase = refuelService.save(refuel);
@@ -65,10 +79,12 @@ public class RefuelRestController {
 					restResponse.setBody(refuelFromDatabase);
 					restResponse.setHttp_status(HttpStatus.OK);
 					restResponse.setMessage(ENTITY + " saved successfully");
-				}
 
-				responseList.add(restResponse);
+					addLog("create " + ENTITY, ENTITY + " created:\n" + refuelFromDatabase);
+				}
 			}
+
+			responseList.add(restResponse);
 		}
 
 		if (errorOccurred) {
@@ -77,7 +93,6 @@ public class RefuelRestController {
 			return ResponseEntity.status(HttpStatus.OK).body(responseList);
 		}
 	}
-
 
 	@PostMapping(value = {"", "/"}, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<RestResponse<Refuel>> post(@RequestBody Refuel refuel) {
@@ -105,6 +120,8 @@ public class RefuelRestController {
 			restResponse.setBody(refuelFromDatabase);
 			restResponse.setHttp_status(HttpStatus.OK);
 			restResponse.setMessage(ENTITY + " saved successfully");
+
+			addLog("create " + ENTITY, ENTITY + " created:\n" + refuelFromDatabase);
 
 			return ResponseEntity.status(HttpStatus.OK).body(restResponse);
 		}
@@ -138,6 +155,10 @@ public class RefuelRestController {
 	@PutMapping(value = {"", "/"}, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<List<RestResponse<Refuel>>> putList(@RequestBody List<Refuel> refuels) {
 
+		if (refuels == null || refuels.isEmpty()) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "NULL or empty array was provided");
+		}
+
 		boolean errorOccurred = false;
 
 		List<RestResponse<Refuel>> responseList = new ArrayList<>();
@@ -154,6 +175,7 @@ public class RefuelRestController {
 
 				errorOccurred = true;
 			} else {
+				String oldRefuelFromDatabase = refuelService.getById(refuel.getId()).toString();
 				Refuel refuelFromDatabase = refuelService.save(refuel);
 
 				if (refuelFromDatabase == null) {
@@ -165,6 +187,8 @@ public class RefuelRestController {
 					restResponse.setBody(refuelFromDatabase);
 					restResponse.setHttp_status(HttpStatus.OK);
 					restResponse.setMessage(ENTITY + " saved successfully");
+
+					addLog("update (PUT) " + ENTITY, ENTITY + " updated from:\n" + oldRefuelFromDatabase + "\nto:\n" + refuelFromDatabase);
 				}
 			}
 			
@@ -193,6 +217,7 @@ public class RefuelRestController {
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(restResponse);
 		}
 
+		String oldRefuelFromDatabase = refuelService.getById(refuel.getId()).toString();
 		Refuel refuelFromDatabase = refuelService.save(refuel);
 
 		if (refuelFromDatabase == null) {
@@ -205,6 +230,8 @@ public class RefuelRestController {
 			restResponse.setHttp_status(HttpStatus.OK);
 			restResponse.setMessage(ENTITY + " saved successfully");
 
+			addLog("update (PUT) " + ENTITY, ENTITY + " updated from:\n" + oldRefuelFromDatabase + "\nto:\n" + refuelFromDatabase);
+
 			return ResponseEntity.status(HttpStatus.OK).body(restResponse);
 		}
 	}
@@ -214,6 +241,10 @@ public class RefuelRestController {
 	@PatchMapping(value = {"", "/"}, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<List<RestResponse<?>>> patchList(@RequestBody List<Map<String, Object>> changesList) {
 
+		if (changesList == null || changesList.isEmpty()) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "NULL or empty array was provided");
+		}
+
 		List<RestResponse<?>> responseList = new ArrayList<>();
 		boolean errorOccurred = false;
 
@@ -221,6 +252,14 @@ public class RefuelRestController {
 
 			RestResponse<Map<String, Object>> mapResponse = new RestResponse<>();
 			mapResponse.setBody(changes);
+
+			if (changes == null) {
+				mapResponse.setHttp_status(HttpStatus.BAD_REQUEST);
+				mapResponse.setMessage("NULL array element was provided");
+				responseList.add(mapResponse);
+				errorOccurred = true;
+				continue;
+			}
 
 			if (!changes.containsKey("id")) {
 				mapResponse.setHttp_status(HttpStatus.BAD_REQUEST);
@@ -240,19 +279,11 @@ public class RefuelRestController {
 
 					errorOccurred = true;
 				} else {
-					Integer id = (Integer) idObj;
-
-					Refuel refuelFromDatabase = refuelService.getById(Long.valueOf(id));
-
+					long idLong = (long) ((Integer) idObj);
 					changes.remove("id");
 
-					changes.forEach((key, value) -> {
-						Field field = ReflectionUtils.findField(Refuel.class, key);
-						if (field != null) {
-							field.setAccessible(true);
-							ReflectionUtils.setField(field, refuelFromDatabase, value);
-						}
-					});
+					String oldRefuelFromDatabase = refuelService.getById(idLong).toString();
+					Refuel refuelFromDatabase = handlePatchChanges(idLong, changes);
 
 					RestResponse<Refuel> restResponse = new RestResponse<>();
 					restResponse.setBody(refuelFromDatabase);
@@ -265,8 +296,20 @@ public class RefuelRestController {
 
 						errorOccurred = true;
 					} else {
-						restResponse.setHttp_status(HttpStatus.OK);
-						restResponse.setMessage(ENTITY + "patched successfully");
+						Refuel updatedRefuelFromDatabase = refuelService.save(refuelFromDatabase);
+
+						if (updatedRefuelFromDatabase == null) {
+							restResponse.setHttp_status(HttpStatus.INTERNAL_SERVER_ERROR);
+							restResponse.setMessage("failed to save " + ENTITY + " in database");
+
+							errorOccurred = true;
+						} else {
+							restResponse.setBody(updatedRefuelFromDatabase);
+							restResponse.setHttp_status(HttpStatus.OK);
+							restResponse.setMessage(ENTITY + "patched successfully");
+
+							addLog("update (PATCH) " + ENTITY, ENTITY + " updated from:\n" + oldRefuelFromDatabase + "\nto:\n" + updatedRefuelFromDatabase);
+						}
 					}
 
 					responseList.add(restResponse);
@@ -284,21 +327,21 @@ public class RefuelRestController {
 	@PatchMapping(value = "/{id}", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<RestResponse<Refuel>> patchById(@RequestBody Map<String, Object> changes, @PathVariable Long id) {
 
+		if (changes == null || changes.isEmpty()) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "NULL or empty array was provided");
+		}
+
 		Refuel refuelFromDatabase = refuelService.getById(id);
 
 		if (refuelFromDatabase == null) {
 			throw new ResponseStatusException(HttpStatus.NOT_FOUND, ENTITY + " with ID: '" + id + "' not found");
 		}
 
+		String oldRefuelFromDatabase = refuelFromDatabase.toString();
+
 		changes.remove("id");
 
-		changes.forEach((key, value) -> {
-			Field field = ReflectionUtils.findField(Refuel.class, key);
-			if (field != null) {
-				field.setAccessible(true);
-				ReflectionUtils.setField(field, refuelFromDatabase, value);
-			}
-		});
+		refuelFromDatabase = handlePatchChanges(id, changes);
 
 		RestResponse<Refuel> restResponse = new RestResponse<>();
 		restResponse.setBody(refuelFromDatabase);
@@ -324,6 +367,8 @@ public class RefuelRestController {
 			restResponse.setHttp_status(HttpStatus.OK);
 			restResponse.setMessage(ENTITY + " saved successfully");
 
+			addLog("update (PATCH) " + ENTITY, ENTITY + " updated from:\n" + oldRefuelFromDatabase + "\nto:\n" + patchedRefuel);
+
 			return ResponseEntity.status(HttpStatus.OK).body(restResponse);
 		}
 	}
@@ -332,6 +377,10 @@ public class RefuelRestController {
 
 	@DeleteMapping(value = {"", "/"}, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<List<RestResponse<Refuel>>> deleteList(@RequestBody List<Refuel> refuels) {
+
+		if (refuels == null || refuels.isEmpty()) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "NULL or empty array was provided");
+		}
 
 		boolean errorOccurred = false;
 
@@ -347,8 +396,6 @@ public class RefuelRestController {
 				restResponse.setHttp_status(HttpStatus.BAD_REQUEST);
 				restResponse.setMessage(response.getMessage());
 
-				responseList.add(restResponse);
-
 				errorOccurred = true;
 			} else {
 				try {
@@ -356,15 +403,17 @@ public class RefuelRestController {
 
 					restResponse.setHttp_status(HttpStatus.OK);
 					restResponse.setMessage(ENTITY + " deleted successfully");
+
+					addLog("delete " + ENTITY, ENTITY + " deleted:\n" + refuel);
 				} catch (Exception e) {
 					restResponse.setHttp_status(HttpStatus.INTERNAL_SERVER_ERROR);
 					restResponse.setMessage("failed to delete " + ENTITY + " from database \n" + e.getMessage());
 
 					errorOccurred = true;
 				}
-
-				responseList.add(restResponse);
 			}
+
+			responseList.add(restResponse);
 		}
 
 		if (errorOccurred) {
@@ -382,6 +431,12 @@ public class RefuelRestController {
 			throw new ResponseStatusException(HttpStatus.NOT_FOUND, ENTITY + " with ID: '" + id + "' not found");
 		}
 
+		ValidationResponse response = refuelService.validate(refuelFromDatabase, Mapping.DELETE);
+
+		if (!response.isValid()) {
+			throw new ResponseStatusException(HttpStatus.METHOD_NOT_ALLOWED, response.getMessage());
+		}
+
 		try {
 			refuelService.delete(refuelFromDatabase);
 		} catch (Exception e) {
@@ -393,28 +448,57 @@ public class RefuelRestController {
 		restResponse.setHttp_status(HttpStatus.OK);
 		restResponse.setMessage(ENTITY + " deleted successfully");
 
+		addLog("delete " + ENTITY, ENTITY + " deleted:\n" + refuelFromDatabase);
+
 		return ResponseEntity.ok(restResponse);
 	}
 
 
+	private void addLog(String action, String description) {
+		if (eventHistoryLogService.isLoggingEnabledForRefuels()) {
+			EventHistoryLog log = new EventHistoryLog();
+			log.setWho_did(eventHistoryLogService.getCurrentUser() == null ? "NULL" : eventHistoryLogService.getCurrentUser().toString());
+			log.setAction(action);
+			log.setDescription(description);
 
-	//TODO FOR TESTING -> REMOVE IN PRODUCTION
-	@PostMapping("/populate_with_test_data")
-	public void populateWithTestData() {
-		for (int i = 1; i < 5; i++) {
-			Refuel refuel = new Refuel();
-			refuel.setPrice(14.96F);
-			refuel.setFuel_name("Diesel");
-			refuel.setLocation("Location_" + i);
-			refuel.setDescription("Description for Refuel_" + i);
-
-			refuelService.save(refuel);
+			eventHistoryLogService.save(log);
 		}
 	}
 
-	//TODO FOR TESTING -> REMOVE IN PRODUCTION
-	@DeleteMapping("/delete_all")
-	public void deleteAll() {
-		refuelService.deleteAll();
+	private Refuel handlePatchChanges(Long id, Map<String, Object> changes) {
+		Refuel entity = refuelService.getById(id);
+
+		if (entity != null) {
+			changes.forEach((key, value) -> {
+				Field field = ReflectionUtils.findField(entity.getClass(), key);
+
+				if (field != null) {
+					field.setAccessible(true);
+
+					if (field.getType().equals(String.class)) {
+						ReflectionUtils.setField(field, entity, value);
+					} else {
+
+						if (field.getType().equals(Date.class)) {
+							LocalDateTime localDateTime = LocalDateTime.parse((String) value, DateUtils.getFormat());
+							ReflectionUtils.setField(field, entity, localDateTime);
+						}
+
+						if (field.getType().equals(Vehicle.class)) {
+							try {
+								Vehicle vehicle = objectMapper.readValue((String) value, Vehicle.class);
+								entity.setVehicle(vehicle);
+							} catch (JsonProcessingException e) {
+								System.err.println("RefuelRestController -> handlePatchChanges(): Vehicle json parsing error: " + e.getMessage());
+							}
+						}
+
+
+					}
+				}
+			});
+		}
+
+		return entity;
 	}
 }

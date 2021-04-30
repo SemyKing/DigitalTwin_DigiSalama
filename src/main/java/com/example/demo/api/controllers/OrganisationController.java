@@ -1,12 +1,13 @@
 package com.example.demo.api.controllers;
 
+import com.example.demo.database.models.EventHistoryLog;
 import com.example.demo.database.models.Organisation;
 import com.example.demo.database.models.utils.Mapping;
 import com.example.demo.database.models.utils.ValidationResponse;
-import com.example.demo.database.models.vehicle.Vehicle;
+import com.example.demo.database.services.EventHistoryLogService;
 import com.example.demo.database.services.OrganisationService;
+import com.example.demo.utils.Constants;
 import com.example.demo.utils.FieldReflectionUtils;
-import com.example.demo.utils.StringUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -18,10 +19,13 @@ import java.util.List;
 @Controller
 @RequiredArgsConstructor
 @SessionAttributes("organisation")
-@RequestMapping(StringUtils.UI_API + "/organisations")
+@RequestMapping(Constants.UI_API + "/organisations")
 public class OrganisationController {
 
 	private final String ENTITY = "organisation";
+
+	@Autowired
+	private final EventHistoryLogService eventHistoryLogService;
 
 	@Autowired
 	private final OrganisationService organisationService;
@@ -41,9 +45,9 @@ public class OrganisationController {
 		Organisation organisationFromDatabase = organisationService.getById(id);
 
 		if (organisationFromDatabase == null) {
-			model.addAttribute(StringUtils.ERROR_TITLE_ATTRIBUTE, "No such entity");
-			model.addAttribute(StringUtils.ERROR_MESSAGE_ATTRIBUTE, ENTITY + " with id: " + id + " not found");
-			return StringUtils.ERROR_PAGE;
+			model.addAttribute(Constants.ERROR_TITLE_ATTRIBUTE, "No such entity");
+			model.addAttribute(Constants.ERROR_MESSAGE_ATTRIBUTE, ENTITY + " with id: " + id + " not found");
+			return Constants.ERROR_PAGE;
 		}
 
 		model.addAttribute(ENTITY, organisationFromDatabase);
@@ -64,9 +68,9 @@ public class OrganisationController {
 		Organisation organisationFromDatabase = organisationService.getById(id);
 
 		if (organisationFromDatabase == null) {
-			model.addAttribute(StringUtils.ERROR_TITLE_ATTRIBUTE, "No such entity");
-			model.addAttribute(StringUtils.ERROR_MESSAGE_ATTRIBUTE, ENTITY + " with id: " + id + " not found");
-			return StringUtils.ERROR_PAGE;
+			model.addAttribute(Constants.ERROR_TITLE_ATTRIBUTE, "No such entity");
+			model.addAttribute(Constants.ERROR_MESSAGE_ATTRIBUTE, ENTITY + " with id: " + id + " not found");
+			return Constants.ERROR_PAGE;
 		}
 
 		model.addAttribute(ENTITY, organisationFromDatabase);
@@ -77,48 +81,70 @@ public class OrganisationController {
 
 	@PostMapping({"", "/"})
 	public String post(@ModelAttribute Organisation organisation, Model model) {
-		organisation = new FieldReflectionUtils<Organisation>().getObjectWithEmptyStringValuesAsNull(organisation);
+		organisation = new FieldReflectionUtils<Organisation>().getEntityWithEmptyStringValuesAsNull(organisation);
 
 		ValidationResponse response = organisationService.validate(organisation, Mapping.POST);
 
 		if (!response.isValid()) {
-			model.addAttribute(StringUtils.ERROR_TITLE_ATTRIBUTE, "Validation error");
-			model.addAttribute(StringUtils.ERROR_MESSAGE_ATTRIBUTE, response.getMessage());
-			return StringUtils.ERROR_PAGE;
+			model.addAttribute(Constants.ERROR_TITLE_ATTRIBUTE, "Validation error");
+			model.addAttribute(Constants.ERROR_MESSAGE_ATTRIBUTE, response.getMessage());
+			return Constants.ERROR_PAGE;
 		}
 
 		Organisation organisationFromDatabase = organisationService.save(organisation);
 
 		if (organisationFromDatabase == null) {
-			model.addAttribute(StringUtils.ERROR_TITLE_ATTRIBUTE, "Database error");
-			model.addAttribute(StringUtils.ERROR_MESSAGE_ATTRIBUTE,"failed to save " + ENTITY + " in database");
-			return StringUtils.ERROR_PAGE;
+			model.addAttribute(Constants.ERROR_TITLE_ATTRIBUTE, "Database error");
+			model.addAttribute(Constants.ERROR_MESSAGE_ATTRIBUTE,"failed to save " + ENTITY + " in database");
+			return Constants.ERROR_PAGE;
 		} else {
-			return StringUtils.REDIRECT + StringUtils.UI_API + "/organisations";
+
+			addLog(
+					"create " + ENTITY,
+					ENTITY + " created: \n" + organisationFromDatabase);
+
+			return Constants.REDIRECT + Constants.UI_API + "/organisations";
 		}
 	}
 
 
 	@PostMapping("/update")
 	public String put(@ModelAttribute Organisation organisation, Model model) {
-		organisation = new FieldReflectionUtils<Organisation>().getObjectWithEmptyStringValuesAsNull(organisation);
+		String oldOrganisationDatabase = organisationService.getById(organisation.getId()).toString();
+
+		organisation = new FieldReflectionUtils<Organisation>().getEntityWithEmptyStringValuesAsNull(organisation);
 
 		ValidationResponse response = organisationService.validate(organisation, Mapping.PUT);
 
 		if (!response.isValid()) {
-			model.addAttribute(StringUtils.ERROR_TITLE_ATTRIBUTE, "Validation error");
-			model.addAttribute(StringUtils.ERROR_MESSAGE_ATTRIBUTE, response.getMessage());
-			return StringUtils.ERROR_PAGE;
+			model.addAttribute(Constants.ERROR_TITLE_ATTRIBUTE, "Validation error");
+			model.addAttribute(Constants.ERROR_MESSAGE_ATTRIBUTE, response.getMessage());
+			return Constants.ERROR_PAGE;
 		}
+
 
 		Organisation organisationFromDatabase = organisationService.save(organisation);
 
 		if (organisationFromDatabase == null) {
-			model.addAttribute(StringUtils.ERROR_TITLE_ATTRIBUTE, "Database error");
-			model.addAttribute(StringUtils.ERROR_MESSAGE_ATTRIBUTE,"failed to save " + ENTITY + " in database");
-			return StringUtils.ERROR_PAGE;
+			model.addAttribute(Constants.ERROR_TITLE_ATTRIBUTE, "Database error");
+			model.addAttribute(Constants.ERROR_MESSAGE_ATTRIBUTE,"failed to save " + ENTITY + " in database");
+			return Constants.ERROR_PAGE;
 		} else {
-			return StringUtils.REDIRECT + StringUtils.UI_API + "/organisations/" + organisationFromDatabase.getId();
+
+			addLog(
+					"update " + ENTITY,
+					ENTITY + " updated from:\n" + organisationFromDatabase + "\nto:\n" + oldOrganisationDatabase);
+
+			if (eventHistoryLogService.isLoggingEnabledForOrganisations()) {
+				EventHistoryLog log = new EventHistoryLog();
+				log.setWho_did(eventHistoryLogService.getCurrentUser() == null ? "NULL" : eventHistoryLogService.getCurrentUser().toString());
+				log.setAction("update " + ENTITY);
+				log.setDescription(ENTITY + " updated from:\n" + organisationFromDatabase + "\nto:\n" + oldOrganisationDatabase);
+
+				eventHistoryLogService.save(log);
+			}
+
+			return Constants.REDIRECT + Constants.UI_API + "/organisations/" + organisationFromDatabase.getId();
 		}
 	}
 
@@ -128,13 +154,28 @@ public class OrganisationController {
 		Organisation organisationFromDatabase = organisationService.getById(id);
 
 		if (organisationFromDatabase == null) {
-			model.addAttribute(StringUtils.ERROR_TITLE_ATTRIBUTE, "Not found");
-			model.addAttribute(StringUtils.ERROR_MESSAGE_ATTRIBUTE, ENTITY + " with ID " + id + " not found");
-			return StringUtils.ERROR_PAGE;
+			model.addAttribute(Constants.ERROR_TITLE_ATTRIBUTE, "Not found");
+			model.addAttribute(Constants.ERROR_MESSAGE_ATTRIBUTE, ENTITY + " with ID " + id + " not found");
+			return Constants.ERROR_PAGE;
 		}
 
 		organisationService.delete(organisationFromDatabase);
 
-		return StringUtils.REDIRECT + StringUtils.UI_API + "/organisations";
+		addLog(
+				"delete " + ENTITY,
+				ENTITY + " deleted:\n" + organisationFromDatabase);
+
+		return Constants.REDIRECT + Constants.UI_API + "/organisations";
+	}
+
+	private void addLog(String action, String description) {
+		if (eventHistoryLogService.isLoggingEnabledForOrganisations()) {
+			EventHistoryLog log = new EventHistoryLog();
+			log.setWho_did(eventHistoryLogService.getCurrentUser() == null ? "NULL" : eventHistoryLogService.getCurrentUser().toString());
+			log.setAction(action);
+			log.setDescription(description);
+
+			eventHistoryLogService.save(log);
+		}
 	}
 }

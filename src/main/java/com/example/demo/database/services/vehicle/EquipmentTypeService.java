@@ -3,15 +3,13 @@ package com.example.demo.database.services.vehicle;
 import com.example.demo.database.models.utils.Mapping;
 import com.example.demo.database.models.utils.ValidationResponse;
 import com.example.demo.database.models.vehicle.EquipmentType;
-import com.example.demo.database.models.vehicle.VehicleEvent;
+import com.example.demo.database.repositories.vehicle.EquipmentRepository;
 import com.example.demo.database.repositories.vehicle.EquipmentTypeRepository;
+import com.example.demo.utils.FieldReflectionUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.util.ReflectionUtils;
 
 import javax.transaction.Transactional;
-import java.lang.reflect.Field;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -21,6 +19,8 @@ import java.util.Optional;
 public class EquipmentTypeService {
 
 	private final EquipmentTypeRepository repository;
+
+	private final EquipmentRepository equipmentRepository;
 
 
 	public List<EquipmentType> getAll() {
@@ -44,17 +44,33 @@ public class EquipmentTypeService {
 	}
 
 	public void delete(EquipmentType type) {
-		if (type == null) {
+		if (type == null || type.getId() == null) {
 			return;
 		}
 
-		if (type.getId() == null) {
-			return;
-		}
+		// FIRST DELETE/SET NULL ALL ENTITIES THAT HAVE FOREIGN KEY OF CURRENT ENTITY
+
+		equipmentRepository.findAllByTypeId(type.getId()).forEach(equipment -> {
+			equipment.setEquipment_type(null);
+			equipmentRepository.save(equipment);
+
+//			equipmentRepository.delete(equipment);
+		});
+
 		repository.delete(type);
 	}
 
 	public void deleteAll() {
+
+		// FIRST DELETE/SET NULL ALL ENTITIES THAT HAVE FOREIGN KEY OF CURRENT ENTITY
+
+		equipmentRepository.findAll().forEach(equipment -> {
+			equipment.setEquipment_type(null);
+			equipmentRepository.save(equipment);
+
+//			equipmentRepository.delete(equipment);
+		});
+
 		repository.deleteAll();
 	}
 
@@ -70,45 +86,31 @@ public class EquipmentTypeService {
 
 		if (mapping.equals(Mapping.PUT) || mapping.equals(Mapping.PATCH)) {
 			if (type.getId() == null) {
-				return new ValidationResponse(false, "ID parameter is required");
+				return new ValidationResponse(false, "entity ID parameter is required");
 			}
 
 			EquipmentType typeFromDatabase = getById(type.getId());
 
 			if (typeFromDatabase == null) {
-				return new ValidationResponse(false, "ID parameter is invalid");
+				return new ValidationResponse(false, "entity ID parameter is invalid");
 			}
 		}
 
 		if (mapping.equals(Mapping.POST) || mapping.equals(Mapping.PUT) || mapping.equals(Mapping.PATCH)) {
 
-			// EMPTY STRING CHECK
-			List<Field> stringFields = new ArrayList<>();
 
-			Field[] allFields = EquipmentType.class.getDeclaredFields();
-			for (Field field : allFields) {
-				if (field.getType().equals(String.class)) {
-					stringFields.add(field);
-				}
-			}
 
-			for (Field field : stringFields) {
-				field.setAccessible(true);
-				Object object = ReflectionUtils.getField(field, type);
 
-				if (object != null) {
-					if (object instanceof String) {
-						if (((String) object).length() <= 0) {
-							return new ValidationResponse(false, "'" + field.getName() + "' cannot be empty");
-						}
-					}
-				}
+			ValidationResponse stringFieldsValidation = new FieldReflectionUtils<EquipmentType>().validateStringFields(type);
+
+			if (!stringFieldsValidation.isValid()) {
+				return stringFieldsValidation;
 			}
 		}
 
 		if (mapping.equals(Mapping.DELETE)) {
 			if (type.getId() == null) {
-				return new ValidationResponse(false, "ID parameter is required");
+				return new ValidationResponse(false, "entity ID parameter is required");
 			}
 		}
 

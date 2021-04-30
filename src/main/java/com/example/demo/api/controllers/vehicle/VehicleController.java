@@ -1,14 +1,16 @@
 package com.example.demo.api.controllers.vehicle;
 
+import com.example.demo.database.models.EventHistoryLog;
 import com.example.demo.database.models.Organisation;
 import com.example.demo.database.models.utils.ListWrapper;
 import com.example.demo.database.models.utils.Mapping;
 import com.example.demo.database.models.utils.ValidationResponse;
 import com.example.demo.database.models.vehicle.*;
+import com.example.demo.database.services.EventHistoryLogService;
 import com.example.demo.database.services.OrganisationService;
 import com.example.demo.database.services.vehicle.*;
+import com.example.demo.utils.Constants;
 import com.example.demo.utils.FieldReflectionUtils;
-import com.example.demo.utils.StringUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -23,10 +25,13 @@ import java.util.Set;
 @Controller
 @RequiredArgsConstructor
 @SessionAttributes({"vehicle, fleet"})
-@RequestMapping(StringUtils.UI_API + "/vehicles")
+@RequestMapping(Constants.UI_API + "/vehicles")
 public class VehicleController {
 
-	private static final String ENTITY = "vehicle";
+	private final String ENTITY = "vehicle";
+
+	@Autowired
+	private final EventHistoryLogService eventHistoryLogService;
 
 	@Autowired
 	private final VehicleService vehicleService;
@@ -41,7 +46,7 @@ public class VehicleController {
 	private final FileService fileService;
 
 	@Autowired
-	private final EventService eventService;
+	private final VehicleEventService vehicleEventService;
 
 	@Autowired
 	private final EquipmentService equipmentService;
@@ -67,9 +72,9 @@ public class VehicleController {
 		Vehicle vehicleFromDatabase = vehicleService.getById(id);
 
 		if (vehicleFromDatabase == null) {
-			model.addAttribute(StringUtils.ERROR_TITLE_ATTRIBUTE, "No such entity");
-			model.addAttribute(StringUtils.ERROR_MESSAGE_ATTRIBUTE, ENTITY + " with id: " + id + " not found");
-			return StringUtils.ERROR_PAGE;
+			model.addAttribute(Constants.ERROR_TITLE_ATTRIBUTE, "No such entity");
+			model.addAttribute(Constants.ERROR_MESSAGE_ATTRIBUTE, ENTITY + " with id: " + id + " not found");
+			return Constants.ERROR_PAGE;
 		}
 
 		model.addAttribute(ENTITY, vehicleFromDatabase);
@@ -94,9 +99,9 @@ public class VehicleController {
 		Vehicle vehicleFromDatabase = vehicleService.getById(id);
 
 		if (vehicleFromDatabase == null) {
-			model.addAttribute(StringUtils.ERROR_TITLE_ATTRIBUTE, "No such entity");
-			model.addAttribute(StringUtils.ERROR_MESSAGE_ATTRIBUTE, ENTITY + " with id: " + id + " not found");
-			return StringUtils.ERROR_PAGE;
+			model.addAttribute(Constants.ERROR_TITLE_ATTRIBUTE, "No such entity");
+			model.addAttribute(Constants.ERROR_MESSAGE_ATTRIBUTE, ENTITY + " with id: " + id + " not found");
+			return Constants.ERROR_PAGE;
 		}
 
 		model.addAttribute(ENTITY, vehicleFromDatabase);
@@ -112,9 +117,9 @@ public class VehicleController {
 		Vehicle vehicleFromDatabase = vehicleService.getById(id);
 
 		if (vehicleFromDatabase == null) {
-			model.addAttribute(StringUtils.ERROR_TITLE_ATTRIBUTE, "No such entity");
-			model.addAttribute(StringUtils.ERROR_MESSAGE_ATTRIBUTE, ENTITY + " with id: " + id + " not found");
-			return StringUtils.ERROR_PAGE;
+			model.addAttribute(Constants.ERROR_TITLE_ATTRIBUTE, "No such entity");
+			model.addAttribute(Constants.ERROR_MESSAGE_ATTRIBUTE, ENTITY + " with id: " + id + " not found");
+			return Constants.ERROR_PAGE;
 		}
 
 		model.addAttribute(ENTITY, vehicleFromDatabase);
@@ -130,9 +135,9 @@ public class VehicleController {
 		Vehicle vehicleFromDatabase = vehicleService.getById(id);
 
 		if (vehicleFromDatabase == null) {
-			model.addAttribute(StringUtils.ERROR_TITLE_ATTRIBUTE, "No such entity");
-			model.addAttribute(StringUtils.ERROR_MESSAGE_ATTRIBUTE, ENTITY + " with id: " + id + " not found");
-			return StringUtils.ERROR_PAGE;
+			model.addAttribute(Constants.ERROR_TITLE_ATTRIBUTE, "No such entity");
+			model.addAttribute(Constants.ERROR_MESSAGE_ATTRIBUTE, ENTITY + " with id: " + id + " not found");
+			return Constants.ERROR_PAGE;
 		}
 
 		model.addAttribute(ENTITY, vehicleFromDatabase);
@@ -148,9 +153,9 @@ public class VehicleController {
 		Vehicle vehicleFromDatabase = vehicleService.getById(id);
 
 		if (vehicleFromDatabase == null) {
-			model.addAttribute(StringUtils.ERROR_TITLE_ATTRIBUTE, "No such entity");
-			model.addAttribute(StringUtils.ERROR_MESSAGE_ATTRIBUTE, ENTITY + " with id: " + id + " not found");
-			return StringUtils.ERROR_PAGE;
+			model.addAttribute(Constants.ERROR_TITLE_ATTRIBUTE, "No such entity");
+			model.addAttribute(Constants.ERROR_MESSAGE_ATTRIBUTE, ENTITY + " with id: " + id + " not found");
+			return Constants.ERROR_PAGE;
 		}
 
 		model.addAttribute(ENTITY, vehicleFromDatabase);
@@ -167,15 +172,15 @@ public class VehicleController {
 		Vehicle vehicleFromDatabase = vehicleService.getById(id);
 
 		if (vehicleFromDatabase == null) {
-			model.addAttribute(StringUtils.ERROR_TITLE_ATTRIBUTE, "No such entity");
-			model.addAttribute(StringUtils.ERROR_MESSAGE_ATTRIBUTE, ENTITY + " with id: " + id + " not found");
-			return StringUtils.ERROR_PAGE;
+			model.addAttribute(Constants.ERROR_TITLE_ATTRIBUTE, "No such entity");
+			model.addAttribute(Constants.ERROR_MESSAGE_ATTRIBUTE, ENTITY + " with id: " + id + " not found");
+			return Constants.ERROR_PAGE;
 		}
 
 		model.addAttribute(ENTITY, vehicleFromDatabase);
 
 
-		List<VehicleEvent> events = eventService.getAllByVehicleId(id);
+		List<VehicleEvent> events = vehicleEventService.getAllByVehicleId(id);
 		model.addAttribute("events", events);
 
 		return "vehicle/vehicle_events_list_page";
@@ -198,12 +203,10 @@ public class VehicleController {
 		Vehicle vehicle = vehicleService.getById(id);
 
 		if (vehicle == null) {
-			model.addAttribute(StringUtils.ERROR_TITLE_ATTRIBUTE, "No such entity");
-			model.addAttribute(StringUtils.ERROR_MESSAGE_ATTRIBUTE, ENTITY + " with id: " + id + " not found");
-			return StringUtils.ERROR_PAGE;
+			model.addAttribute(Constants.ERROR_TITLE_ATTRIBUTE, "No such entity");
+			model.addAttribute(Constants.ERROR_MESSAGE_ATTRIBUTE, ENTITY + " with id: " + id + " not found");
+			return Constants.ERROR_PAGE;
 		}
-
-		System.out.println("EDIT VEHICLE: " + vehicle);
 
 		model.addAttribute(ENTITY, vehicle);
 
@@ -223,9 +226,9 @@ public class VehicleController {
 		Vehicle vehicleFromDatabase = vehicleService.getById(id);
 
 		if (vehicleFromDatabase == null) {
-			model.addAttribute(StringUtils.ERROR_TITLE_ATTRIBUTE, "No such entity");
-			model.addAttribute(StringUtils.ERROR_MESSAGE_ATTRIBUTE, ENTITY + " with id: " + id + " not found");
-			return StringUtils.ERROR_PAGE;
+			model.addAttribute(Constants.ERROR_TITLE_ATTRIBUTE, "No such entity");
+			model.addAttribute(Constants.ERROR_MESSAGE_ATTRIBUTE, ENTITY + " with id: " + id + " not found");
+			return Constants.ERROR_PAGE;
 		}
 
 		List<Fleet> vehicleFleets = new ArrayList<>(vehicleFromDatabase.getFleets());
@@ -246,16 +249,20 @@ public class VehicleController {
 	}
 
 
+	//TODO: COPY WORKING CODE FROM FLEET_CONTROLLER
+
 	// SET FLEETS FOR VEHICLE
 	@PostMapping("/{id}/set_fleets")
 	public String addFleetsToVehicle(@ModelAttribute ListWrapper fleetsWrapper, @PathVariable Long id, Model model) {
 		Vehicle vehicleFromDatabase = vehicleService.getById(id);
 
 		if (vehicleFromDatabase == null) {
-			model.addAttribute(StringUtils.ERROR_TITLE_ATTRIBUTE, "No such entity");
-			model.addAttribute(StringUtils.ERROR_MESSAGE_ATTRIBUTE, ENTITY + " with id: " + id + " not found");
-			return StringUtils.ERROR_PAGE;
+			model.addAttribute(Constants.ERROR_TITLE_ATTRIBUTE, "No such entity");
+			model.addAttribute(Constants.ERROR_MESSAGE_ATTRIBUTE, ENTITY + " with id: " + id + " not found");
+			return Constants.ERROR_PAGE;
 		}
+
+		String oldVehicle = vehicleFromDatabase.toString();
 
 		if (fleetsWrapper.getFleets().size() > 0) {
 			Set<Fleet> fleets = new HashSet<>();
@@ -268,59 +275,73 @@ public class VehicleController {
 			}
 
 			vehicleFromDatabase.setFleets(fleets);
+			vehicleFromDatabase = vehicleService.save(vehicleFromDatabase);
 
-			vehicleService.save(vehicleFromDatabase);
+			addLog(
+					"add/remove fleets to/from " + ENTITY,
+					ENTITY + " updated from:\n" + oldVehicle + "\nto:\n" + vehicleFromDatabase);
 		}
 
-		return StringUtils.REDIRECT + StringUtils.UI_API + "/vehicles" + id + "/edit";
+		return Constants.REDIRECT + Constants.UI_API + "/vehicles" + id + "/edit";
 	}
 
 
 	@PostMapping({"", "/"})
 	public String post(@ModelAttribute Vehicle vehicle, Model model) {
-		vehicle = new FieldReflectionUtils<Vehicle>().getObjectWithEmptyStringValuesAsNull(vehicle);
+		vehicle = new FieldReflectionUtils<Vehicle>().getEntityWithEmptyStringValuesAsNull(vehicle);
 
 		ValidationResponse response = vehicleService.validate(vehicle, Mapping.POST);
 
 		if (!response.isValid()) {
-			model.addAttribute(StringUtils.ERROR_TITLE_ATTRIBUTE, "Validation error");
-			model.addAttribute(StringUtils.ERROR_MESSAGE_ATTRIBUTE, response.getMessage());
-			return StringUtils.ERROR_PAGE;
+			model.addAttribute(Constants.ERROR_TITLE_ATTRIBUTE, "Validation error");
+			model.addAttribute(Constants.ERROR_MESSAGE_ATTRIBUTE, response.getMessage());
+			return Constants.ERROR_PAGE;
 		}
 
 		Vehicle vehicleFromDatabase = vehicleService.save(vehicle);
 
 		if (vehicleFromDatabase == null) {
-			model.addAttribute(StringUtils.ERROR_TITLE_ATTRIBUTE, "Database error");
-			model.addAttribute(StringUtils.ERROR_MESSAGE_ATTRIBUTE,"failed to save " + ENTITY + " in database");
-			return StringUtils.ERROR_PAGE;
+			model.addAttribute(Constants.ERROR_TITLE_ATTRIBUTE, "Database error");
+			model.addAttribute(Constants.ERROR_MESSAGE_ATTRIBUTE,"failed to save " + ENTITY + " in database");
+			return Constants.ERROR_PAGE;
 		} else {
-			return StringUtils.REDIRECT + StringUtils.UI_API + "/vehicles";
+
+			addLog(
+					"create " + ENTITY,
+					ENTITY + " created:\n" + vehicleFromDatabase);
+
+			return Constants.REDIRECT + Constants.UI_API + "/vehicles";
 		}
 	}
 
 
 	@PostMapping("/update")
 	public String put(@ModelAttribute Vehicle vehicle, Model model) {
-		FieldReflectionUtils<Vehicle> util = new FieldReflectionUtils<>();
-		vehicle = util.getObjectWithEmptyStringValuesAsNull(vehicle);
+		String oldVehicleFromDatabase = vehicleService.getById(vehicle.getId()).toString();
+
+		vehicle = new FieldReflectionUtils<Vehicle>().getEntityWithEmptyStringValuesAsNull(vehicle);
 
 		ValidationResponse response = vehicleService.validate(vehicle, Mapping.PUT);
 
 		if (!response.isValid()) {
-			model.addAttribute(StringUtils.ERROR_TITLE_ATTRIBUTE, "Validation error");
-			model.addAttribute(StringUtils.ERROR_MESSAGE_ATTRIBUTE, response.getMessage());
-			return StringUtils.ERROR_PAGE;
+			model.addAttribute(Constants.ERROR_TITLE_ATTRIBUTE, "Validation error");
+			model.addAttribute(Constants.ERROR_MESSAGE_ATTRIBUTE, response.getMessage());
+			return Constants.ERROR_PAGE;
 		}
 
 		Vehicle vehicleFromDatabase = vehicleService.save(vehicle);
 
 		if (vehicleFromDatabase == null) {
-			model.addAttribute(StringUtils.ERROR_TITLE_ATTRIBUTE, "Database error");
-			model.addAttribute(StringUtils.ERROR_MESSAGE_ATTRIBUTE,"failed to save " + ENTITY + " in database");
-			return StringUtils.ERROR_PAGE;
+			model.addAttribute(Constants.ERROR_TITLE_ATTRIBUTE, "Database error");
+			model.addAttribute(Constants.ERROR_MESSAGE_ATTRIBUTE,"failed to save " + ENTITY + " in database");
+			return Constants.ERROR_PAGE;
 		} else {
-			return StringUtils.REDIRECT + StringUtils.UI_API + "/vehicles/" + vehicleFromDatabase.getId();
+
+			addLog(
+					"update " + ENTITY,
+					ENTITY + " updated from:\n" + oldVehicleFromDatabase + "\nto:\n" + vehicleFromDatabase);
+
+			return Constants.REDIRECT + Constants.UI_API + "/vehicles/" + vehicleFromDatabase.getId();
 		}
 	}
 
@@ -330,13 +351,28 @@ public class VehicleController {
 		Vehicle vehicleFromDatabase = vehicleService.getById(id);
 
 		if (vehicleFromDatabase == null) {
-			model.addAttribute(StringUtils.ERROR_TITLE_ATTRIBUTE, "Not found");
-			model.addAttribute(StringUtils.ERROR_MESSAGE_ATTRIBUTE, ENTITY + " with ID " + id + " not found");
-			return StringUtils.ERROR_PAGE;
+			model.addAttribute(Constants.ERROR_TITLE_ATTRIBUTE, "Not found");
+			model.addAttribute(Constants.ERROR_MESSAGE_ATTRIBUTE, ENTITY + " with ID " + id + " not found");
+			return Constants.ERROR_PAGE;
 		}
 
 		vehicleService.delete(vehicleFromDatabase);
 
-		return StringUtils.REDIRECT + StringUtils.UI_API + "/vehicles";
+		addLog(
+				"delete " + ENTITY,
+				ENTITY + " deleted:\n" + vehicleFromDatabase);
+
+		return Constants.REDIRECT + Constants.UI_API + "/vehicles";
+	}
+
+	private void addLog(String action, String description) {
+		if (eventHistoryLogService.isLoggingEnabledForVehicles()) {
+			EventHistoryLog log = new EventHistoryLog();
+			log.setWho_did(eventHistoryLogService.getCurrentUser() == null ? "NULL" : eventHistoryLogService.getCurrentUser().toString());
+			log.setAction(action);
+			log.setDescription(description);
+
+			eventHistoryLogService.save(log);
+		}
 	}
 }

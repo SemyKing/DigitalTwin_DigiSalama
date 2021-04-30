@@ -1,0 +1,54 @@
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{main-layout :: main-fragment(~{:: #main-content})}">
+	<head>
+		<title>Event History Log Details</title>
+		<link rel="stylesheet"
+			  href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css"
+			  integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO"
+			  crossorigin="anonymous">
+	</head>
+
+	<body>
+
+		<div id="main-content" class="container pt-2">
+
+			<h1>Event History Log Details</h1>
+
+			<form action="#" th:action="${'/api1/event_history_logs/' + event_history_log.id + '/delete'}" th:object="${event_history_log}" method="POST">
+
+				<div class="form-group">
+					<label for="id">ID</label>
+					<input type="text" class="form-control" id="id" readonly th:field="*{id}">
+				</div>
+
+				<div class="form-group">
+					<label for="action">Action</label>
+					<input type="text" class="form-control" id="action" readonly th:field="*{action}">
+				</div>
+
+				<div class="form-group">
+					<label for="timestamp">Timestamp</label>
+					<input type="text" class="form-control" id="timestamp" readonly th:value="${#temporals.format(event_history_log.timestamp, 'dd/MM/yyyy HH:mm')}">
+				</div>
+
+				<div class="form-group">
+					<label for="timestamp">Who did</label>
+					<input type="text" class="form-control" id="who_did" readonly th:field="*{who_did}">
+				</div>
+
+				<div class="form-group">
+					<label for="description">Description</label>
+					<textarea id="description" style="min-height: 200px;" class="form-control" aria-label="Description" readonly th:field="*{description}"></textarea>
+				</div>
+
+
+<!--					<tr>-->
+<!--						<td> Timestamp </td>-->
+<!--						<td> <span th:text="${#dates.format(event_history_log.timestamp, 'dd/MM/yyyy HH:mm')}"></span> </td>-->
+<!--					</tr>-->
+
+				<button type="submit" class="btn btn-danger mx-auto mt-4">Delete</button>
+			</form>
+
+		</div>
+	</body>
+</html>

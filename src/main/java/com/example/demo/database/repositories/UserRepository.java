@@ -1,7 +1,7 @@
 package com.example.demo.database.repositories;
 
 import com.example.demo.database.models.user.User;
-import com.example.demo.utils.StringUtils;
+import com.example.demo.utils.Constants;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -21,9 +21,12 @@ public interface UserRepository extends JpaRepository<User, Long> {
 	@Query("SELECT u FROM User u WHERE u.email = :email")
 	Optional<User> findUserByEmail(@Param("email") String email);
 
-	@Query("SELECT u FROM User u WHERE u.role IS NOT NULL AND u.role.name = '" + StringUtils.ROLE_SYSTEM_ADMIN + "'")
+	@Query("SELECT u FROM User u WHERE u.role IS NOT NULL AND u.role.name = '" + Constants.ROLE_SYSTEM_ADMIN + "'")
 	List<User> findSystemAdmins();
 
 	@Query("SELECT u FROM User u WHERE u.password_update_token = :token")
     Optional<User> findUserByPasswordUpdateToken(@Param("token") String token);
+
+	@Query("SELECT u FROM User u WHERE u.organisation IS NOT NULL AND u.organisation.id  = :id")
+    List<User> findAllByOrganisationId(@Param("id") Long id);
 }

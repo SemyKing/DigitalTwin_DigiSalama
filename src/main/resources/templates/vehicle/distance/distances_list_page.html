@@ -45,7 +45,7 @@
 							<span th:text="${distance.vehicle == null ? 'NOT SELECTED' : distance.vehicle.registration_number}"></span>
 						</td>
 						<td>
-							<span th:text="${#dates.format(distance.timestamp, 'dd/MM/yyyy HH:mm')}"></span>
+							<span th:text="${#temporals.format(distance.timestamp, 'dd/MM/yyyy HH:mm')}"></span>
 						</td>
 						<td style="width: 1px;">
 							<form action="#" th:action="${'/api1/distances/' + distance.id}" class="m-0 p-0" method="get">

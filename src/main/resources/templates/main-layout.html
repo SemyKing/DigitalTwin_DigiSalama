@@ -13,7 +13,6 @@
         <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
             <div class="collapse navbar-collapse" id="navbarNavDropdown">
                 <ul class="navbar-nav">
-
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                             Navigation
@@ -26,11 +25,14 @@
                             <a class="dropdown-item" href="/api1/files/">Files</a>
                             <a class="dropdown-item" href="/api1/trips/">Trips</a>
                             <a class="dropdown-item" href="/api1/refuels/">Refuels</a>
-                            <a class="dropdown-item" href="/api1/events/">Events</a>
+                            <a class="dropdown-item" href="/api1/vehicle_events/">Events</a>
                             <a class="dropdown-item" href="/api1/distances/">Distances</a>
                             <div class="dropdown-divider"></div>
                             <a class="dropdown-item" href="/api1/organisations/">Organisations</a>
                             <a class="dropdown-item" href="/api1/users/">Users</a>
+                            <div class="dropdown-divider"></div>
+                            <a class="dropdown-item" href="/api1/event_history_logs/">Events Log</a>
+                            <a class="dropdown-item" href="/api1/settings/">Settings</a>
                         </div>
                     </li>
 
@@ -50,10 +52,14 @@
     <section>
         <article th:insert="${mainContent} ?: ~{}">
 
+
+
 <!--        INITIAL PAGE AFTER SUCCESSFUL LOGIN-->
             <div class="container pt-2">
                 <h1 class="my-auto mx-auto text-center">Digital Twin API</h1>
             </div>
+
+
 
         </article>
     </section>

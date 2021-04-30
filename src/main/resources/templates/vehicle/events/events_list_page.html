@@ -14,7 +14,7 @@
 			<div class="row">
 				<h1>Events List</h1>
 
-				<form action="#" th:action="${'/api1/events/new'}" class="ml-auto p-0" method="get">
+				<form action="#" th:action="${'/api1/vehicle_events/new'}" class="ml-auto p-0" method="get">
 					<button type="submit" class="btn btn-success">+ New Refuel</button>
 				</form>
 			</div>
@@ -43,10 +43,10 @@
 						<span th:text="${event.vehicle == null ? 'NOT SELECTED' : event.vehicle.registration_number}"></span>
 					</td>
 					<td>
-						<span th:text="${#dates.format(event.timestamp, 'dd/MM/yyyy HH:mm')}"></span>
+						<span th:text="${#temporals.format(event.timestamp, 'dd/MM/yyyy HH:mm')}"></span>
 					</td>
 					<td style="width: 1px;">
-						<form action="#" th:action="${'/api1/events/' + event.id}" class="m-0 p-0" method="get">
+						<form action="#" th:action="${'/api1/vehicle_events/' + event.id}" class="m-0 p-0" method="get">
 							<button type="submit" class="btn btn-secondary btn-sm">View</button>
 						</form>
 					</td>

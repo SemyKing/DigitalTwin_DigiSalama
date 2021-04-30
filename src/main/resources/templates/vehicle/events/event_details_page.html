@@ -32,7 +32,7 @@
 						</tr>
 						<tr>
 							<td> Date & Time </td>
-							<td> <span th:text="${#dates.format(event.timestamp, 'dd/MM/yyyy HH:mm')}"></span> </td>
+							<td> <span th:text="${#temporals.format(event.timestamp, 'dd/MM/yyyy HH:mm')}"></span> </td>
 						</tr>
 						<tr>
 							<td> Files </td>
@@ -52,11 +52,11 @@
 				</table>
 
 				<div class="row">
-					<form action="#" th:action="${'/api1/events/' + event.id + '/edit'}" class="m-0 p-0" method="GET">
+					<form action="#" th:action="${'/api1/vehicle_events/' + event.id + '/edit'}" class="m-0 p-0" method="GET">
 						<button type="submit" class="btn btn-primary">Edit</button>
 					</form>
 
-					<form action="#" th:action="${'/api1/events/' + event.id + '/delete'}" class="m-0 ml-auto p-0" method="POST">
+					<form action="#" th:action="${'/api1/vehicle_events/' + event.id + '/delete'}" class="m-0 ml-auto p-0" method="POST">
 						<button type="submit" class="btn btn-danger">Delete</button>
 					</form>
 				</div>

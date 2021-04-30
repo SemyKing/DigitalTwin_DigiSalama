@@ -4,7 +4,7 @@ import com.example.demo.database.models.user.User;
 import com.example.demo.database.models.utils.JwtResponse;
 import com.example.demo.database.services.UserService;
 import com.example.demo.security.JwtTokenUtil;
-import com.example.demo.utils.StringUtils;
+import com.example.demo.utils.Constants;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -72,7 +72,7 @@ public class GeneralController {
 			}
 		}
 
-		return StringUtils.REDIRECT + "/";
+		return Constants.REDIRECT + "/";
 	}
 
 

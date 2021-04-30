@@ -2,29 +2,28 @@ package com.example.demo.database.services.vehicle;
 
 import com.example.demo.database.models.utils.Mapping;
 import com.example.demo.database.models.utils.ValidationResponse;
-import com.example.demo.database.models.vehicle.FileDB;
-import com.example.demo.database.models.vehicle.Trip;
+import com.example.demo.database.models.vehicle.Vehicle;
 import com.example.demo.database.models.vehicle.VehicleEvent;
-import com.example.demo.database.repositories.vehicle.EventRepository;
 import com.example.demo.database.repositories.vehicle.FileRepository;
+import com.example.demo.database.repositories.vehicle.VehicleEventRepository;
+import com.example.demo.database.repositories.vehicle.VehicleRepository;
+import com.example.demo.utils.FieldReflectionUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.util.ReflectionUtils;
 
 import javax.transaction.Transactional;
-import java.lang.reflect.Field;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
 @Service
 @Transactional
 @RequiredArgsConstructor
-public class EventService {
+public class VehicleEventService {
 
-	private final EventRepository repository;
+	private final VehicleEventRepository repository;
 
 	private final FileRepository fileRepository;
+	private final VehicleRepository vehicleRepository;
 
 
 	public List<VehicleEvent> getAll() {
@@ -56,28 +55,32 @@ public class EventService {
 	}
 
 	public void delete(VehicleEvent event) {
-		if (event == null) {
+		if (event == null || event.getId() == null) {
 			return;
 		}
 
-		if (event.getId() != null) {
-			List<FileDB> files = fileRepository.findAllByVehicleEventId(event.getId());
-			for (FileDB file : files) {
-				file.setVehicle(null);
-				fileRepository.save(file);
-			}
-		}
+		// FIRST DELETE/SET NULL ALL ENTITIES THAT HAVE FOREIGN KEY OF CURRENT ENTITY
+
+		fileRepository.findAllByVehicleEventId(event.getId()).forEach(file-> {
+			file.setVehicle_event(null);
+			fileRepository.save(file);
+
+//			fileRepository.delete(file);
+		});
 
 		repository.delete(event);
 	}
 
 	public void deleteAll() {
-		List<FileDB> files = fileRepository.findAll();
 
-		for (FileDB file : files) {
-			file.setEvent(null);
+		// FIRST DELETE/SET NULL ALL ENTITIES THAT HAVE FOREIGN KEY OF CURRENT ENTITY
+
+		fileRepository.findAll().forEach(file-> {
+			file.setVehicle_event(null);
 			fileRepository.save(file);
-		}
+
+//			fileRepository.delete(file);
+		});
 
 		repository.deleteAll();
 	}
@@ -95,51 +98,51 @@ public class EventService {
 
 		if (mapping.equals(Mapping.PUT) || mapping.equals(Mapping.PATCH)) {
 			if (event.getId() == null) {
-				return new ValidationResponse(false, "ID parameter is required");
+				return new ValidationResponse(false, "entity ID parameter is required");
 			}
 
 			VehicleEvent eventFromDatabase = getById(event.getId());
 
 			if (eventFromDatabase == null) {
-				return new ValidationResponse(false, "ID parameter is invalid");
+				return new ValidationResponse(false, "entity ID parameter is invalid");
 			}
 		}
 
 		if (mapping.equals(Mapping.POST) || mapping.equals(Mapping.PUT) || mapping.equals(Mapping.PATCH)) {
 
-			// EMPTY STRING CHECK
-			List<Field> stringFields = new ArrayList<>();
-
-			Field[] allFields = VehicleEvent.class.getDeclaredFields();
-			for (Field field : allFields) {
-				if (field.getType().equals(String.class)) {
-					stringFields.add(field);
-				}
+			if (event.getVehicle() == null) {
+				return new ValidationResponse(false, "vehicle is required");
 			}
 
-			for (Field field : stringFields) {
-				field.setAccessible(true);
-				Object object = ReflectionUtils.getField(field, event);
+			if (event.getVehicle().getId() == null) {
+				return new ValidationResponse(false, "vehicle ID is required");
+			}
 
-				if (object != null) {
-					if (object instanceof String) {
-						if (((String) object).length() <= 0) {
-							return new ValidationResponse(false, "'" + field.getName() + "' cannot be empty");
-						}
-					}
-				}
+			Optional<Vehicle> vehicle = vehicleRepository.findById(event.getVehicle().getId());
+
+			if (vehicle.isEmpty()) {
+				return new ValidationResponse(false, "vehicle ID is invalid");
+			}
+
+			event.setVehicle(vehicle.get());
+
+
+			ValidationResponse stringFieldsValidation = new FieldReflectionUtils<VehicleEvent>().validateStringFields(event);
+
+			if (!stringFieldsValidation.isValid()) {
+				return stringFieldsValidation;
 			}
 		}
 
 		if (mapping.equals(Mapping.DELETE)) {
 			if (event.getId() == null) {
-				return new ValidationResponse(false, "ID parameter is required");
+				return new ValidationResponse(false, "entity ID parameter is required");
 			}
 
 			VehicleEvent eventFromDatabase = getById(event.getId());
 
 			if (eventFromDatabase == null) {
-				return new ValidationResponse(false, "ID parameter is invalid");
+				return new ValidationResponse(false, "entity ID parameter is invalid");
 			}
 		}
 

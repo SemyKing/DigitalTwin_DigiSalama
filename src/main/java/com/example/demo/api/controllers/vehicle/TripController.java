@@ -1,13 +1,15 @@
 package com.example.demo.api.controllers.vehicle;
 
+import com.example.demo.database.models.EventHistoryLog;
 import com.example.demo.database.models.utils.Mapping;
 import com.example.demo.database.models.utils.ValidationResponse;
 import com.example.demo.database.models.vehicle.Trip;
 import com.example.demo.database.models.vehicle.Vehicle;
+import com.example.demo.database.services.EventHistoryLogService;
 import com.example.demo.database.services.vehicle.TripService;
 import com.example.demo.database.services.vehicle.VehicleService;
+import com.example.demo.utils.Constants;
 import com.example.demo.utils.FieldReflectionUtils;
-import com.example.demo.utils.StringUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -19,10 +21,13 @@ import java.util.List;
 @Controller
 @RequiredArgsConstructor
 @SessionAttributes({"trip"})
-@RequestMapping(StringUtils.UI_API + "/trips")
+@RequestMapping(Constants.UI_API + "/trips")
 public class TripController {
 
 	private final String ENTITY = "trip";
+
+	@Autowired
+	private final EventHistoryLogService eventHistoryLogService;
 
 	@Autowired
 	private final TripService tripService;
@@ -45,9 +50,9 @@ public class TripController {
 		Trip tripFromDatabase = tripService.getById(id);
 
 		if (tripFromDatabase == null) {
-			model.addAttribute(StringUtils.ERROR_TITLE_ATTRIBUTE, "No such entity");
-			model.addAttribute(StringUtils.ERROR_MESSAGE_ATTRIBUTE, ENTITY + " with id: " + id + " not found");
-			return StringUtils.ERROR_PAGE;
+			model.addAttribute(Constants.ERROR_TITLE_ATTRIBUTE, "No such entity");
+			model.addAttribute(Constants.ERROR_MESSAGE_ATTRIBUTE, ENTITY + " with id: " + id + " not found");
+			return Constants.ERROR_PAGE;
 		}
 
 		model.addAttribute(ENTITY, tripFromDatabase);
@@ -73,9 +78,9 @@ public class TripController {
 		Trip tripFromDatabase = tripService.getById(id);
 
 		if (tripFromDatabase == null) {
-			model.addAttribute(StringUtils.ERROR_TITLE_ATTRIBUTE, "No such entity");
-			model.addAttribute(StringUtils.ERROR_MESSAGE_ATTRIBUTE, ENTITY + " with id: " + id + " not found");
-			return StringUtils.ERROR_PAGE;
+			model.addAttribute(Constants.ERROR_TITLE_ATTRIBUTE, "No such entity");
+			model.addAttribute(Constants.ERROR_MESSAGE_ATTRIBUTE, ENTITY + " with id: " + id + " not found");
+			return Constants.ERROR_PAGE;
 		}
 
 		model.addAttribute(ENTITY, tripFromDatabase);
@@ -89,48 +94,60 @@ public class TripController {
 
 	@PostMapping({"", "/"})
 	public String post(@ModelAttribute Trip trip, Model model) {
-		trip = new FieldReflectionUtils<Trip>().getObjectWithEmptyStringValuesAsNull(trip);
+		trip = new FieldReflectionUtils<Trip>().getEntityWithEmptyStringValuesAsNull(trip);
 
 		ValidationResponse response = tripService.validate(trip, Mapping.POST);
 
 		if (!response.isValid()) {
-			model.addAttribute(StringUtils.ERROR_TITLE_ATTRIBUTE, "Validation error");
-			model.addAttribute(StringUtils.ERROR_MESSAGE_ATTRIBUTE, response.getMessage());
-			return StringUtils.ERROR_PAGE;
+			model.addAttribute(Constants.ERROR_TITLE_ATTRIBUTE, "Validation error");
+			model.addAttribute(Constants.ERROR_MESSAGE_ATTRIBUTE, response.getMessage());
+			return Constants.ERROR_PAGE;
 		}
 
 		Trip tripFromDatabase = tripService.save(trip);
 
 		if (tripFromDatabase == null) {
-			model.addAttribute(StringUtils.ERROR_TITLE_ATTRIBUTE, "Database error");
-			model.addAttribute(StringUtils.ERROR_MESSAGE_ATTRIBUTE,"failed to save " + ENTITY + " in database");
-			return StringUtils.ERROR_PAGE;
+			model.addAttribute(Constants.ERROR_TITLE_ATTRIBUTE, "Database error");
+			model.addAttribute(Constants.ERROR_MESSAGE_ATTRIBUTE,"failed to save " + ENTITY + " in database");
+			return Constants.ERROR_PAGE;
 		} else {
-			return StringUtils.REDIRECT + StringUtils.UI_API + "/trips";
+
+			addLog(
+					"create " + ENTITY,
+					ENTITY + " created:\n" + tripFromDatabase);
+
+			return Constants.REDIRECT + Constants.UI_API + "/trips";
 		}
 	}
 
 
 	@PostMapping("/update")
 	public String put(@ModelAttribute Trip trip, Model model) {
-		trip = new FieldReflectionUtils<Trip>().getObjectWithEmptyStringValuesAsNull(trip);
+		String oldTripFromDatabase = tripService.getById(trip.getId()).toString();
+
+		trip = new FieldReflectionUtils<Trip>().getEntityWithEmptyStringValuesAsNull(trip);
 
 		ValidationResponse response = tripService.validate(trip, Mapping.PUT);
 
 		if (!response.isValid()) {
-			model.addAttribute(StringUtils.ERROR_TITLE_ATTRIBUTE, "Validation error");
-			model.addAttribute(StringUtils.ERROR_MESSAGE_ATTRIBUTE, response.getMessage());
-			return StringUtils.ERROR_PAGE;
+			model.addAttribute(Constants.ERROR_TITLE_ATTRIBUTE, "Validation error");
+			model.addAttribute(Constants.ERROR_MESSAGE_ATTRIBUTE, response.getMessage());
+			return Constants.ERROR_PAGE;
 		}
 
 		Trip tripFromDatabase = tripService.save(trip);
 
 		if (tripFromDatabase == null) {
-			model.addAttribute(StringUtils.ERROR_TITLE_ATTRIBUTE, "Database error");
-			model.addAttribute(StringUtils.ERROR_MESSAGE_ATTRIBUTE,"failed to save " + ENTITY + " in database");
-			return StringUtils.ERROR_PAGE;
+			model.addAttribute(Constants.ERROR_TITLE_ATTRIBUTE, "Database error");
+			model.addAttribute(Constants.ERROR_MESSAGE_ATTRIBUTE,"failed to save " + ENTITY + " in database");
+			return Constants.ERROR_PAGE;
 		} else {
-			return StringUtils.REDIRECT + StringUtils.UI_API + "/trips/" + tripFromDatabase.getId();
+
+			addLog(
+					"update " + ENTITY,
+					ENTITY + " updated from:\n" + oldTripFromDatabase + "\nto:\n" + tripFromDatabase);
+
+			return Constants.REDIRECT + Constants.UI_API + "/trips/" + tripFromDatabase.getId();
 		}
 	}
 
@@ -140,13 +157,28 @@ public class TripController {
 		Trip tripFromDatabase = tripService.getById(id);
 
 		if (tripFromDatabase == null) {
-			model.addAttribute(StringUtils.ERROR_TITLE_ATTRIBUTE, "Not found");
-			model.addAttribute(StringUtils.ERROR_MESSAGE_ATTRIBUTE, ENTITY + " with ID " + id + " not found");
-			return StringUtils.ERROR_PAGE;
+			model.addAttribute(Constants.ERROR_TITLE_ATTRIBUTE, "Not found");
+			model.addAttribute(Constants.ERROR_MESSAGE_ATTRIBUTE, ENTITY + " with ID " + id + " not found");
+			return Constants.ERROR_PAGE;
 		}
 
 		tripService.delete(tripFromDatabase);
 
-		return StringUtils.REDIRECT + StringUtils.UI_API + "/trips";
+		addLog(
+				"delete " + ENTITY,
+				ENTITY + " deleted:\n" + tripFromDatabase);
+
+		return Constants.REDIRECT + Constants.UI_API + "/trips";
+	}
+
+	private void addLog(String action, String description) {
+		if (eventHistoryLogService.isLoggingEnabledForTrips()) {
+			EventHistoryLog log = new EventHistoryLog();
+			log.setWho_did(eventHistoryLogService.getCurrentUser() == null ? "NULL" : eventHistoryLogService.getCurrentUser().toString());
+			log.setAction(action);
+			log.setDescription(description);
+
+			eventHistoryLogService.save(log);
+		}
 	}
 }

@@ -1,5 +1,6 @@
 package com.example.demo.database.models.vehicle;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -11,7 +12,6 @@ import javax.persistence.*;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@ToString(exclude = {"data"})
 public class FileDB {
 
 	@Id
@@ -29,11 +29,20 @@ public class FileDB {
 
 	@Lob
 	@Column
+	@ToString.Exclude
 	private byte[] data;
 
 	@ManyToOne
 	@JoinColumn(name="vehicle_id", referencedColumnName = "id")
+	@ToString.Exclude
 	private Vehicle vehicle;
+
+	@Transient
+	@JsonIgnore
+	@ToString.Include
+	private Long vehicle_id() {
+		return this.vehicle == null ? null : this.vehicle.getId();
+	}
 
 	@ManyToOne
 	@JoinColumn(name="refuel_id", referencedColumnName = "id")
@@ -41,7 +50,7 @@ public class FileDB {
 
 	@ManyToOne
 	@JoinColumn(name="event_id", referencedColumnName = "id")
-	private VehicleEvent event;
+	private VehicleEvent vehicle_event;
 
 
 	public FileDB(String file_name, String file_type, byte[] data) {

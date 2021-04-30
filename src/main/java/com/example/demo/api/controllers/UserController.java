@@ -1,5 +1,6 @@
 package com.example.demo.api.controllers;
 
+import com.example.demo.database.models.EventHistoryLog;
 import com.example.demo.database.models.Organisation;
 import com.example.demo.database.models.user.Role;
 import com.example.demo.database.models.user.User;
@@ -7,10 +8,11 @@ import com.example.demo.database.models.user.UserPassword;
 import com.example.demo.database.models.utils.Mapping;
 import com.example.demo.database.models.utils.ValidationResponse;
 import com.example.demo.database.repositories.RoleRepository;
+import com.example.demo.database.services.EventHistoryLogService;
 import com.example.demo.database.services.OrganisationService;
 import com.example.demo.database.services.UserService;
+import com.example.demo.utils.Constants;
 import com.example.demo.utils.FieldReflectionUtils;
-import com.example.demo.utils.StringUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -24,11 +26,14 @@ import java.util.List;
 @Controller
 @RequiredArgsConstructor
 @SessionAttributes("user")
-@RequestMapping(StringUtils.UI_API + "/users")
+@RequestMapping(Constants.UI_API + "/users")
 public class UserController {
 
 	private final String ENTITY = "user";
 	private boolean returnToProfile = false;
+
+	@Autowired
+	private final EventHistoryLogService eventHistoryLogService;
 
 
 	@Autowired
@@ -86,9 +91,9 @@ public class UserController {
 		User userFromDatabase = userService.getById(id);
 
 		if (userFromDatabase == null) {
-			model.addAttribute(StringUtils.ERROR_TITLE_ATTRIBUTE, "No such entity");
-			model.addAttribute(StringUtils.ERROR_MESSAGE_ATTRIBUTE, ENTITY + " with id: " + id + " not found");
-			return StringUtils.ERROR_PAGE;
+			model.addAttribute(Constants.ERROR_TITLE_ATTRIBUTE, "No such entity");
+			model.addAttribute(Constants.ERROR_MESSAGE_ATTRIBUTE, ENTITY + " with id: " + id + " not found");
+			return Constants.ERROR_PAGE;
 		}
 
 		model.addAttribute(ENTITY, userFromDatabase);
@@ -163,9 +168,9 @@ public class UserController {
 		User userFromDatabase = userService.getById(id);
 
 		if (userFromDatabase == null) {
-			model.addAttribute(StringUtils.ERROR_TITLE_ATTRIBUTE, "No such entity");
-			model.addAttribute(StringUtils.ERROR_MESSAGE_ATTRIBUTE, ENTITY + " with id: " + id + " not found");
-			return StringUtils.ERROR_PAGE;
+			model.addAttribute(Constants.ERROR_TITLE_ATTRIBUTE, "No such entity");
+			model.addAttribute(Constants.ERROR_MESSAGE_ATTRIBUTE, ENTITY + " with id: " + id + " not found");
+			return Constants.ERROR_PAGE;
 		}
 
 		model.addAttribute(ENTITY, userFromDatabase);
@@ -227,36 +232,38 @@ public class UserController {
 		User userFromDatabase = userService.getById(id);
 
 		if (userFromDatabase == null) {
-			model.addAttribute(StringUtils.ERROR_TITLE_ATTRIBUTE, "No such entity");
-			model.addAttribute(StringUtils.ERROR_MESSAGE_ATTRIBUTE, ENTITY + " with ID: " + id + " not found");
-			return StringUtils.ERROR_PAGE;
+			model.addAttribute(Constants.ERROR_TITLE_ATTRIBUTE, "No such entity");
+			model.addAttribute(Constants.ERROR_MESSAGE_ATTRIBUTE, ENTITY + " with ID: " + id + " not found");
+			return Constants.ERROR_PAGE;
 		}
 
 		model.addAttribute("userId", id);
 		model.addAttribute("password", userPassword);
 
 		if (!userService.isPasswordCorrect(userFromDatabase, userPassword.getCurrent_password())) {
-			model.addAttribute(StringUtils.ERROR_MESSAGE_ATTRIBUTE, "Current password invalid");
+			model.addAttribute(Constants.ERROR_MESSAGE_ATTRIBUTE, "Current password invalid");
 			return "user/change_password_page";
 		}
 
 		if (!userPassword.getNew_password_1().equals(userPassword.getNew_password_2())) {
-			model.addAttribute(StringUtils.ERROR_MESSAGE_ATTRIBUTE, "Passwords don't match");
+			model.addAttribute(Constants.ERROR_MESSAGE_ATTRIBUTE, "Passwords don't match");
 			return "user/change_password_page";
 		}
 
 		userFromDatabase.setPassword(userService.getBcryptEncoder().encode(userPassword.getNew_password_1()));
 		userService.save(userFromDatabase);
 
-		model.addAttribute(StringUtils.SUCCESS_MESSAGE_ATTRIBUTE, "Password changed");
+		addLog("change password", "password changed for user:\n" + userFromDatabase);
+
+		model.addAttribute(Constants.SUCCESS_MESSAGE_ATTRIBUTE, "Password changed");
 
 		if (returnToProfile) {
 			returnToProfile = false;
-			redirectAttributes.addFlashAttribute(StringUtils.SUCCESS_MESSAGE_ATTRIBUTE, "Password changed successfully");
-			return StringUtils.REDIRECT + StringUtils.UI_API + "/profile";
+			redirectAttributes.addFlashAttribute(Constants.SUCCESS_MESSAGE_ATTRIBUTE, "Password changed successfully");
+			return Constants.REDIRECT + Constants.UI_API + "/profile";
 		}
 
-		return StringUtils.REDIRECT + StringUtils.UI_API + "/users/" + id + "/edit";
+		return Constants.REDIRECT + Constants.UI_API + "/users/" + id + "/edit";
 	}
 
 
@@ -290,24 +297,27 @@ public class UserController {
 //			}
 //		}
 
-		user = new FieldReflectionUtils<User>().getObjectWithEmptyStringValuesAsNull(user);
+		user = new FieldReflectionUtils<User>().getEntityWithEmptyStringValuesAsNull(user);
 
 		ValidationResponse response = userService.validate(user, Mapping.POST);
 
 		if (!response.isValid()) {
-			model.addAttribute(StringUtils.ERROR_TITLE_ATTRIBUTE, "Validation error");
-			model.addAttribute(StringUtils.ERROR_MESSAGE_ATTRIBUTE, response.getMessage());
-			return StringUtils.ERROR_PAGE;
+			model.addAttribute(Constants.ERROR_TITLE_ATTRIBUTE, "Validation error");
+			model.addAttribute(Constants.ERROR_MESSAGE_ATTRIBUTE, response.getMessage());
+			return Constants.ERROR_PAGE;
 		}
 
 		User userFromDatabase = userService.save(user);
 
 		if (userFromDatabase == null) {
-			model.addAttribute(StringUtils.ERROR_TITLE_ATTRIBUTE, "Database error");
-			model.addAttribute(StringUtils.ERROR_MESSAGE_ATTRIBUTE,"failed to save " + ENTITY + " in database");
-			return StringUtils.ERROR_PAGE;
+			model.addAttribute(Constants.ERROR_TITLE_ATTRIBUTE, "Database error");
+			model.addAttribute(Constants.ERROR_MESSAGE_ATTRIBUTE,"failed to save " + ENTITY + " in database");
+			return Constants.ERROR_PAGE;
 		} else {
-			return StringUtils.REDIRECT + StringUtils.UI_API + "/users";
+
+			addLog("create " + ENTITY, ENTITY + " created:\n" + userFromDatabase);
+
+			return Constants.REDIRECT + Constants.UI_API + "/users";
 		}
 	}
 
@@ -349,28 +359,34 @@ public class UserController {
 //			}
 //		}
 
-		user = new FieldReflectionUtils<User>().getObjectWithEmptyStringValuesAsNull(user);
+		String oldUser = userService.getById(user.getId()).toString();
+
+		user = new FieldReflectionUtils<User>().getEntityWithEmptyStringValuesAsNull(user);
 
 		ValidationResponse response = userService.validate(user, Mapping.PUT);
 
 		if (!response.isValid()) {
-			model.addAttribute(StringUtils.ERROR_TITLE_ATTRIBUTE, "Validation error");
-			model.addAttribute(StringUtils.ERROR_MESSAGE_ATTRIBUTE, response.getMessage());
-			return StringUtils.ERROR_PAGE;
+			model.addAttribute(Constants.ERROR_TITLE_ATTRIBUTE, "Validation error");
+			model.addAttribute(Constants.ERROR_MESSAGE_ATTRIBUTE, response.getMessage());
+			return Constants.ERROR_PAGE;
 		}
+
 
 		User userFromDatabase = userService.save(user);
 
 		if (userFromDatabase == null) {
-			model.addAttribute(StringUtils.ERROR_TITLE_ATTRIBUTE, "Database error");
-			model.addAttribute(StringUtils.ERROR_MESSAGE_ATTRIBUTE,"failed to save " + ENTITY + " in database");
-			return StringUtils.ERROR_PAGE;
+			model.addAttribute(Constants.ERROR_TITLE_ATTRIBUTE, "Database error");
+			model.addAttribute(Constants.ERROR_MESSAGE_ATTRIBUTE,"failed to save " + ENTITY + " in database");
+			return Constants.ERROR_PAGE;
 		} else {
+
+			addLog("update " + ENTITY, ENTITY + " update from:\n" + oldUser + "\nto:\n" + userFromDatabase);
+
 			if (request.getHeader("Referer").contains("/profile")) {
-				return StringUtils.REDIRECT + StringUtils.UI_API + "/";
+				return Constants.REDIRECT + Constants.UI_API + "/";
 			}
 
-			return StringUtils.REDIRECT + StringUtils.UI_API + "/users/" + userFromDatabase.getId();
+			return Constants.REDIRECT + Constants.UI_API + "/users/" + userFromDatabase.getId();
 		}
 	}
 
@@ -380,21 +396,35 @@ public class UserController {
 		User userFromDatabase = userService.getById(id);
 
 		if (userFromDatabase == null) {
-			model.addAttribute(StringUtils.ERROR_TITLE_ATTRIBUTE, "Not found");
-			model.addAttribute(StringUtils.ERROR_MESSAGE_ATTRIBUTE, ENTITY + " with ID " + id + " not found");
-			return StringUtils.ERROR_PAGE;
+			model.addAttribute(Constants.ERROR_TITLE_ATTRIBUTE, "Not found");
+			model.addAttribute(Constants.ERROR_MESSAGE_ATTRIBUTE, ENTITY + " with ID " + id + " not found");
+			return Constants.ERROR_PAGE;
 		}
 
 		ValidationResponse response = userService.validate(userFromDatabase, Mapping.DELETE);
 
 		if (!response.isValid()) {
-			model.addAttribute(StringUtils.ERROR_TITLE_ATTRIBUTE, "Validation error");
-			model.addAttribute(StringUtils.ERROR_MESSAGE_ATTRIBUTE, response.getMessage());
-			return StringUtils.ERROR_PAGE;
+			model.addAttribute(Constants.ERROR_TITLE_ATTRIBUTE, "Validation error");
+			model.addAttribute(Constants.ERROR_MESSAGE_ATTRIBUTE, response.getMessage());
+			return Constants.ERROR_PAGE;
 		}
 
 		userService.delete(userFromDatabase);
 
-		return StringUtils.REDIRECT + StringUtils.UI_API + "/users";
+		addLog("delete " + ENTITY, ENTITY + " deleted:\n" + userFromDatabase);
+
+		return Constants.REDIRECT + Constants.UI_API + "/users";
+	}
+
+
+	private void addLog(String action, String description) {
+		if (eventHistoryLogService.isLoggingEnabledForUsers()) {
+			EventHistoryLog log = new EventHistoryLog();
+			log.setWho_did(eventHistoryLogService.getCurrentUser() == null ? "NULL" : eventHistoryLogService.getCurrentUser().toString());
+			log.setAction(action);
+			log.setDescription(description);
+
+			eventHistoryLogService.save(log);
+		}
 	}
 }

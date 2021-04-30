@@ -3,15 +3,16 @@ package com.example.demo.database.services.vehicle;
 import com.example.demo.database.models.utils.Mapping;
 import com.example.demo.database.models.utils.ValidationResponse;
 import com.example.demo.database.models.vehicle.Equipment;
-import com.example.demo.database.models.vehicle.VehicleEvent;
+import com.example.demo.database.models.vehicle.EquipmentType;
+import com.example.demo.database.models.vehicle.Vehicle;
 import com.example.demo.database.repositories.vehicle.EquipmentRepository;
+import com.example.demo.database.repositories.vehicle.EquipmentTypeRepository;
+import com.example.demo.database.repositories.vehicle.VehicleRepository;
+import com.example.demo.utils.FieldReflectionUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.util.ReflectionUtils;
 
 import javax.transaction.Transactional;
-import java.lang.reflect.Field;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -21,6 +22,9 @@ import java.util.Optional;
 public class EquipmentService {
 
 	private final EquipmentRepository repository;
+
+	private final EquipmentTypeRepository equipmentTypeRepository;
+	private final VehicleRepository vehicleRepository;
 
 
 	public List<Equipment> getAll() {
@@ -78,50 +82,59 @@ public class EquipmentService {
 
 		if (mapping.equals(Mapping.PUT) || mapping.equals(Mapping.PATCH)) {
 			if (equipment.getId() == null) {
-				return new ValidationResponse(false, "ID parameter is required");
+				return new ValidationResponse(false, "entity ID parameter is required");
 			}
 
 			Equipment equipmentFromDatabase = getById(equipment.getId());
 
 			if (equipmentFromDatabase == null) {
-				return new ValidationResponse(false, "ID parameter is invalid");
+				return new ValidationResponse(false, "entity ID parameter is invalid");
 			}
 		}
 
 		if (mapping.equals(Mapping.POST) || mapping.equals(Mapping.PUT) || mapping.equals(Mapping.PATCH)) {
 
-			// EMPTY STRING CHECK
-			List<Field> stringFields = new ArrayList<>();
-
-			Field[] allFields = Equipment.class.getDeclaredFields();
-			for (Field field : allFields) {
-				if (field.getType().equals(String.class)) {
-					stringFields.add(field);
+			if (equipment.getEquipment_type() != null) {
+				if (equipment.getEquipment_type().getId() == null) {
+					return new ValidationResponse(false, "equipment_type ID is required");
 				}
+
+				Optional<EquipmentType> equipmentType = equipmentTypeRepository.findById(equipment.getEquipment_type().getId());
+
+				if (equipmentType.isEmpty()) {
+					return new ValidationResponse(false, "equipment_type with ID: " + equipment.getVehicle().getId() + " not found");
+				}
+
+				equipment.setEquipment_type(equipmentType.get());
 			}
 
-			for (Field field : stringFields) {
-				field.setAccessible(true);
-				Object object = ReflectionUtils.getField(field, equipment);
-
-				if (object != null) {
-					if (object instanceof String) {
-						if (((String) object).length() <= 0) {
-							return new ValidationResponse(false, "'" + field.getName() + "' cannot be empty");
-						}
-					}
+			if (equipment.getVehicle() != null) {
+				if (equipment.getVehicle().getId() == null) {
+					return new ValidationResponse(false, "vehicle ID is required");
 				}
+
+				Optional<Vehicle> vehicle = vehicleRepository.findById(equipment.getVehicle().getId());
+
+				if (vehicle.isEmpty()) {
+					return new ValidationResponse(false, "vehicle with ID: " + equipment.getVehicle().getId() + " not found");
+				}
+
+				equipment.setVehicle(vehicle.get());
+			}
+
+			ValidationResponse stringFieldsValidation = new FieldReflectionUtils<Equipment>().validateStringFields(equipment);
+
+			if (!stringFieldsValidation.isValid()) {
+				return stringFieldsValidation;
 			}
 		}
 
 		if (mapping.equals(Mapping.DELETE)) {
 			if (equipment.getId() == null) {
-				return new ValidationResponse(false, "ID parameter is required");
+				return new ValidationResponse(false, "entity ID parameter is required");
 			}
 		}
 
 		return new ValidationResponse(true, "validation success");
 	}
-
-
 }

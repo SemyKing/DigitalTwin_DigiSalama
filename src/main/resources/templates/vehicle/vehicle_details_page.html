@@ -116,11 +116,11 @@
 										</tr>
 										<tr>
 											<td> First Commissioning Date </td>
-											<td> <span th:text="${#dates.format(vehicle.first_commissioning_date, 'dd/MM/yyyy')}"></span> </td>
+											<td> <span th:text="${#temporals.format(vehicle.first_commissioning_date, 'dd/MM/yyyy HH:mm')}"></span> </td>
 										</tr>
 										<tr>
 											<td> Commissioning Check Performed Date </td>
-											<td> <span th:text="${#dates.format(vehicle.commissioning_check_performed_date, 'dd/MM/yyyy')}"></span> </td>
+											<td> <span th:text="${#temporals.format(vehicle.commissioning_check_performed_date, 'dd/MM/yyyy HH:mm')}"></span> </td>
 										</tr>
 										<tr>
 											<td> Brand </td>
@@ -156,7 +156,7 @@
 										</tr>
 										<tr>
 											<td> Next Inspection Date </td>
-											<td> <span th:text="${#dates.format(vehicle.next_inspection_date, 'dd/MM/yyyy')}"></span> </td>
+											<td> <span th:text="${#temporals.format(vehicle.next_inspection_date, 'dd/MM/yyyy HH:mm')}"></span> </td>
 										</tr>
 										<tr>
 											<td> Engine Capacity </td>

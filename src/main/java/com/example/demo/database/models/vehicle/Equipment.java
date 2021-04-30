@@ -1,8 +1,10 @@
 package com.example.demo.database.models.vehicle;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 
 import javax.persistence.*;
 
@@ -26,5 +28,13 @@ public class Equipment {
 
     @ManyToOne(cascade = CascadeType.PERSIST)
     @JoinColumn(name="vehicle_id", referencedColumnName = "id")
+    @ToString.Exclude
     private Vehicle vehicle;
+
+    @Transient
+    @JsonIgnore
+    @ToString.Include
+    private Long vehicle_id() {
+        return this.vehicle == null ? null : this.vehicle.getId();
+    }
 }

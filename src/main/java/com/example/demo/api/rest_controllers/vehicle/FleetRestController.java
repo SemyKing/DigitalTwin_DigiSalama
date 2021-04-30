@@ -1,12 +1,18 @@
 package com.example.demo.api.rest_controllers.vehicle;
 
+import com.example.demo.database.models.EventHistoryLog;
 import com.example.demo.database.models.Organisation;
 import com.example.demo.database.models.utils.Mapping;
 import com.example.demo.database.models.utils.RestResponse;
 import com.example.demo.database.models.utils.ValidationResponse;
 import com.example.demo.database.models.vehicle.Fleet;
+import com.example.demo.database.models.vehicle.Vehicle;
+import com.example.demo.database.services.EventHistoryLogService;
 import com.example.demo.database.services.vehicle.FleetService;
-import com.example.demo.utils.StringUtils;
+import com.example.demo.utils.Constants;
+import com.example.demo.utils.DateUtils;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -17,24 +23,32 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
+import java.time.LocalDateTime;
+import java.util.*;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping(StringUtils.JSON_API + "/fleets")
+@RequestMapping(Constants.JSON_API + "/fleets")
 public class FleetRestController {
 
 	private final String ENTITY = "fleet";
 
 	@Autowired
+	private final EventHistoryLogService eventHistoryLogService;
+
+	@Autowired
 	private final FleetService fleetService;
+
+	@Autowired
+	private ObjectMapper objectMapper;
 
 
 	@PostMapping(value = {"/batch"}, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<List<RestResponse<Fleet>>> postList(@RequestBody List<Fleet> fleets) {
+
+		if (fleets == null || fleets.isEmpty()) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "NULL or empty array was provided");
+		}
 
 		boolean errorOccurred = false;
 
@@ -50,8 +64,6 @@ public class FleetRestController {
 				restResponse.setHttp_status(HttpStatus.BAD_REQUEST);
 				restResponse.setMessage(response.getMessage());
 
-				responseList.add(restResponse);
-
 				errorOccurred = true;
 			} else {
 				Fleet fleetFromDatabase = fleetService.save(fleet);
@@ -65,10 +77,12 @@ public class FleetRestController {
 					restResponse.setBody(fleetFromDatabase);
 					restResponse.setHttp_status(HttpStatus.OK);
 					restResponse.setMessage(ENTITY + " saved successfully");
-				}
 
-				responseList.add(restResponse);
+					addLog("create " + ENTITY, ENTITY + " created:\n" + fleetFromDatabase);
+				}
 			}
+
+			responseList.add(restResponse);
 		}
 
 		if (errorOccurred) {
@@ -77,7 +91,6 @@ public class FleetRestController {
 			return ResponseEntity.status(HttpStatus.OK).body(responseList);
 		}
 	}
-
 
 	@PostMapping(value = {"", "/"}, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<RestResponse<Fleet>> post(@RequestBody Fleet fleet) {
@@ -105,6 +118,8 @@ public class FleetRestController {
 			restResponse.setBody(fleetFromDatabase);
 			restResponse.setHttp_status(HttpStatus.OK);
 			restResponse.setMessage(ENTITY + " saved successfully");
+
+			addLog("create " + ENTITY, ENTITY + " created:\n" + fleetFromDatabase);
 
 			return ResponseEntity.status(HttpStatus.OK).body(restResponse);
 		}
@@ -138,6 +153,10 @@ public class FleetRestController {
 	@PutMapping(value = {"", "/"}, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<List<RestResponse<Fleet>>> putList(@RequestBody List<Fleet> fleets) {
 
+		if (fleets == null || fleets.isEmpty()) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "NULL or empty array was provided");
+		}
+
 		boolean errorOccurred = false;
 
 		List<RestResponse<Fleet>> responseList = new ArrayList<>();
@@ -152,10 +171,9 @@ public class FleetRestController {
 				restResponse.setHttp_status(HttpStatus.BAD_REQUEST);
 				restResponse.setMessage(response.getMessage());
 
-				responseList.add(restResponse);
-
 				errorOccurred = true;
 			} else {
+				String oldFleetFromDatabase = fleetService.getById(fleet.getId()).toString();
 				Fleet fleetFromDatabase = fleetService.save(fleet);
 
 				if (fleetFromDatabase == null) {
@@ -167,10 +185,12 @@ public class FleetRestController {
 					restResponse.setBody(fleetFromDatabase);
 					restResponse.setHttp_status(HttpStatus.OK);
 					restResponse.setMessage(ENTITY + " saved successfully");
-				}
 
-				responseList.add(restResponse);
+					addLog("update (PUT) " + ENTITY, ENTITY + " updated from:\n" + oldFleetFromDatabase + "\nto:\n" + fleetFromDatabase);
+				}
 			}
+
+			responseList.add(restResponse);
 		}
 
 		if (errorOccurred) {
@@ -194,6 +214,7 @@ public class FleetRestController {
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(restResponse);
 		}
 
+		String oldFleetFromDatabase = fleetService.getById(fleet.getId()).toString();
 		Fleet fleetFromDatabase = fleetService.save(fleet);
 
 		if (fleetFromDatabase == null) {
@@ -206,6 +227,8 @@ public class FleetRestController {
 			restResponse.setHttp_status(HttpStatus.OK);
 			restResponse.setMessage(ENTITY + " saved successfully");
 
+			addLog("update (PUT) " + ENTITY, ENTITY + " updated from:\n" + oldFleetFromDatabase + "\nto:\n" + fleetFromDatabase);
+
 			return ResponseEntity.status(HttpStatus.OK).body(restResponse);
 		}
 	}
@@ -215,6 +238,10 @@ public class FleetRestController {
 	@PatchMapping(value = {"", "/"}, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<List<RestResponse<?>>> patchList(@RequestBody List<Map<String, Object>> changesList) {
 
+		if (changesList == null || changesList.isEmpty()) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "NULL or empty array was provided");
+		}
+
 		List<RestResponse<?>> responseList = new ArrayList<>();
 		boolean errorOccurred = false;
 
@@ -222,6 +249,14 @@ public class FleetRestController {
 
 			RestResponse<Map<String, Object>> mapResponse = new RestResponse<>();
 			mapResponse.setBody(changes);
+
+			if (changes == null) {
+				mapResponse.setHttp_status(HttpStatus.BAD_REQUEST);
+				mapResponse.setMessage("NULL array element was provided");
+				responseList.add(mapResponse);
+				errorOccurred = true;
+				continue;
+			}
 
 			if (!changes.containsKey("id")) {
 				mapResponse.setHttp_status(HttpStatus.BAD_REQUEST);
@@ -241,19 +276,11 @@ public class FleetRestController {
 
 					errorOccurred = true;
 				} else {
-					Integer id = (Integer) idObj;
-
-					Fleet fleetFromDatabase = fleetService.getById(Long.valueOf(id));
-
+					long idLong = (long) ((Integer) idObj);
 					changes.remove("id");
 
-					changes.forEach((key, value) -> {
-						Field field = ReflectionUtils.findField(Fleet.class, key);
-						if (field != null) {
-							field.setAccessible(true);
-							ReflectionUtils.setField(field, fleetFromDatabase, value);
-						}
-					});
+					String oldFleetFromDatabase = fleetService.getById(idLong).toString();
+					Fleet fleetFromDatabase = handlePatchChanges(idLong, changes);
 
 					RestResponse<Fleet> restResponse = new RestResponse<>();
 					restResponse.setBody(fleetFromDatabase);
@@ -266,8 +293,21 @@ public class FleetRestController {
 
 						errorOccurred = true;
 					} else {
-						restResponse.setHttp_status(HttpStatus.OK);
-						restResponse.setMessage(ENTITY + "patched successfully");
+
+						Fleet updatedFleetFromDatabase = fleetService.save(fleetFromDatabase);
+
+						if (updatedFleetFromDatabase == null) {
+							restResponse.setHttp_status(HttpStatus.INTERNAL_SERVER_ERROR);
+							restResponse.setMessage("failed to save " + ENTITY + " in database");
+
+							errorOccurred = true;
+						} else {
+							restResponse.setBody(updatedFleetFromDatabase);
+							restResponse.setHttp_status(HttpStatus.OK);
+							restResponse.setMessage(ENTITY + "patched successfully");
+
+							addLog("update (PATCH) " + ENTITY, ENTITY + " updated from:\n" + oldFleetFromDatabase + "\nto:\n" + updatedFleetFromDatabase);
+						}
 					}
 
 					responseList.add(restResponse);
@@ -285,21 +325,21 @@ public class FleetRestController {
 	@PatchMapping(value = "/{id}", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<RestResponse<Fleet>> patchById(@RequestBody Map<String, Object> changes, @PathVariable Long id) {
 
+		if (changes == null || changes.isEmpty()) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "NULL or empty array was provided");
+		}
+
 		Fleet fleetFromDatabase = fleetService.getById(id);
 
 		if (fleetFromDatabase == null) {
 			throw new ResponseStatusException(HttpStatus.NOT_FOUND, ENTITY + " with ID: '" + id + "' not found");
 		}
 
+		String oldFleetFromDatabase = fleetFromDatabase.toString();
+
 		changes.remove("id");
 
-		changes.forEach((key, value) -> {
-			Field field = ReflectionUtils.findField(Fleet.class, key);
-			if (field != null) {
-				field.setAccessible(true);
-				ReflectionUtils.setField(field, fleetFromDatabase, value);
-			}
-		});
+		fleetFromDatabase = handlePatchChanges(id, changes);
 
 		RestResponse<Fleet> restResponse = new RestResponse<>();
 		restResponse.setBody(fleetFromDatabase);
@@ -324,6 +364,9 @@ public class FleetRestController {
 		} else {
 			restResponse.setHttp_status(HttpStatus.OK);
 			restResponse.setMessage(ENTITY + " saved successfully");
+
+			addLog("update (PATCH) " + ENTITY, ENTITY + " updated from:\n" + oldFleetFromDatabase + "\nto:\n" + patchedFleet);
+
 			return ResponseEntity.status(HttpStatus.OK).body(restResponse);
 		}
 	}
@@ -332,6 +375,10 @@ public class FleetRestController {
 
 	@DeleteMapping(value = {"", "/"}, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<List<RestResponse<Fleet>>> deleteList(@RequestBody List<Fleet> fleets) {
+
+		if (fleets == null || fleets.isEmpty()) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "NULL or empty array was provided");
+		}
 
 		boolean errorOccurred = false;
 
@@ -347,8 +394,6 @@ public class FleetRestController {
 				restResponse.setHttp_status(HttpStatus.BAD_REQUEST);
 				restResponse.setMessage(response.getMessage());
 
-				responseList.add(restResponse);
-
 				errorOccurred = true;
 			} else {
 				try {
@@ -356,15 +401,17 @@ public class FleetRestController {
 
 					restResponse.setHttp_status(HttpStatus.OK);
 					restResponse.setMessage(ENTITY + " deleted successfully");
+
+					addLog("delete " + ENTITY, ENTITY + " deleted:\n" + fleet);
 				} catch (Exception e) {
 					restResponse.setHttp_status(HttpStatus.INTERNAL_SERVER_ERROR);
 					restResponse.setMessage("failed to delete " + ENTITY + " from database \n" + e.getMessage());
 
 					errorOccurred = true;
 				}
-
-				responseList.add(restResponse);
 			}
+
+			responseList.add(restResponse);
 		}
 
 		if (errorOccurred) {
@@ -382,6 +429,12 @@ public class FleetRestController {
 			throw new ResponseStatusException(HttpStatus.NOT_FOUND, ENTITY + " with ID: '" + id + "' not found");
 		}
 
+		ValidationResponse response = fleetService.validate(fleetFromDatabase, Mapping.DELETE);
+
+		if (!response.isValid()) {
+			throw new ResponseStatusException(HttpStatus.METHOD_NOT_ALLOWED, response.getMessage());
+		}
+
 		try {
 			fleetService.delete(fleetFromDatabase);
 		} catch (Exception e) {
@@ -393,25 +446,68 @@ public class FleetRestController {
 		restResponse.setHttp_status(HttpStatus.OK);
 		restResponse.setMessage(ENTITY + " deleted successfully");
 
+		addLog("delete " + ENTITY, ENTITY + " deleted:\n" + fleetFromDatabase);
+
 		return ResponseEntity.ok(restResponse);
 	}
 
 
+	private void addLog(String action, String description) {
+		if (eventHistoryLogService.isLoggingEnabledForFleets()) {
+			EventHistoryLog log = new EventHistoryLog();
+			log.setWho_did(eventHistoryLogService.getCurrentUser() == null ? "NULL" : eventHistoryLogService.getCurrentUser().toString());
+			log.setAction(action);
+			log.setDescription(description);
 
-	//TODO FOR TESTING -> REMOVE IN PRODUCTION
-	@PostMapping("/populate_with_test_data")
-	public void populateWithTestData() {
-		for (int i = 1; i < 5; i++) {
-			Fleet fleet = new Fleet();
-			fleet.setName("Fleet_" + i);
-
-			fleetService.save(fleet);
+			eventHistoryLogService.save(log);
 		}
 	}
 
-	//TODO FOR TESTING -> REMOVE IN PRODUCTION
-	@DeleteMapping("/delete_all")
-	public void deleteAll() {
-		fleetService.deleteAll();
+	private Fleet handlePatchChanges(Long id, Map<String, Object> changes) {
+		Fleet entity = fleetService.getById(id);
+
+		if (entity != null) {
+			for (Map.Entry<String, Object> entry : changes.entrySet()) {
+				String key = entry.getKey();
+				Object value = entry.getValue();
+				Field field = ReflectionUtils.findField(entity.getClass(), key);
+
+				if (field != null) {
+					field.setAccessible(true);
+
+					if (field.getType().equals(String.class)) {
+						ReflectionUtils.setField(field, entity, value);
+					} else {
+
+						if (field.getType().equals(Date.class)) {
+							LocalDateTime localDateTime = LocalDateTime.parse((String) value, DateUtils.getFormat());
+							ReflectionUtils.setField(field, entity, localDateTime);
+						}
+
+						if (field.getType().equals(Organisation.class)) {
+							try {
+								entity.setOrganisation(objectMapper.readValue((String) value, Organisation.class));
+							} catch (JsonProcessingException e) {
+								e.printStackTrace();
+							}
+						}
+
+						if (field.getType().equals(Set.class) && field.getName().equals("vehicles")) {
+							try {
+								Set<Vehicle> vehiclesFromPatch = objectMapper.readValue((String) value, objectMapper.getTypeFactory().constructCollectionType(HashSet.class, Vehicle.class));
+
+								// ADD VEHICLE TO FLEET IF ALREADY NOT THERE
+								vehiclesFromPatch.forEach(vehicle -> entity.getVehicles().add(vehicle));
+							} catch (JsonProcessingException e) {
+								System.err.println("FleetRestController -> handlePatchChanges(): Vehicles Set: '" + value + "' json parsing error: " + e.getMessage());
+							}
+						}
+
+					}
+				}
+			}
+		}
+
+		return entity;
 	}
 }

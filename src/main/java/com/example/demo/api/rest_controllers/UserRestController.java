@@ -1,5 +1,6 @@
 package com.example.demo.api.rest_controllers;
 
+import com.example.demo.database.models.EventHistoryLog;
 import com.example.demo.database.models.Organisation;
 import com.example.demo.database.models.user.PasswordUpdateRequest;
 import com.example.demo.database.models.user.PasswordUpdateResponse;
@@ -8,10 +9,12 @@ import com.example.demo.database.models.utils.Mapping;
 import com.example.demo.database.models.utils.RestResponse;
 import com.example.demo.database.models.utils.ValidationResponse;
 import com.example.demo.database.repositories.RoleRepository;
+import com.example.demo.database.services.EventHistoryLogService;
 import com.example.demo.database.services.OrganisationService;
 import com.example.demo.database.services.UserService;
-import com.example.demo.utils.FieldReflectionUtils;
-import com.example.demo.utils.StringUtils;
+import com.example.demo.utils.Constants;
+import com.example.demo.utils.DateUtils;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,19 +30,24 @@ import org.springframework.web.server.ResponseStatusException;
 
 import javax.servlet.http.HttpServletRequest;
 import java.lang.reflect.Field;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
 @Slf4j
 @RestController
 @RequiredArgsConstructor
-@RequestMapping(StringUtils.JSON_API + "/users")
+@RequestMapping(Constants.JSON_API + "/users")
 public class UserRestController {
 
 	protected final Log logger = LogFactory.getLog(getClass());
 
 	private final String ENTITY = "user";
+
+	@Autowired
+	private final EventHistoryLogService eventHistoryLogService;
 
 
 	@Autowired
@@ -51,9 +59,17 @@ public class UserRestController {
 	@Autowired
 	private final RoleRepository roleRepository;
 
+	@Autowired
+	private ObjectMapper objectMapper;
+
+
 
 	@PostMapping(value = {"/batch"}, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<List<RestResponse<User>>> postList(@RequestBody List<User> users) {
+
+		if (users == null || users.isEmpty()) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "NULL or empty array was provided");
+		}
 
 		boolean errorOccurred = false;
 
@@ -82,6 +98,8 @@ public class UserRestController {
 					restResponse.setBody(userFromDatabase);
 					restResponse.setHttp_status(HttpStatus.OK);
 					restResponse.setMessage(ENTITY + " saved successfully");
+
+					addLog("create " + ENTITY, ENTITY + " created:\n" + userFromDatabase);
 				}
 			}
 
@@ -122,6 +140,8 @@ public class UserRestController {
 			restResponse.setHttp_status(HttpStatus.OK);
 			restResponse.setMessage(ENTITY + " saved successfully");
 
+			addLog("create " + ENTITY, ENTITY + " created:\n" + userFromDatabase);
+
 			return ResponseEntity.ok(restResponse);
 		}
 	}
@@ -154,6 +174,10 @@ public class UserRestController {
 	@PutMapping(value = {"", "/"}, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<List<RestResponse<User>>> putList(@RequestBody List<User> users) {
 
+		if (users == null || users.isEmpty()) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "NULL or empty array was provided");
+		}
+
 		boolean errorOccurred = false;
 
 		List<RestResponse<User>> responseList = new ArrayList<>();
@@ -170,6 +194,7 @@ public class UserRestController {
 
 				errorOccurred = true;
 			} else {
+				String oldUserFromDatabase = userService.getById(user.getId()).toString();
 				User userFromDatabase = userService.save(user);
 
 				if (userFromDatabase == null) {
@@ -181,6 +206,8 @@ public class UserRestController {
 					restResponse.setBody(userFromDatabase);
 					restResponse.setHttp_status(HttpStatus.OK);
 					restResponse.setMessage(ENTITY + " saved successfully");
+
+					addLog("update (PUT) " + ENTITY, ENTITY + " updated from:\n" + oldUserFromDatabase + "\nto:\n" + userFromDatabase);
 				}
 			}
 
@@ -211,6 +238,7 @@ public class UserRestController {
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(restResponse);
 		}
 
+		String oldUserFromDatabase = userService.getById(user.getId()).toString();
 		User userFromDatabase = userService.save(user);
 
 		if (userFromDatabase == null) {
@@ -223,6 +251,8 @@ public class UserRestController {
 			restResponse.setHttp_status(HttpStatus.OK);
 			restResponse.setMessage(ENTITY + " saved successfully");
 
+			addLog("update (PUT) " + ENTITY, ENTITY + " updated from:\n" + oldUserFromDatabase + "\nto:\n" + userFromDatabase);
+
 			return ResponseEntity.ok(restResponse);
 		}
 	}
@@ -232,16 +262,28 @@ public class UserRestController {
 	@PatchMapping(value = {"", "/"}, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<List<RestResponse<?>>> patchList(@RequestBody List<Map<String, Object>> changesList) {
 
+		if (changesList == null || changesList.isEmpty()) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "NULL or empty array was provided");
+		}
+
 		boolean errorOccurred = false;
 
 		List<RestResponse<?>> responseList = new ArrayList<>();
 
 		for (Map<String, Object> changes : changesList) {
 
-			changes.remove("password");
-
 			RestResponse<Map<String, Object>> mapResponse = new RestResponse<>();
 			mapResponse.setBody(changes);
+
+			if (changes == null) {
+				mapResponse.setHttp_status(HttpStatus.BAD_REQUEST);
+				mapResponse.setMessage("NULL array element was provided");
+				responseList.add(mapResponse);
+				errorOccurred = true;
+				continue;
+			}
+
+			changes.remove("password");
 
 			if (!changes.containsKey("id")) {
 				mapResponse.setHttp_status(HttpStatus.BAD_REQUEST);
@@ -261,25 +303,18 @@ public class UserRestController {
 
 					errorOccurred = true;
 				} else {
-					Integer id = (Integer) idObj;
-
-					User userFromDatabase = userService.getById(Long.valueOf(id));
-
 					changes.remove("id");
+					long idLong = (long) ((Integer) idObj);
 
-					changes.forEach((key, value) -> {
-						Field field = ReflectionUtils.findField(User.class, key);
-						if (field != null) {
-							field.setAccessible(true);
-							ReflectionUtils.setField(field, userFromDatabase, value);
-						}
-					});
+					String oldUserFromDatabase = userService.getById(idLong).toString();
+
+					User userFromDatabase = handlePatchChanges(idLong, changes);
+
 
 					RestResponse<User> userResponse = new RestResponse<>();
 					userResponse.setBody(userFromDatabase);
 
 					ValidationResponse response = userService.validate(userFromDatabase, Mapping.PATCH);
-
 
 					if (!response.isValid()) {
 						userResponse.setHttp_status(HttpStatus.BAD_REQUEST);
@@ -287,8 +322,21 @@ public class UserRestController {
 
 						errorOccurred = true;
 					} else {
-						userResponse.setHttp_status(HttpStatus.OK);
-						userResponse.setMessage(ENTITY + "patched successfully");
+
+						User updatedUserFromDatabase = userService.save(userFromDatabase);
+
+						if (updatedUserFromDatabase == null) {
+							userResponse.setHttp_status(HttpStatus.INTERNAL_SERVER_ERROR);
+							userResponse.setMessage("failed to save " + ENTITY + " in database");
+
+							errorOccurred = true;
+						} else {
+							userResponse.setBody(updatedUserFromDatabase);
+							userResponse.setHttp_status(HttpStatus.OK);
+							userResponse.setMessage(ENTITY + "patched successfully");
+
+							addLog("update (PATCH) " + ENTITY, ENTITY + " updated from:\n" + oldUserFromDatabase + "\nto:\n" + updatedUserFromDatabase);
+						}
 					}
 
 					responseList.add(userResponse);
@@ -306,27 +354,27 @@ public class UserRestController {
 	@PatchMapping(value = "/{id}", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<RestResponse<User>> patchById(@RequestBody Map<String, Object> changes, @PathVariable Long id) {
 
+		if (changes == null || changes.isEmpty()) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "NULL or empty array was provided");
+		}
+
 		User userFromDatabase = userService.getById(id);
 
 		if (userFromDatabase == null) {
 			throw new ResponseStatusException(HttpStatus.NOT_FOUND, ENTITY + " with ID: '" + id + "' not found");
 		}
 
+		String oldUser = userFromDatabase.toString();
+
 		changes.remove("id");
 		changes.remove("password");
 
-		changes.forEach((key, value) -> {
-			Field field = ReflectionUtils.findField(User.class, key);
-			if (field != null) {
-				field.setAccessible(true);
-				ReflectionUtils.setField(field, userFromDatabase, value);
-			}
-		});
+		userFromDatabase = handlePatchChanges(id, changes);
 
 		RestResponse<User> restResponse = new RestResponse<>();
+		restResponse.setBody(userFromDatabase);
 
 		ValidationResponse response = userService.validate(userFromDatabase, Mapping.PATCH);
-		restResponse.setBody(userFromDatabase);
 
 		if (!response.isValid()) {
 			restResponse.setHttp_status(HttpStatus.BAD_REQUEST);
@@ -346,6 +394,8 @@ public class UserRestController {
 		} else {
 			restResponse.setHttp_status(HttpStatus.OK);
 			restResponse.setMessage(ENTITY + " patched successfully");
+
+			addLog("update (PATCH) " + ENTITY, ENTITY + " updated from:\n" + oldUser + "\nto:\n" + patchedUser);
 
 			return ResponseEntity.ok(restResponse);
 		}
@@ -372,6 +422,8 @@ public class UserRestController {
 		} else {
 			String passwordUpdateToken = userService.generatePasswordUpdateToken(userFromDatabase);
 			logger.info("user with email: " + user.getEmail() + " was found and password update token was created: " + passwordUpdateToken);
+
+			addLog("forgot password", "request was made by IP address:\n" + ip + "\nuser:\n" + user);
 
 			//TODO: SEND EMAIL WITH RESET LINK
 			// CURRENTLY WILL WORK BY CREATING POST REQUEST TO /update_password WITH passwordUpdateToken and NEW PASSWORD
@@ -442,6 +494,8 @@ public class UserRestController {
 		userFromDatabase.setPassword_update_token(null);
 		userService.save(userFromDatabase);
 
+		addLog("update password", "password updated for user:\n" + userFromDatabase);
+
 		return ResponseEntity.ok("password updated successfully");
 	}
 
@@ -449,6 +503,10 @@ public class UserRestController {
 
 	@DeleteMapping(value = {"", "/"}, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<List<RestResponse<User>>> deleteList(@RequestBody List<User> users) {
+
+		if (users == null || users.isEmpty()) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "NULL or empty array was provided");
+		}
 
 		boolean errorOccurred = false;
 
@@ -471,6 +529,8 @@ public class UserRestController {
 
 					restResponse.setHttp_status(HttpStatus.OK);
 					restResponse.setMessage(ENTITY + " deleted successfully");
+
+					addLog("delete " + ENTITY, ENTITY + " deleted:\n" + user);
 				} catch (Exception e) {
 					restResponse.setHttp_status(HttpStatus.INTERNAL_SERVER_ERROR);
 					restResponse.setMessage("failed to delete " + ENTITY + " from database \n" + e.getMessage());
@@ -497,6 +557,12 @@ public class UserRestController {
 			throw new ResponseStatusException(HttpStatus.NOT_FOUND, ENTITY + " with ID: '" + id + "' not found");
 		}
 
+		ValidationResponse response = userService.validate(userFromDatabase, Mapping.DELETE);
+
+		if (!response.isValid()) {
+			throw new ResponseStatusException(HttpStatus.METHOD_NOT_ALLOWED, response.getMessage());
+		}
+
 		try {
 			userService.delete(userFromDatabase);
 		} catch (Exception e) {
@@ -509,36 +575,55 @@ public class UserRestController {
 		restResponse.setHttp_status(HttpStatus.OK);
 		restResponse.setMessage(ENTITY + " deleted successfully");
 
+		addLog("delete " + ENTITY, ENTITY + " deleted:\n" + userFromDatabase);
+
 		return ResponseEntity.ok(restResponse);
 	}
 
 
+	private void addLog(String action, String description) {
+		if (eventHistoryLogService.isLoggingEnabledForUsers()) {
+			EventHistoryLog log = new EventHistoryLog();
+			log.setWho_did(eventHistoryLogService.getCurrentUser() == null ? "NULL" : eventHistoryLogService.getCurrentUser().toString());
+			log.setAction(action);
+			log.setDescription(description);
 
-	//TODO FOR TESTING -> REMOVE IN PRODUCTION
-	@PostMapping("/populate_with_test_data")
-	public void populateWithTestData() {
-		for (int i = 1; i < 11; i++) {
-			User user = new User();
-			user.setUsername("username_" + i);
-			user.setPassword(userService.getBcryptEncoder().encode("password"));
-			user.setFirst_name("First Name_" + i);
-			user.setLast_name("Last Name_" + i);
-			user.setEmail("test@test" + i + ".com");
-			user.setRole(roleRepository.findByName(StringUtils.ROLE_USER));
-
-			List<Organisation> organisations = organisationService.getAll();
-
-			if (organisations.size() > 0) {
-				user.setOrganisation(organisations.get(0));
-			}
-
-			userService.save(user);
+			eventHistoryLogService.save(log);
 		}
 	}
 
-	//TODO FOR TESTING -> REMOVE IN PRODUCTION
-	@DeleteMapping("/delete_all")
-	public void deleteAll() {
-		userService.deleteAll();
+
+	private User handlePatchChanges(Long id, Map<String, Object> changes) {
+		User entity = userService.getById(id);
+
+		if (entity != null) {
+			changes.forEach((key, value) -> {
+				Field field = ReflectionUtils.findField(entity.getClass(), key);
+
+				if (field != null) {
+					field.setAccessible(true);
+
+					if (field.getType().equals(String.class)) {
+						ReflectionUtils.setField(field, entity, value);
+					} else {
+
+						if (field.getType().equals(Date.class)) {
+							LocalDateTime localDateTime = LocalDateTime.parse((String) value, DateUtils.getFormat());
+							ReflectionUtils.setField(field, entity, localDateTime);
+						}
+
+						if (field.getType().equals(Organisation.class)) {
+							try {
+								entity.setOrganisation(objectMapper.readValue((String) value, Organisation.class));
+							} catch (JsonProcessingException e) {
+								e.printStackTrace();
+							}
+						}
+					}
+				}
+			});
+		}
+
+		return entity;
 	}
 }

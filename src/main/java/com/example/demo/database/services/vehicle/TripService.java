@@ -5,13 +5,12 @@ import com.example.demo.database.models.utils.ValidationResponse;
 import com.example.demo.database.models.vehicle.Trip;
 import com.example.demo.database.models.vehicle.Vehicle;
 import com.example.demo.database.repositories.vehicle.TripRepository;
+import com.example.demo.database.repositories.vehicle.VehicleRepository;
+import com.example.demo.utils.FieldReflectionUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.util.ReflectionUtils;
 
 import javax.transaction.Transactional;
-import java.lang.reflect.Field;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -21,6 +20,8 @@ import java.util.Optional;
 public class TripService {
 
 	private final TripRepository repository;
+
+	private final VehicleRepository vehicleRepository;
 
 
 	public List<Trip> getAll() {
@@ -80,46 +81,45 @@ public class TripService {
 
 		if (mapping.equals(Mapping.PUT) || mapping.equals(Mapping.PATCH)) {
 			if (trip.getId() == null) {
-				return new ValidationResponse(false, "ID parameter is required");
+				return new ValidationResponse(false, "entity ID parameter is required");
 			}
 
 			Trip tripFromDatabase = getById(trip.getId());
 
 			if (tripFromDatabase == null) {
-				return new ValidationResponse(false, "ID parameter is invalid");
+				return new ValidationResponse(false, "entity ID parameter is invalid");
 			}
 		}
 
 		if (mapping.equals(Mapping.POST) || mapping.equals(Mapping.PUT) || mapping.equals(Mapping.PATCH)) {
 
-			// EMPTY STRING CHECK
-			List<Field> stringFields = new ArrayList<>();
-
-			Field[] allFields = Trip.class.getDeclaredFields();
-			for (Field field : allFields) {
-				if (field.getType().equals(String.class)) {
-					stringFields.add(field);
-				}
+			if (trip.getVehicle() == null) {
+				return new ValidationResponse(false, "vehicle is required");
 			}
 
-			for (Field field : stringFields) {
-				field.setAccessible(true);
-				Object object = ReflectionUtils.getField(field, trip);
-
-				if (object != null) {
-					if (object instanceof String) {
-						if (((String) object).length() <= 0) {
-							return new ValidationResponse(false, "'" + field.getName() + "' cannot be empty");
-						}
-					}
-				}
+			if (trip.getVehicle().getId() == null) {
+				return new ValidationResponse(false, "vehicle ID is required");
 			}
 
+			Optional<Vehicle> vehicle = vehicleRepository.findById(trip.getVehicle().getId());
+
+			if (vehicle.isEmpty()) {
+				return new ValidationResponse(false, "vehicle ID is invalid");
+			}
+
+			trip.setVehicle(vehicle.get());
+
+
+			ValidationResponse stringFieldsValidation = new FieldReflectionUtils<Trip>().validateStringFields(trip);
+
+			if (!stringFieldsValidation.isValid()) {
+				return stringFieldsValidation;
+			}
 		}
 
 		if (mapping.equals(Mapping.DELETE)) {
 			if (trip.getId() == null) {
-				return new ValidationResponse(false, "ID parameter is required");
+				return new ValidationResponse(false, "entity ID parameter is required");
 			}
 		}
 

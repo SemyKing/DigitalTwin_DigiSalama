@@ -18,7 +18,4 @@ public class Role {
 
 	@Column
 	private String name;
-
-	@Column
-	private Integer level;
 }

@@ -1,15 +1,17 @@
 package com.example.demo.api.controllers.vehicle;
 
+import com.example.demo.database.models.EventHistoryLog;
 import com.example.demo.database.models.utils.Mapping;
 import com.example.demo.database.models.utils.ValidationResponse;
 import com.example.demo.database.models.vehicle.Equipment;
 import com.example.demo.database.models.vehicle.EquipmentType;
 import com.example.demo.database.models.vehicle.Vehicle;
+import com.example.demo.database.services.EventHistoryLogService;
 import com.example.demo.database.services.vehicle.EquipmentService;
 import com.example.demo.database.services.vehicle.EquipmentTypeService;
 import com.example.demo.database.services.vehicle.VehicleService;
+import com.example.demo.utils.Constants;
 import com.example.demo.utils.FieldReflectionUtils;
-import com.example.demo.utils.StringUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -21,10 +23,13 @@ import java.util.List;
 @Controller
 @RequiredArgsConstructor
 @SessionAttributes("equipment")
-@RequestMapping(StringUtils.UI_API + "/equipment")
+@RequestMapping(Constants.UI_API + "/equipment")
 public class EquipmentController {
 
 	private static final String ENTITY = "equipment";
+
+	@Autowired
+	private final EventHistoryLogService eventHistoryLogService;
 
 	@Autowired
 	private final EquipmentService equipmentService;
@@ -50,9 +55,9 @@ public class EquipmentController {
 		Equipment equipment = equipmentService.getById(id);
 
 		if (equipment == null) {
-			model.addAttribute(StringUtils.ERROR_TITLE_ATTRIBUTE, "No such entity");
-			model.addAttribute(StringUtils.ERROR_MESSAGE_ATTRIBUTE, ENTITY + " with id: " + id + " not found");
-			return StringUtils.ERROR_PAGE;
+			model.addAttribute(Constants.ERROR_TITLE_ATTRIBUTE, "No such entity");
+			model.addAttribute(Constants.ERROR_MESSAGE_ATTRIBUTE, ENTITY + " with id: " + id + " not found");
+			return Constants.ERROR_PAGE;
 		}
 
 		model.addAttribute(ENTITY, equipment);
@@ -80,9 +85,9 @@ public class EquipmentController {
 		Equipment equipment = equipmentService.getById(id);
 
 		if (equipment == null) {
-			model.addAttribute(StringUtils.ERROR_TITLE_ATTRIBUTE, "No such entity");
-			model.addAttribute(StringUtils.ERROR_MESSAGE_ATTRIBUTE, ENTITY + " with id: " + id + " not found");
-			return StringUtils.ERROR_PAGE;
+			model.addAttribute(Constants.ERROR_TITLE_ATTRIBUTE, "No such entity");
+			model.addAttribute(Constants.ERROR_MESSAGE_ATTRIBUTE, ENTITY + " with id: " + id + " not found");
+			return Constants.ERROR_PAGE;
 		}
 
 		model.addAttribute(ENTITY, equipment);
@@ -99,48 +104,60 @@ public class EquipmentController {
 
 	@PostMapping({"", "/"})
 	public String post(@ModelAttribute Equipment equipment, Model model) {
-		equipment = new FieldReflectionUtils<Equipment>().getObjectWithEmptyStringValuesAsNull(equipment);
+		equipment = new FieldReflectionUtils<Equipment>().getEntityWithEmptyStringValuesAsNull(equipment);
 
 		ValidationResponse response = equipmentService.validate(equipment, Mapping.POST);
 
 		if (!response.isValid()) {
-			model.addAttribute(StringUtils.ERROR_TITLE_ATTRIBUTE, "Validation error");
-			model.addAttribute(StringUtils.ERROR_MESSAGE_ATTRIBUTE, response.getMessage());
-			return StringUtils.ERROR_PAGE;
+			model.addAttribute(Constants.ERROR_TITLE_ATTRIBUTE, "Validation error");
+			model.addAttribute(Constants.ERROR_MESSAGE_ATTRIBUTE, response.getMessage());
+			return Constants.ERROR_PAGE;
 		}
 
 		Equipment equipmentFromDatabase = equipmentService.save(equipment);
 
 		if (equipmentFromDatabase == null) {
-			model.addAttribute(StringUtils.ERROR_TITLE_ATTRIBUTE, "Database error");
-			model.addAttribute(StringUtils.ERROR_MESSAGE_ATTRIBUTE,"failed to save " + ENTITY + " in database");
-			return StringUtils.ERROR_PAGE;
+			model.addAttribute(Constants.ERROR_TITLE_ATTRIBUTE, "Database error");
+			model.addAttribute(Constants.ERROR_MESSAGE_ATTRIBUTE,"failed to save " + ENTITY + " in database");
+			return Constants.ERROR_PAGE;
 		} else {
-			return StringUtils.REDIRECT + StringUtils.UI_API + "/equipment";
+
+			addLog(
+					"crate " + ENTITY,
+					ENTITY + " created:\n" + equipmentFromDatabase);
+
+			return Constants.REDIRECT + Constants.UI_API + "/equipment";
 		}
 	}
 
 
 	@PostMapping("/update")
 	public String put(@ModelAttribute Equipment equipment, Model model) {
-		equipment = new FieldReflectionUtils<Equipment>().getObjectWithEmptyStringValuesAsNull(equipment);
+		String oldEquipmentFromDatabase = equipmentService.getById(equipment.getId()).toString();
+
+		equipment = new FieldReflectionUtils<Equipment>().getEntityWithEmptyStringValuesAsNull(equipment);
 
 		ValidationResponse response = equipmentService.validate(equipment, Mapping.PUT);
 
 		if (!response.isValid()) {
-			model.addAttribute(StringUtils.ERROR_TITLE_ATTRIBUTE, "Validation error");
-			model.addAttribute(StringUtils.ERROR_MESSAGE_ATTRIBUTE, response.getMessage());
-			return StringUtils.ERROR_PAGE;
+			model.addAttribute(Constants.ERROR_TITLE_ATTRIBUTE, "Validation error");
+			model.addAttribute(Constants.ERROR_MESSAGE_ATTRIBUTE, response.getMessage());
+			return Constants.ERROR_PAGE;
 		}
 
 		Equipment equipmentFromDatabase = equipmentService.save(equipment);
 
 		if (equipmentFromDatabase == null) {
-			model.addAttribute(StringUtils.ERROR_TITLE_ATTRIBUTE, "Database error");
-			model.addAttribute(StringUtils.ERROR_MESSAGE_ATTRIBUTE,"failed to save " + ENTITY + " in database");
-			return StringUtils.ERROR_PAGE;
+			model.addAttribute(Constants.ERROR_TITLE_ATTRIBUTE, "Database error");
+			model.addAttribute(Constants.ERROR_MESSAGE_ATTRIBUTE,"failed to save " + ENTITY + " in database");
+			return Constants.ERROR_PAGE;
 		} else {
-			return StringUtils.REDIRECT + StringUtils.UI_API + "/equipment/" + equipmentFromDatabase.getId();
+
+			addLog(
+					"update " + ENTITY,
+					ENTITY + " updated from:\n" + oldEquipmentFromDatabase + "\nto:\n" + equipmentFromDatabase);
+
+			return Constants.REDIRECT + Constants.UI_API + "/equipment/" + equipmentFromDatabase.getId();
 		}
 	}
 
@@ -151,13 +168,28 @@ public class EquipmentController {
 		Equipment equipmentFromDatabase = equipmentService.getById(id);
 
 		if (equipmentFromDatabase == null) {
-			model.addAttribute(StringUtils.ERROR_TITLE_ATTRIBUTE, "Not found");
-			model.addAttribute(StringUtils.ERROR_MESSAGE_ATTRIBUTE, ENTITY + " with ID " + id + " not found");
-			return StringUtils.ERROR_PAGE;
+			model.addAttribute(Constants.ERROR_TITLE_ATTRIBUTE, "Not found");
+			model.addAttribute(Constants.ERROR_MESSAGE_ATTRIBUTE, ENTITY + " with ID " + id + " not found");
+			return Constants.ERROR_PAGE;
 		}
 
 		equipmentService.delete(equipmentFromDatabase);
 
-		return StringUtils.REDIRECT + "/equipment";
+		addLog(
+				"delete " + ENTITY,
+				ENTITY + " deleted:\n" + equipmentFromDatabase);
+
+		return Constants.REDIRECT + "/equipment";
+	}
+
+	private void addLog(String action, String description) {
+		if (eventHistoryLogService.isLoggingEnabledForEquipment()) {
+			EventHistoryLog log = new EventHistoryLog();
+			log.setWho_did(eventHistoryLogService.getCurrentUser() == null ? "NULL" : eventHistoryLogService.getCurrentUser().toString());
+			log.setAction(action);
+			log.setDescription(description);
+
+			eventHistoryLogService.save(log);
+		}
 	}
 }

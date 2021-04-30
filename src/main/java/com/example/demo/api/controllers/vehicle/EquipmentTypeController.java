@@ -1,11 +1,13 @@
 package com.example.demo.api.controllers.vehicle;
 
+import com.example.demo.database.models.EventHistoryLog;
 import com.example.demo.database.models.utils.Mapping;
 import com.example.demo.database.models.utils.ValidationResponse;
 import com.example.demo.database.models.vehicle.EquipmentType;
+import com.example.demo.database.services.EventHistoryLogService;
 import com.example.demo.database.services.vehicle.EquipmentTypeService;
+import com.example.demo.utils.Constants;
 import com.example.demo.utils.FieldReflectionUtils;
-import com.example.demo.utils.StringUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -17,10 +19,13 @@ import java.util.List;
 @Controller
 @RequiredArgsConstructor
 @SessionAttributes("equipment_type")
-@RequestMapping(StringUtils.UI_API + "/equipment_types")
+@RequestMapping(Constants.UI_API + "/equipment_types")
 public class EquipmentTypeController {
 
-	private static final String ENTITY = "equipment_type";
+	private final String ENTITY = "equipment_type";
+
+	@Autowired
+	private final EventHistoryLogService eventHistoryLogService;
 
 	@Autowired
 	private final EquipmentTypeService typeService;
@@ -40,9 +45,9 @@ public class EquipmentTypeController {
 		EquipmentType type = typeService.getById(id);
 
 		if (type == null) {
-			model.addAttribute(StringUtils.ERROR_TITLE_ATTRIBUTE, "No such element");
-			model.addAttribute(StringUtils.ERROR_MESSAGE_ATTRIBUTE, ENTITY + " with id: " + id + " not found");
-			return StringUtils.ERROR_PAGE;
+			model.addAttribute(Constants.ERROR_TITLE_ATTRIBUTE, "No such element");
+			model.addAttribute(Constants.ERROR_MESSAGE_ATTRIBUTE, ENTITY + " with id: " + id + " not found");
+			return Constants.ERROR_PAGE;
 		}
 
 		model.addAttribute(ENTITY, type);
@@ -64,9 +69,9 @@ public class EquipmentTypeController {
 		EquipmentType type = typeService.getById(id);
 
 		if (type == null) {
-			model.addAttribute(StringUtils.ERROR_TITLE_ATTRIBUTE, "No such entity");
-			model.addAttribute(StringUtils.ERROR_MESSAGE_ATTRIBUTE, ENTITY + " with id: " + id + " not found");
-			return StringUtils.ERROR_PAGE;
+			model.addAttribute(Constants.ERROR_TITLE_ATTRIBUTE, "No such entity");
+			model.addAttribute(Constants.ERROR_MESSAGE_ATTRIBUTE, ENTITY + " with id: " + id + " not found");
+			return Constants.ERROR_PAGE;
 		}
 
 		model.addAttribute(ENTITY, type);
@@ -77,48 +82,61 @@ public class EquipmentTypeController {
 
 	@PostMapping({"", "/"})
 	public String post(@ModelAttribute EquipmentType type, Model model) {
-		type = new FieldReflectionUtils<EquipmentType>().getObjectWithEmptyStringValuesAsNull(type);
+		type = new FieldReflectionUtils<EquipmentType>().getEntityWithEmptyStringValuesAsNull(type);
 
 		ValidationResponse response = typeService.validate(type, Mapping.POST);
 
 		if (!response.isValid()) {
-			model.addAttribute(StringUtils.ERROR_TITLE_ATTRIBUTE, "Validation error");
-			model.addAttribute(StringUtils.ERROR_MESSAGE_ATTRIBUTE, response.getMessage());
-			return StringUtils.ERROR_PAGE;
+			model.addAttribute(Constants.ERROR_TITLE_ATTRIBUTE, "Validation error");
+			model.addAttribute(Constants.ERROR_MESSAGE_ATTRIBUTE, response.getMessage());
+			return Constants.ERROR_PAGE;
 		}
+
 
 		EquipmentType typeFromDatabase = typeService.save(type);
 
 		if (typeFromDatabase == null) {
-			model.addAttribute(StringUtils.ERROR_TITLE_ATTRIBUTE, "Database error");
-			model.addAttribute(StringUtils.ERROR_MESSAGE_ATTRIBUTE,"failed to save " + ENTITY + " in database");
-			return StringUtils.ERROR_PAGE;
+			model.addAttribute(Constants.ERROR_TITLE_ATTRIBUTE, "Database error");
+			model.addAttribute(Constants.ERROR_MESSAGE_ATTRIBUTE,"failed to save " + ENTITY + " in database");
+			return Constants.ERROR_PAGE;
 		} else {
-			return StringUtils.REDIRECT + StringUtils.UI_API + "/equipment_types";
+
+			addLog(
+					"create " + ENTITY,
+					ENTITY + " created:\n" + typeFromDatabase);
+
+			return Constants.REDIRECT + Constants.UI_API + "/equipment_types";
 		}
 	}
 
 
 	@PostMapping("/update")
 	public String put(@ModelAttribute EquipmentType type, Model model) {
-		type = new FieldReflectionUtils<EquipmentType>().getObjectWithEmptyStringValuesAsNull(type);
+		String oldTypeFromDatabase = typeService.getById(type.getId()).toString();
+
+		type = new FieldReflectionUtils<EquipmentType>().getEntityWithEmptyStringValuesAsNull(type);
 
 		ValidationResponse response = typeService.validate(type, Mapping.PUT);
 
 		if (!response.isValid()) {
-			model.addAttribute(StringUtils.ERROR_TITLE_ATTRIBUTE, "Validation error");
-			model.addAttribute(StringUtils.ERROR_MESSAGE_ATTRIBUTE, response.getMessage());
-			return StringUtils.ERROR_PAGE;
+			model.addAttribute(Constants.ERROR_TITLE_ATTRIBUTE, "Validation error");
+			model.addAttribute(Constants.ERROR_MESSAGE_ATTRIBUTE, response.getMessage());
+			return Constants.ERROR_PAGE;
 		}
 
 		EquipmentType typeFromDatabase = typeService.save(type);
 
 		if (typeFromDatabase == null) {
-			model.addAttribute(StringUtils.ERROR_TITLE_ATTRIBUTE, "Database error");
-			model.addAttribute(StringUtils.ERROR_MESSAGE_ATTRIBUTE,"failed to save " + ENTITY + " in database");
-			return StringUtils.ERROR_PAGE;
+			model.addAttribute(Constants.ERROR_TITLE_ATTRIBUTE, "Database error");
+			model.addAttribute(Constants.ERROR_MESSAGE_ATTRIBUTE,"failed to save " + ENTITY + " in database");
+			return Constants.ERROR_PAGE;
 		} else {
-			return StringUtils.REDIRECT + StringUtils.UI_API + "/equipment_types/" + typeFromDatabase.getId();
+
+			addLog(
+					"update " + ENTITY,
+					ENTITY + " updated from:\n" + oldTypeFromDatabase + "\nto:\n" + typeFromDatabase);
+
+			return Constants.REDIRECT + Constants.UI_API + "/equipment_types/" + typeFromDatabase.getId();
 		}
 	}
 
@@ -128,13 +146,28 @@ public class EquipmentTypeController {
 		EquipmentType typeFromDatabase = typeService.getById(id);
 
 		if (typeFromDatabase == null) {
-			model.addAttribute(StringUtils.ERROR_TITLE_ATTRIBUTE, "Not found");
-			model.addAttribute(StringUtils.ERROR_MESSAGE_ATTRIBUTE, ENTITY + " with ID " + id + " not found");
-			return StringUtils.ERROR_PAGE;
+			model.addAttribute(Constants.ERROR_TITLE_ATTRIBUTE, "Not found");
+			model.addAttribute(Constants.ERROR_MESSAGE_ATTRIBUTE, ENTITY + " with ID " + id + " not found");
+			return Constants.ERROR_PAGE;
 		}
 
 		typeService.delete(typeFromDatabase);
 
-		return StringUtils.REDIRECT + "/equipment_types";
+		addLog(
+				"delete " + ENTITY,
+				ENTITY + " deleted:\n" + typeFromDatabase);
+
+		return Constants.REDIRECT + "/equipment_types";
+	}
+
+	private void addLog(String action, String description) {
+		if (eventHistoryLogService.isLoggingEnabledForEquipmentTypes()) {
+			EventHistoryLog log = new EventHistoryLog();
+			log.setWho_did(eventHistoryLogService.getCurrentUser() == null ? "NULL" : eventHistoryLogService.getCurrentUser().toString());
+			log.setAction(action);
+			log.setDescription(description);
+
+			eventHistoryLogService.save(log);
+		}
 	}
 }

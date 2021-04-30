@@ -1,7 +1,7 @@
 package com.example.demo.security;
 
 import com.example.demo.database.services.UserService;
-import com.example.demo.utils.StringUtils;
+import com.example.demo.utils.Constants;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -16,14 +16,13 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
 @Configuration
 @EnableWebSecurity
 @EnableGlobalMethodSecurity(prePostEnabled = true)
 public class SecurityConfig {
 
-	// UI TOKEN VALID FOR 24 HOURS
+	// UI COOKIE TOKEN VALID FOR 24 HOURS
 	private final static int SESSION_COOKIE_VALIDITY = 86400000;
 
 	@Autowired
@@ -59,10 +58,11 @@ public class SecurityConfig {
 		@Override
 		protected void configure(HttpSecurity http) throws Exception {
 			http
-					.antMatcher(StringUtils.JSON_API + "/**")
+					.antMatcher(Constants.JSON_API + "/**")
 					.authorizeRequests()
-						.antMatchers(StringUtils.JSON_API + "/authenticate").permitAll()
-						.antMatchers(StringUtils.JSON_API + "/**").authenticated()
+						.antMatchers(Constants.JSON_API + "/authenticate").permitAll()
+//						.antMatchers(Constants.JSON_API + "/**").authenticated()
+						.antMatchers(Constants.JSON_API + "/**").permitAll()
 						.and()
 					.exceptionHandling().authenticationEntryPoint(jwtAuthenticationEntryPoint)
 					.and()
@@ -83,23 +83,23 @@ public class SecurityConfig {
 
 		@Override
 		protected void configure(HttpSecurity http) throws Exception {
-			http
-					.authorizeRequests()
-						.antMatchers("/", "/login", "/signin", "/logout").permitAll()
-						.antMatchers(StringUtils.UI_API + "/**").authenticated()
-						.and()
-					.formLogin()
-						.loginProcessingUrl("/signin")
-						.loginPage("/login").permitAll()
-						.defaultSuccessUrl(StringUtils.UI_API + "/", true)
-						.usernameParameter("username")
-						.passwordParameter("password")
-						.and()
-					.csrf().disable()
-
-					.rememberMe().tokenValiditySeconds(SESSION_COOKIE_VALIDITY).key("mySecret!").rememberMeParameter("checkRememberMe")
-					.and()
-					.logout().logoutRequestMatcher(new AntPathRequestMatcher("/logout")).logoutSuccessUrl("/login");
+//			http
+//					.authorizeRequests()
+//						.antMatchers("/", "/login", "/signin", "/logout").permitAll()
+//						.antMatchers(Constants.UI_API + "/**").authenticated()
+//						.and()
+//					.formLogin()
+//						.loginProcessingUrl("/signin")
+//						.loginPage("/login").permitAll()
+//						.defaultSuccessUrl(Constants.UI_API + "/", true)
+//						.usernameParameter("username")
+//						.passwordParameter("password")
+//						.and()
+//					.csrf().disable()
+//
+//					.rememberMe().tokenValiditySeconds(SESSION_COOKIE_VALIDITY).key("mySecret!").rememberMeParameter("checkRememberMe")
+//					.and()
+//					.logout().logoutRequestMatcher(new AntPathRequestMatcher("/logout")).logoutSuccessUrl("/login");
 		}
 	}
 }

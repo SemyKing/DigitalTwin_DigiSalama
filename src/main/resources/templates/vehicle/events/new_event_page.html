@@ -13,7 +13,7 @@
 
 		<h3 th:text="${error_message_attribute}" class="text-danger"></h3>
 
-		<form action="#" th:action="@{/api1/events}" th:object="${event}" method="post">
+		<form action="#" th:action="@{/api1/vehicle_events}" th:object="${event}" method="post">
 
 			<div class="form-group">
 				<label for="name">Name</label>
@@ -49,7 +49,6 @@
 
 			<div class="form-group">
 				<label for="timestamp">Timestamp</label>
-<!--				<input type="text" class="form-control" id="timestamp" placeholder="Timestamp" th:value="${#dates.format(event.timestamp, 'dd/MM/yyyy HH:mm')}">-->
 				<input type="datetime-local" class="form-control" id="timestamp" placeholder="Timestamp" th:field="*{{timestamp}}">
 			</div>
 

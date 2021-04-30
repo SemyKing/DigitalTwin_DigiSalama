@@ -1,0 +1,50 @@
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{main-layout :: main-fragment(~{:: #main-content})}">
+	<head>
+		<title>Event History Log List</title>
+		<link rel="stylesheet"
+			  href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css"
+			  integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO"
+			  crossorigin="anonymous">
+	</head>
+
+	<body>
+
+		<div id="main-content" class="container pt-2">
+			<div class="row">
+				<h1>Event History Log List</h1>
+			</div>
+
+			<table class="table table-hover table-sm table-bordered">
+				<thead>
+				<tr>
+					<th> ID </th>
+					<th> Action </th>
+					<th> Timestamp </th>
+				</tr>
+				</thead>
+				<tbody>
+					<tr th:if="${event_history_log_list.empty}">
+						<td colspan="6"> No Event Logs In Database </td>
+					</tr>
+					<tr th:each="log : ${event_history_log_list}">
+						<td>
+							<span th:text="${log.id}"></span>
+						</td>
+						<td>
+							<span th:text="${log.action}"></span>
+						</td>
+						<td>
+							<span th:text="${#temporals.format(log.timestamp, 'dd/MM/yyyy HH:mm')}"></span>
+						</td>
+						<td style="width: 1px;">
+							<form action="#" th:action="${'/api1/event_history_logs/' + log.id}" class="m-0 p-0" method="get">
+								<button type="submit" class="btn btn-secondary btn-sm">View</button>
+							</form>
+						</td>
+					</tr>
+				</tbody>
+			</table>
+		</div>
+
+	</body>
+</html>

@@ -10,7 +10,7 @@ import java.util.List;
 
 @Repository
 @Qualifier("trips")
-public interface EventRepository extends JpaRepository<VehicleEvent, Long> {
+public interface VehicleEventRepository extends JpaRepository<VehicleEvent, Long> {
 
     @Query("SELECT e FROM VehicleEvent e WHERE e.vehicle IS NOT NULL AND e.vehicle.id = :id")
     List<VehicleEvent> findAllByVehicleId(Long id);

@@ -13,7 +13,6 @@ import javax.persistence.*;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@ToString(exclude = {"password_update_token", "password"})
 public class User {
 
 	@Id
@@ -24,25 +23,31 @@ public class User {
 	private String username;
 
 	@Column
+	@ToString.Exclude
 	private String password;
 
 	@Column
+	@ToString.Exclude
 	private String first_name;
 
 	@Column
+	@ToString.Exclude
 	private String last_name;
 
 	@Column
+	@ToString.Exclude
 	private String email;
 
-	@OneToOne(cascade = CascadeType.PERSIST)
+	@OneToOne
 	@JoinColumn(name = "organisation_id", referencedColumnName = "id")
 	private Organisation organisation;
 
 	@OneToOne
+	@ToString.Exclude
 	@JoinColumn(name = "role_id", referencedColumnName = "id")
 	private Role role;
 
 	@Column
+	@ToString.Exclude
 	private String password_update_token = null;
 }

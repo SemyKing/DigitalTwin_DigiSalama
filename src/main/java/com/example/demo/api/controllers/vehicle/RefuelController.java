@@ -1,15 +1,17 @@
 package com.example.demo.api.controllers.vehicle;
 
+import com.example.demo.database.models.EventHistoryLog;
 import com.example.demo.database.models.utils.Mapping;
 import com.example.demo.database.models.utils.ValidationResponse;
 import com.example.demo.database.models.vehicle.FileDB;
 import com.example.demo.database.models.vehicle.Refuel;
 import com.example.demo.database.models.vehicle.Vehicle;
+import com.example.demo.database.services.EventHistoryLogService;
 import com.example.demo.database.services.vehicle.FileService;
 import com.example.demo.database.services.vehicle.RefuelService;
 import com.example.demo.database.services.vehicle.VehicleService;
+import com.example.demo.utils.Constants;
 import com.example.demo.utils.FieldReflectionUtils;
-import com.example.demo.utils.StringUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -22,10 +24,13 @@ import java.util.List;
 @Controller
 @RequiredArgsConstructor
 @SessionAttributes({"refuel"})
-@RequestMapping(StringUtils.UI_API + "/refuels")
+@RequestMapping(Constants.UI_API + "/refuels")
 public class RefuelController {
 
 	private final String ENTITY = "refuel";
+
+	@Autowired
+	private final EventHistoryLogService eventHistoryLogService;
 
 	@Autowired
 	private final RefuelService refuelService;
@@ -51,9 +56,9 @@ public class RefuelController {
 		Refuel refuelFromDatabase = refuelService.getById(id);
 
 		if (refuelFromDatabase == null) {
-			model.addAttribute(StringUtils.ERROR_TITLE_ATTRIBUTE, "No such entity");
-			model.addAttribute(StringUtils.ERROR_MESSAGE_ATTRIBUTE, ENTITY + " with id: " + id + " not found");
-			return StringUtils.ERROR_PAGE;
+			model.addAttribute(Constants.ERROR_TITLE_ATTRIBUTE, "No such entity");
+			model.addAttribute(Constants.ERROR_MESSAGE_ATTRIBUTE, ENTITY + " with id: " + id + " not found");
+			return Constants.ERROR_PAGE;
 		}
 
 		model.addAttribute(ENTITY, refuelFromDatabase);
@@ -67,9 +72,9 @@ public class RefuelController {
 		Refuel refuelFromDatabase = refuelService.getById(id);
 
 		if (refuelFromDatabase == null) {
-			model.addAttribute(StringUtils.ERROR_TITLE_ATTRIBUTE, "No such entity");
-			model.addAttribute(StringUtils.ERROR_MESSAGE_ATTRIBUTE, ENTITY + " with id: " + id + " not found");
-			return StringUtils.ERROR_PAGE;
+			model.addAttribute(Constants.ERROR_TITLE_ATTRIBUTE, "No such entity");
+			model.addAttribute(Constants.ERROR_MESSAGE_ATTRIBUTE, ENTITY + " with id: " + id + " not found");
+			return Constants.ERROR_PAGE;
 		}
 
 		model.addAttribute(ENTITY, refuelFromDatabase);
@@ -101,9 +106,9 @@ public class RefuelController {
 		Refuel refuelFromDatabase = refuelService.getById(id);
 
 		if (refuelFromDatabase == null) {
-			model.addAttribute(StringUtils.ERROR_TITLE_ATTRIBUTE, "No such entity");
-			model.addAttribute(StringUtils.ERROR_MESSAGE_ATTRIBUTE, ENTITY + " with id: " + id + " not found");
-			return StringUtils.ERROR_PAGE;
+			model.addAttribute(Constants.ERROR_TITLE_ATTRIBUTE, "No such entity");
+			model.addAttribute(Constants.ERROR_MESSAGE_ATTRIBUTE, ENTITY + " with id: " + id + " not found");
+			return Constants.ERROR_PAGE;
 		}
 
 		model.addAttribute(ENTITY, refuelFromDatabase);
@@ -120,13 +125,13 @@ public class RefuelController {
 
 	@PostMapping({"", "/"})
 	public String post(@ModelAttribute Refuel refuel, Model model) {
-		refuel = new FieldReflectionUtils<Refuel>().getObjectWithEmptyStringValuesAsNull(refuel);
+		refuel = new FieldReflectionUtils<Refuel>().getEntityWithEmptyStringValuesAsNull(refuel);
 
 		ValidationResponse response = refuelService.validate(refuel, Mapping.POST);
 
 		if (!response.isValid()) {
 			model.addAttribute(ENTITY, refuel);
-			model.addAttribute(StringUtils.ERROR_MESSAGE_ATTRIBUTE, response.getMessage());
+			model.addAttribute(Constants.ERROR_MESSAGE_ATTRIBUTE, response.getMessage());
 
 			List<Vehicle> vehicles = vehicleService.getAll();
 			model.addAttribute("vehicles", vehicles);
@@ -140,24 +145,31 @@ public class RefuelController {
 		Refuel refuelFromDatabase = refuelService.save(refuel);
 
 		if (refuelFromDatabase == null) {
-			model.addAttribute(StringUtils.ERROR_TITLE_ATTRIBUTE, "Database error");
-			model.addAttribute(StringUtils.ERROR_MESSAGE_ATTRIBUTE,"failed to save " + ENTITY + " in database");
-			return StringUtils.ERROR_PAGE;
+			model.addAttribute(Constants.ERROR_TITLE_ATTRIBUTE, "Database error");
+			model.addAttribute(Constants.ERROR_MESSAGE_ATTRIBUTE,"failed to save " + ENTITY + " in database");
+			return Constants.ERROR_PAGE;
 		} else {
-			return StringUtils.REDIRECT + StringUtils.UI_API + "/refuels";
+
+			addLog(
+					"create " + ENTITY,
+					ENTITY + " created:\n" + refuelFromDatabase);
+
+			return Constants.REDIRECT + Constants.UI_API + "/refuels";
 		}
 	}
 
 
 	@PostMapping("/update")
 	public String put(@ModelAttribute Refuel refuel, Model model, HttpServletRequest request) {
-		refuel = new FieldReflectionUtils<Refuel>().getObjectWithEmptyStringValuesAsNull(refuel);
+		String oldRefuelFromDatabase = refuelService.getById(refuel.getId()).toString();
+
+		refuel = new FieldReflectionUtils<Refuel>().getEntityWithEmptyStringValuesAsNull(refuel);
 
 		ValidationResponse response = refuelService.validate(refuel, Mapping.PUT);
 
 		if (!response.isValid()) {
-			model.addAttribute(StringUtils.ERROR_TITLE_ATTRIBUTE, "Validation error");
-			model.addAttribute(StringUtils.ERROR_MESSAGE_ATTRIBUTE, response.getMessage());
+			model.addAttribute(Constants.ERROR_TITLE_ATTRIBUTE, "Validation error");
+			model.addAttribute(Constants.ERROR_MESSAGE_ATTRIBUTE, response.getMessage());
 
 			String referer = request.getHeader("Referer");
 
@@ -173,17 +185,22 @@ public class RefuelController {
 				return "vehicle/refuels/edit_refuel_page";
 			}
 
-			return StringUtils.ERROR_PAGE;
+			return Constants.ERROR_PAGE;
 		}
 
 		Refuel refuelFromDatabase = refuelService.save(refuel);
 
 		if (refuelFromDatabase == null) {
-			model.addAttribute(StringUtils.ERROR_TITLE_ATTRIBUTE, "Database error");
-			model.addAttribute(StringUtils.ERROR_MESSAGE_ATTRIBUTE,"failed to save " + ENTITY + " in database");
-			return StringUtils.ERROR_PAGE;
+			model.addAttribute(Constants.ERROR_TITLE_ATTRIBUTE, "Database error");
+			model.addAttribute(Constants.ERROR_MESSAGE_ATTRIBUTE,"failed to save " + ENTITY + " in database");
+			return Constants.ERROR_PAGE;
 		} else {
-			return StringUtils.REDIRECT + StringUtils.UI_API + "/refuels/" + refuelFromDatabase.getId();
+
+			addLog(
+					"update " + ENTITY,
+					ENTITY + " updated from:\n" + oldRefuelFromDatabase + "\nto:\n" + refuelFromDatabase);
+
+			return Constants.REDIRECT + Constants.UI_API + "/refuels/" + refuelFromDatabase.getId();
 		}
 	}
 
@@ -193,13 +210,28 @@ public class RefuelController {
 		Refuel refuelFromDatabase = refuelService.getById(id);
 
 		if (refuelFromDatabase == null) {
-			model.addAttribute(StringUtils.ERROR_TITLE_ATTRIBUTE, "Not found");
-			model.addAttribute(StringUtils.ERROR_MESSAGE_ATTRIBUTE, ENTITY + " with ID " + id + " not found");
-			return StringUtils.ERROR_PAGE;
+			model.addAttribute(Constants.ERROR_TITLE_ATTRIBUTE, "Not found");
+			model.addAttribute(Constants.ERROR_MESSAGE_ATTRIBUTE, ENTITY + " with ID " + id + " not found");
+			return Constants.ERROR_PAGE;
 		}
 
 		refuelService.delete(refuelFromDatabase);
 
-		return StringUtils.REDIRECT + StringUtils.UI_API + "/refuels";
+		addLog(
+				"delete " + ENTITY,
+				ENTITY + " deleted:\n" + refuelFromDatabase);
+
+		return Constants.REDIRECT + Constants.UI_API + "/refuels";
+	}
+
+	private void addLog(String action, String description) {
+		if (eventHistoryLogService.isLoggingEnabledForRefuels()) {
+			EventHistoryLog log = new EventHistoryLog();
+			log.setWho_did(eventHistoryLogService.getCurrentUser() == null ? "NULL" : eventHistoryLogService.getCurrentUser().toString());
+			log.setAction(action);
+			log.setDescription(description);
+
+			eventHistoryLogService.save(log);
+		}
 	}
 }

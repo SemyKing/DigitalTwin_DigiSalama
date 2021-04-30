@@ -35,6 +35,14 @@ dependencies {
 	// https://mvnrepository.com/artifact/io.jsonwebtoken/jjwt
 	implementation group: 'io.jsonwebtoken', name: 'jjwt', version: '0.9.1'
 
+	// https://mvnrepository.com/artifact/org.springdoc/springdoc-openapi-ui
+	implementation group: 'org.springdoc', name: 'springdoc-openapi-ui', version: '1.5.7'
+
+	// https://mvnrepository.com/artifact/commons-beanutils/commons-beanutils
+	implementation group: 'commons-beanutils', name: 'commons-beanutils', version: '1.9.4'
+
+
+
 
 
 

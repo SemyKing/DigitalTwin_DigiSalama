@@ -1,12 +1,17 @@
 package com.example.demo.api.rest_controllers.vehicle;
 
-import com.example.demo.database.models.Organisation;
+import com.example.demo.database.models.EventHistoryLog;
 import com.example.demo.database.models.utils.Mapping;
 import com.example.demo.database.models.utils.RestResponse;
 import com.example.demo.database.models.utils.ValidationResponse;
 import com.example.demo.database.models.vehicle.Trip;
+import com.example.demo.database.models.vehicle.Vehicle;
+import com.example.demo.database.services.EventHistoryLogService;
 import com.example.demo.database.services.vehicle.TripService;
-import com.example.demo.utils.StringUtils;
+import com.example.demo.utils.Constants;
+import com.example.demo.utils.DateUtils;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -17,25 +22,35 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.lang.reflect.Field;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Comparator;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping(StringUtils.JSON_API + "/trips")
+@RequestMapping(Constants.JSON_API + "/trips")
 public class TripRestController {
 
 	private final String ENTITY = "trip";
 
+	@Autowired
+	private final EventHistoryLogService eventHistoryLogService;
 
 	@Autowired
 	private final TripService tripService;
 
+	@Autowired
+	private ObjectMapper objectMapper;
+
 
 	@PostMapping(value = {"/batch"}, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<List<RestResponse<Trip>>> postList(@RequestBody List<Trip> trips) {
+
+		if (trips == null || trips.isEmpty()) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "NULL or empty array was provided");
+		}
 
 		boolean errorOccurred = false;
 
@@ -51,8 +66,6 @@ public class TripRestController {
 				restResponse.setHttp_status(HttpStatus.BAD_REQUEST);
 				restResponse.setMessage(response.getMessage());
 
-				responseList.add(restResponse);
-
 				errorOccurred = true;
 			} else {
 				Trip tripFromDatabase = tripService.save(trip);
@@ -66,10 +79,12 @@ public class TripRestController {
 					restResponse.setBody(tripFromDatabase);
 					restResponse.setHttp_status(HttpStatus.OK);
 					restResponse.setMessage(ENTITY + " saved successfully");
-				}
 
-				responseList.add(restResponse);
+					addLog("create " + ENTITY, ENTITY + " created:\n" + tripFromDatabase);
+				}
 			}
+
+			responseList.add(restResponse);
 		}
 
 		if (errorOccurred) {
@@ -78,7 +93,6 @@ public class TripRestController {
 			return ResponseEntity.status(HttpStatus.OK).body(responseList);
 		}
 	}
-
 
 	@PostMapping(value = {"", "/"}, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<RestResponse<Trip>> post(@RequestBody Trip trip) {
@@ -105,6 +119,8 @@ public class TripRestController {
 			restResponse.setBody(tripFromDatabase);
 			restResponse.setHttp_status(HttpStatus.OK);
 			restResponse.setMessage(ENTITY + " saved successfully");
+
+			addLog("create " + ENTITY, ENTITY + " created:\n" + tripFromDatabase);
 
 			return ResponseEntity.status(HttpStatus.OK).body(restResponse);
 		}
@@ -138,6 +154,10 @@ public class TripRestController {
 	@PutMapping(value = {"", "/"}, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<List<RestResponse<Trip>>> putList(@RequestBody List<Trip> trips) {
 
+		if (trips == null || trips.isEmpty()) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "NULL or empty array was provided");
+		}
+
 		boolean errorOccurred = false;
 
 		List<RestResponse<Trip>> responseList = new ArrayList<>();
@@ -152,10 +172,9 @@ public class TripRestController {
 				restResponse.setHttp_status(HttpStatus.BAD_REQUEST);
 				restResponse.setMessage(response.getMessage());
 
-				responseList.add(restResponse);
-
 				errorOccurred = true;
 			} else {
+				String oldTripFromDatabase = tripService.getById(trip.getId()).toString();
 				Trip tripFromDatabase = tripService.save(trip);
 
 				if (tripFromDatabase == null) {
@@ -167,10 +186,12 @@ public class TripRestController {
 					restResponse.setBody(tripFromDatabase);
 					restResponse.setHttp_status(HttpStatus.OK);
 					restResponse.setMessage(ENTITY + " saved successfully");
-				}
 
-				responseList.add(restResponse);
+					addLog("update (PUT) " + ENTITY, ENTITY + " updated from:\n" + oldTripFromDatabase + "\nto:\n" + tripFromDatabase);
+				}
 			}
+
+			responseList.add(restResponse);
 		}
 
 		if (errorOccurred) {
@@ -195,6 +216,7 @@ public class TripRestController {
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(restResponse);
 		}
 
+		String oldTripFromDatabase = tripService.getById(trip.getId()).toString();
 		Trip tripFromDatabase = tripService.save(trip);
 
 		if (tripFromDatabase == null) {
@@ -207,6 +229,8 @@ public class TripRestController {
 			restResponse.setHttp_status(HttpStatus.OK);
 			restResponse.setMessage(ENTITY + " saved successfully");
 
+			addLog("update (PUT) " + ENTITY, ENTITY + " updated from:\n" + oldTripFromDatabase + "\nto:\n" + tripFromDatabase);
+
 			return ResponseEntity.status(HttpStatus.OK).body(restResponse);
 		}
 	}
@@ -216,6 +240,10 @@ public class TripRestController {
 	@PatchMapping(value = {"", "/"}, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<List<RestResponse<?>>> patchList(@RequestBody List<Map<String, Object>> changesList) {
 
+		if (changesList == null || changesList.isEmpty()) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "NULL or empty array was provided");
+		}
+
 		List<RestResponse<?>> responseList = new ArrayList<>();
 		boolean errorOccurred = false;
 
@@ -223,6 +251,14 @@ public class TripRestController {
 
 			RestResponse<Map<String, Object>> mapResponse = new RestResponse<>();
 			mapResponse.setBody(changes);
+
+			if (changes == null) {
+				mapResponse.setHttp_status(HttpStatus.BAD_REQUEST);
+				mapResponse.setMessage("NULL array element was provided");
+				responseList.add(mapResponse);
+				errorOccurred = true;
+				continue;
+			}
 
 			if (!changes.containsKey("id")) {
 				mapResponse.setHttp_status(HttpStatus.BAD_REQUEST);
@@ -242,19 +278,11 @@ public class TripRestController {
 
 					errorOccurred = true;
 				} else {
-					Integer id = (Integer) idObj;
-
-					Trip tripFromDatabase = tripService.getById(Long.valueOf(id));
-
+					long idLong = (long) ((Integer) idObj);
 					changes.remove("id");
 
-					changes.forEach((key, value) -> {
-						Field field = ReflectionUtils.findField(Trip.class, key);
-						if (field != null) {
-							field.setAccessible(true);
-							ReflectionUtils.setField(field, tripFromDatabase, value);
-						}
-					});
+					String oldTripFromDatabase = tripService.getById(idLong).toString();
+					Trip tripFromDatabase = handlePatchChanges(idLong, changes);
 
 					RestResponse<Trip> restResponse = new RestResponse<>();
 					restResponse.setBody(tripFromDatabase);
@@ -266,8 +294,21 @@ public class TripRestController {
 
 						errorOccurred = true;
 					} else {
-						restResponse.setHttp_status(HttpStatus.OK);
-						restResponse.setMessage(ENTITY + "patched successfully");
+
+						Trip updatedTripFromDatabase = tripService.save(tripFromDatabase);
+
+						if (updatedTripFromDatabase == null) {
+							restResponse.setHttp_status(HttpStatus.INTERNAL_SERVER_ERROR);
+							restResponse.setMessage("failed to save " + ENTITY + " in database");
+
+							errorOccurred = true;
+						} else {
+							restResponse.setBody(updatedTripFromDatabase);
+							restResponse.setHttp_status(HttpStatus.OK);
+							restResponse.setMessage(ENTITY + "patched successfully");
+
+							addLog("update (PATCH) " + ENTITY, ENTITY + " updated from:\n" + oldTripFromDatabase + "\nto:\n" + updatedTripFromDatabase);
+						}
 					}
 
 					responseList.add(restResponse);
@@ -285,21 +326,21 @@ public class TripRestController {
 	@PatchMapping(value = "/{id}", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<RestResponse<Trip>> patchById(@RequestBody Map<String, Object> changes, @PathVariable Long id) {
 
+		if (changes == null || changes.isEmpty()) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "NULL or empty array was provided");
+		}
+
 		Trip tripFromDatabase = tripService.getById(id);
 
 		if (tripFromDatabase == null) {
 			throw new ResponseStatusException(HttpStatus.NOT_FOUND, ENTITY + " with ID: '" + id + "' not found");
 		}
 
+		String oldTripFromDatabase = tripFromDatabase.toString();
+
 		changes.remove("id");
 
-		changes.forEach((key, value) -> {
-			Field field = ReflectionUtils.findField(Trip.class, key);
-			if (field != null) {
-				field.setAccessible(true);
-				ReflectionUtils.setField(field, tripFromDatabase, value);
-			}
-		});
+		tripFromDatabase = handlePatchChanges(id, changes);
 
 		RestResponse<Trip> restResponse = new RestResponse<>();
 
@@ -325,6 +366,8 @@ public class TripRestController {
 			restResponse.setHttp_status(HttpStatus.OK);
 			restResponse.setMessage(ENTITY + " saved successfully");
 
+			addLog("update (PATCH) " + ENTITY, ENTITY + " updated from:\n" + oldTripFromDatabase + "\nto:\n" + patchedTrip);
+
 			return ResponseEntity.status(HttpStatus.OK).body(restResponse);
 		}
 	}
@@ -333,6 +376,10 @@ public class TripRestController {
 
 	@DeleteMapping(value = {"", "/"}, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<List<RestResponse<Trip>>> deleteList(@RequestBody List<Trip> trips) {
+
+		if (trips == null || trips.isEmpty()) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "NULL or empty array was provided");
+		}
 
 		boolean errorOccurred = false;
 
@@ -348,8 +395,6 @@ public class TripRestController {
 				restResponse.setHttp_status(HttpStatus.BAD_REQUEST);
 				restResponse.setMessage(response.getMessage());
 
-				responseList.add(restResponse);
-
 				errorOccurred = true;
 			} else {
 				try {
@@ -357,13 +402,15 @@ public class TripRestController {
 
 					restResponse.setHttp_status(HttpStatus.OK);
 					restResponse.setMessage(ENTITY + " deleted successfully");
+
+					addLog("delete " + ENTITY, ENTITY + " deleted:\n" + trip);
 				} catch (Exception e) {
 					restResponse.setHttp_status(HttpStatus.INTERNAL_SERVER_ERROR);
 					restResponse.setMessage("failed to delete " + ENTITY + " from database \n" + e.getMessage());
 				}
-
-				responseList.add(restResponse);
 			}
+
+			responseList.add(restResponse);
 		}
 
 		if (errorOccurred) {
@@ -381,6 +428,12 @@ public class TripRestController {
 			throw new ResponseStatusException(HttpStatus.NOT_FOUND, ENTITY + " with ID: '" + id + "' not found");
 		}
 
+		ValidationResponse response = tripService.validate(tripFromDatabase, Mapping.DELETE);
+
+		if (!response.isValid()) {
+			throw new ResponseStatusException(HttpStatus.METHOD_NOT_ALLOWED, response.getMessage());
+		}
+
 		try {
 			tripService.delete(tripFromDatabase);
 		} catch (Exception e) {
@@ -392,28 +445,66 @@ public class TripRestController {
 		restResponse.setHttp_status(HttpStatus.OK);
 		restResponse.setMessage(ENTITY + " deleted successfully");
 
+		addLog("delete " + ENTITY, ENTITY + " deleted:\n" + tripFromDatabase);
+
 		return ResponseEntity.ok(restResponse);
 	}
 
 
+	private void addLog(String action, String description) {
+		if (eventHistoryLogService.isLoggingEnabledForTrips()) {
+			EventHistoryLog log = new EventHistoryLog();
+			log.setWho_did(eventHistoryLogService.getCurrentUser() == null ? "NULL" : eventHistoryLogService.getCurrentUser().toString());
+			log.setAction(action);
+			log.setDescription(description);
 
-	//TODO FOR TESTING -> REMOVE IN PRODUCTION
-	@PostMapping("/populate_with_test_data")
-	public void populateWithTestData() {
-		for (int i = 1; i < 5; i++) {
-			Trip trip = new Trip();
-			trip.setOrigin("Origin_" + i);
-			trip.setDestination("Destination_" + i);
-			trip.setKilometres_driven(34);
-			trip.setDescription("oli kiva reissu");
-
-			tripService.save(trip);
+			eventHistoryLogService.save(log);
 		}
 	}
 
-	//TODO FOR TESTING -> REMOVE IN PRODUCTION
-	@DeleteMapping("/delete_all")
-	public void deleteAll() {
-		tripService.deleteAll();
+	private Trip handlePatchChanges(Long id, Map<String, Object> changes) {
+		Trip entity = tripService.getById(id);
+
+		if (entity != null) {
+			changes.forEach((key, value) -> {
+				Field field = ReflectionUtils.findField(entity.getClass(), key);
+
+				if (field != null) {
+					field.setAccessible(true);
+
+					if (field.getType().equals(String.class)) {
+						ReflectionUtils.setField(field, entity, value);
+					} else {
+
+						if (field.getType().equals(Date.class)) {
+							LocalDateTime localDateTime = LocalDateTime.parse((String) value, DateUtils.getFormat());
+							ReflectionUtils.setField(field, entity, localDateTime);
+						}
+
+						if (field.getType().equals(Vehicle.class)) {
+							try {
+								Vehicle vehicle = objectMapper.readValue((String) value, Vehicle.class);
+								entity.setVehicle(vehicle);
+							} catch (JsonProcessingException e) {
+								System.err.println("UserRestController -> handlePatchChanges(): Vehicle json parsing error: " + e.getMessage());
+							}
+						}
+
+						if (field.getType().equals(Integer.class)) {
+							try {
+								Integer intValue = Integer.parseInt((String) value);
+
+								ReflectionUtils.setField(field, entity, intValue);
+							} catch (NumberFormatException e) {
+								System.err.println("TripRestController -> handlePatchChanges(): Integer value: '" + value + "' json parsing error: " + e.getMessage());
+							}
+						}
+
+					}
+				}
+			});
+		}
+
+		return entity;
 	}
 }

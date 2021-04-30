@@ -18,6 +18,6 @@ public interface FileRepository extends JpaRepository<FileDB, Long> {
     @Query("SELECT f FROM FileDB f WHERE f.refuel IS NOT NULL AND f.refuel.id = :id")
     List<FileDB> findAllByRefuelId(Long id);
 
-    @Query("SELECT f FROM FileDB f WHERE f.refuel IS NOT NULL AND f.event.id = :id")
+    @Query("SELECT f FROM FileDB f WHERE f.refuel IS NOT NULL AND f.vehicle_event.id = :id")
     List<FileDB> findAllByVehicleEventId(Long id);
 }

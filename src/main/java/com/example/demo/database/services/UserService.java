@@ -1,15 +1,20 @@
 package com.example.demo.database.services;
 
+import com.example.demo.database.models.Organisation;
 import com.example.demo.database.models.user.User;
 import com.example.demo.database.models.utils.Mapping;
 import com.example.demo.database.models.utils.ValidationResponse;
+import com.example.demo.database.repositories.EventHistoryLogRepository;
 import com.example.demo.database.repositories.RoleRepository;
 import com.example.demo.database.repositories.UserRepository;
-import com.example.demo.utils.StringUtils;
+import com.example.demo.utils.Constants;
+import com.example.demo.utils.FieldReflectionUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -34,12 +39,17 @@ public class UserService implements UserDetailsService {
 	private final UserRepository repository;
 
 	private final RoleRepository roleRepository;
-
+	private final EventHistoryLogRepository eventHistoryLogRepository;
+	private final ApplicationSettingsService applicationSettingsService;
 	private final OrganisationService organisationService;
 
 
 	public List<User> getAll() {
 		return repository.findAll();
+	}
+
+	public List<User> getAllByOrganisationId(Long id) {
+		return repository.findAllByOrganisationId(id);
 	}
 
 	public User getById(Long id) {
@@ -52,6 +62,20 @@ public class UserService implements UserDetailsService {
 		}
 
 		return user;
+	}
+
+	public User getCurrentUser() {
+		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+		if (authentication == null) {
+			return null;
+		}
+
+		if (authentication.getName() == null || authentication.getName().length() <= 0) {
+			return null;
+		}
+
+		return getByUsername(authentication.getName());
 	}
 
 	public User getByUsername(String username) {
@@ -156,7 +180,7 @@ public class UserService implements UserDetailsService {
 			return false;
 		}
 
-		return user.getRole().getName().equals(StringUtils.ROLE_SYSTEM_ADMIN);
+		return user.getRole().getName().equals(Constants.ROLE_SYSTEM_ADMIN);
 	}
 
 	public boolean isUserOrganisationAdmin(Long id) {
@@ -174,7 +198,7 @@ public class UserService implements UserDetailsService {
 			return false;
 		}
 
-		return user.getRole().getName().equals(StringUtils.ROLE_ORGANISATION_ADMIN);
+		return user.getRole().getName().equals(Constants.ROLE_ORGANISATION_ADMIN);
 	}
 
 	public boolean isUserOrganisationOrSystemAdmin(Long id) {
@@ -192,18 +216,108 @@ public class UserService implements UserDetailsService {
 			return false;
 		}
 
-		return user.getRole().getName().equals(StringUtils.ROLE_ORGANISATION_ADMIN) || user.getRole().getName().equals(StringUtils.ROLE_SYSTEM_ADMIN);
+		return user.getRole().getName().equals(Constants.ROLE_ORGANISATION_ADMIN) || user.getRole().getName().equals(Constants.ROLE_SYSTEM_ADMIN);
+	}
+
+	public boolean isCurrentUserSystemAdmin() {
+		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+		if (authentication == null) {
+			return false;
+		}
+
+		if (authentication.getName() == null || authentication.getName().length() <= 0) {
+			return false;
+		}
+
+		User userFromDatabase = getByUsername(authentication.getName());
+
+		if (userFromDatabase == null) {
+			return false;
+		}
+
+		if (userFromDatabase.getRole() == null) {
+			return false;
+		}
+
+		return userFromDatabase.getRole().getName().equals(Constants.ROLE_SYSTEM_ADMIN);
+	}
+
+	public boolean isCurrentUserOrganisationAdmin() {
+		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+		if (authentication == null) {
+			return false;
+		}
+
+		if (authentication.getName() == null || authentication.getName().length() <= 0) {
+			return false;
+		}
+
+		User userFromDatabase = getByUsername(authentication.getName());
+
+		if (userFromDatabase == null) {
+			return false;
+		}
+
+		if (userFromDatabase.getRole() == null) {
+			return false;
+		}
+
+		return userFromDatabase.getRole().getName().equals(Constants.ROLE_ORGANISATION_ADMIN);
+	}
+
+	public boolean isCurrentUserOrganisationOrSystemAdmin() {
+		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+		if (authentication == null) {
+			return false;
+		}
+
+		if (authentication.getName() == null || authentication.getName().length() <= 0) {
+			return false;
+		}
+
+		User userFromDatabase = getByUsername(authentication.getName());
+
+		if (userFromDatabase == null) {
+			return false;
+		}
+
+		if (userFromDatabase.getRole() == null) {
+			return false;
+		}
+
+		return userFromDatabase.getRole().getName().equals(Constants.ROLE_ORGANISATION_ADMIN) || userFromDatabase.getRole().getName().equals(Constants.ROLE_SYSTEM_ADMIN);
 	}
 
 
     public ValidationResponse validate(User user, Mapping mapping) {
-
 		if (user == null) {
 			return new ValidationResponse(false, "provided NULL entity");
 		}
 
 		if (mapping.equals(Mapping.POST)) {
 			user.setId(null);
+		}
+
+		if (mapping.equals(Mapping.PUT) || mapping.equals(Mapping.PATCH)) {
+			if (user.getId() == null) {
+				return new ValidationResponse(false, "entity ID parameter is required");
+			}
+
+			User userFromDatabase = getById(user.getId());
+
+			if (userFromDatabase == null) {
+				return new ValidationResponse(false, "entity ID parameter is invalid");
+			}
+
+			//PROTECTION AGAINST PASSWORD MANIPULATIONS
+			user.setPassword(userFromDatabase.getPassword());
+			user.setPassword_update_token(userFromDatabase.getPassword_update_token());
+		}
+
+		if (mapping.equals(Mapping.POST) || mapping.equals(Mapping.PUT) || mapping.equals(Mapping.PATCH)) {
 
 			if (user.getUsername() == null) {
 				return new ValidationResponse(false, "username is required");
@@ -230,24 +344,6 @@ public class UserService implements UserDetailsService {
 
 				user.setPassword(getBcryptEncoder().encode(user.getPassword()));
 			}
-		}
-
-		if (mapping.equals(Mapping.PUT) || mapping.equals(Mapping.PATCH)) {
-			if (user.getId() == null) {
-				return new ValidationResponse(false, "ID parameter is required");
-			}
-
-			User userFromDatabase = getById(user.getId());
-
-			if (userFromDatabase == null) {
-				return new ValidationResponse(false, "ID parameter is invalid");
-			}
-
-			//PROTECTION AGAINST CUSTOM PASSWORD VALUES IN PUT/PATCH
-			user.setPassword(userFromDatabase.getPassword());
-		}
-
-		if (mapping.equals(Mapping.POST) || mapping.equals(Mapping.PUT) || mapping.equals(Mapping.PATCH)) {
 
 			if (user.getEmail() != null) {
 				if (user.getEmail().length() <= 0) {
@@ -263,24 +359,39 @@ public class UserService implements UserDetailsService {
 				}
 			}
 
-			if (user.getFirst_name() != null) {
-				if (user.getFirst_name().length() <= 0) {
-					return new ValidationResponse(false, "first name cannot be empty");
-				}
-			}
-
-			if (user.getLast_name() != null) {
-				if (user.getLast_name().length() <= 0) {
-					return new ValidationResponse(false, "last name cannot be empty");
-				}
-			}
-
 			if (user.getRole() == null || user.getRole().getId() == null) {
-				user.setRole(roleRepository.findByName(StringUtils.ROLE_USER));
+				user.setRole(roleRepository.findByName(Constants.ROLE_USER));
+			}
+
+			if (user.getOrganisation() == null) {
+				return new ValidationResponse(false, "organisation is required");
+			}
+
+			if (user.getOrganisation().getId() == null) {
+				return new ValidationResponse(false, "organisation ID is required");
+			}
+
+			Organisation organisation = organisationService.getById(user.getOrganisation().getId());
+
+			if (organisation == null) {
+				return new ValidationResponse(false, "organisation with ID " + user.getOrganisation().getId() + " not found");
+			}
+
+			user.setOrganisation(organisation);
+
+
+			ValidationResponse stringFieldsValidation = new FieldReflectionUtils<User>().validateStringFields(user);
+
+			if (!stringFieldsValidation.isValid()) {
+				return stringFieldsValidation;
 			}
 		}
 
 		if (mapping.equals(Mapping.DELETE)) {
+			if (user.getId() == null) {
+				return new ValidationResponse(false, "ID is required");
+			}
+
 			if (isUserSystemAdmin(user.getId())) {
 				if (getSystemAdminsCount() <= 1) {
 					return new ValidationResponse(false, "cannot delete last System Administrator");

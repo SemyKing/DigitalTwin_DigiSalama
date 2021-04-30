@@ -58,7 +58,7 @@
 						</tr>
 						<tr>
 							<td> Date & Time </td>
-							<td> <span th:text="${#dates.format(refuel.timestamp, 'dd/MM/yyyy HH:mm')}"></span> </td>
+							<td> <span th:text="${#temporals.format(refuel.timestamp, 'dd/MM/yyyy HH:mm')}"></span> </td>
 						</tr>
 					</tbody>
 				</table>

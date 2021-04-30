@@ -3,7 +3,14 @@ package com.example.demo.database.services.vehicle;
 import com.example.demo.database.models.utils.Mapping;
 import com.example.demo.database.models.utils.ValidationResponse;
 import com.example.demo.database.models.vehicle.FileDB;
+import com.example.demo.database.models.vehicle.Refuel;
+import com.example.demo.database.models.vehicle.Vehicle;
+import com.example.demo.database.models.vehicle.VehicleEvent;
 import com.example.demo.database.repositories.vehicle.FileRepository;
+import com.example.demo.database.repositories.vehicle.RefuelRepository;
+import com.example.demo.database.repositories.vehicle.VehicleEventRepository;
+import com.example.demo.database.repositories.vehicle.VehicleRepository;
+import com.example.demo.utils.FieldReflectionUtils;
 import lombok.RequiredArgsConstructor;
 import org.apache.tomcat.util.http.fileupload.FileUploadException;
 import org.springframework.stereotype.Service;
@@ -23,6 +30,10 @@ import java.util.Optional;
 public class FileService {
 
 	private final FileRepository repository;
+
+	private final VehicleRepository vehicleRepository;
+	private final RefuelRepository refuelRepository;
+	private final VehicleEventRepository vehicleEventRepository;
 
 
 	public List<FileDB> getAll() {
@@ -114,18 +125,66 @@ public class FileService {
 
 		if (mapping.equals(Mapping.PUT) || mapping.equals(Mapping.PATCH)) {
 			if (file.getId() == null) {
-				return new ValidationResponse(false, "ID parameter is required");
+				return new ValidationResponse(false, "entity ID parameter is required");
 			}
 
 			FileDB fileFromDatabase = getById(file.getId());
 
 			if (fileFromDatabase == null) {
-				return new ValidationResponse(false, "ID parameter is invalid");
+				return new ValidationResponse(false, "entity ID parameter is invalid");
 			}
 		}
 
 		if (mapping.equals(Mapping.POST) || mapping.equals(Mapping.PUT) || mapping.equals(Mapping.PATCH)) {
 
+			if (file.getVehicle() != null) {
+				if (file.getVehicle().getId() == null) {
+					return new ValidationResponse(false, "vehicle ID is required");
+				}
+
+				Optional<Vehicle> vehicle = vehicleRepository.findById(file.getVehicle().getId());
+
+				if (vehicle.isEmpty()) {
+					return new ValidationResponse(false, "vehicle with ID: " + file.getVehicle().getId() + " not found");
+				}
+
+				file.setVehicle(vehicle.get());
+			}
+
+			if (file.getRefuel() != null) {
+				if (file.getRefuel().getId() == null) {
+					return new ValidationResponse(false, "refuel ID is required");
+				}
+
+				Optional<Refuel> refuel = refuelRepository.findById(file.getRefuel().getId());
+
+				if (refuel.isEmpty()) {
+					return new ValidationResponse(false, "refuel with ID: " + file.getRefuel().getId() + " not found");
+				}
+
+				file.setRefuel(refuel.get());
+			}
+
+			if (file.getVehicle_event() != null) {
+				if (file.getVehicle_event().getId() == null) {
+					return new ValidationResponse(false, "vehicle_event ID is required");
+				}
+
+				Optional<VehicleEvent> vehicleEvent = vehicleEventRepository.findById(file.getVehicle_event().getId());
+
+				if (vehicleEvent.isEmpty()) {
+					return new ValidationResponse(false, "vehicle_event with ID: " + file.getVehicle_event().getId() + " not found");
+				}
+
+				file.setVehicle_event(vehicleEvent.get());
+			}
+
+
+			ValidationResponse stringFieldsValidation = new FieldReflectionUtils<FileDB>().validateStringFields(file);
+
+			if (!stringFieldsValidation.isValid()) {
+				return stringFieldsValidation;
+			}
 		}
 
 		return new ValidationResponse(true, "validation successful");

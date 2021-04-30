@@ -1,18 +1,18 @@
 package com.example.demo.database.services.vehicle;
 
+import com.example.demo.database.models.Organisation;
 import com.example.demo.database.models.utils.Mapping;
 import com.example.demo.database.models.utils.ValidationResponse;
-import com.example.demo.database.models.vehicle.*;
+import com.example.demo.database.models.vehicle.Fleet;
+import com.example.demo.database.models.vehicle.Vehicle;
+import com.example.demo.database.repositories.OrganisationRepository;
 import com.example.demo.database.repositories.vehicle.*;
+import com.example.demo.utils.FieldReflectionUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.util.ReflectionUtils;
 
 import javax.transaction.Transactional;
-import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 @Service
 @Transactional
@@ -21,15 +21,15 @@ public class VehicleService {
 
 	private final VehicleRepository vehicleRepository;
 
-	private final FleetRepository fleetRepository;
-
+	private final DistanceRepository distanceRepository;
 	private final EquipmentRepository equipmentRepository;
-
 	private final FileRepository fileRepository;
-
-	private final TripRepository tripRepository;
-
+	private final FleetRepository fleetRepository;
 	private final RefuelRepository refuelRepository;
+	private final TripRepository tripRepository;
+	private final VehicleEventRepository vehicleEventRepository;
+
+	private final OrganisationRepository organisationRepository;
 
 
 	public List<Vehicle> getAll() {
@@ -80,94 +80,119 @@ public class VehicleService {
 
 
 	public void delete(Vehicle vehicle) {
-		if (vehicle == null) {
+		if (vehicle == null || vehicle.getId() == null) {
 			return;
 		}
 
-		// FIRST DELETE/SET NULL ALL ENTITIES THAT HAVE vehicle_id FOREIGN KEY
+		// FIRST DELETE/SET NULL ALL ENTITIES THAT HAVE FOREIGN KEY OF CURRENT ENTITY
 
-		if (vehicle.getId() != null) {
-			List<Equipment> equipment = equipmentRepository.findAllByVehicleId(vehicle.getId());
-			for (Equipment e : equipment) {
-				e.setVehicle(null);
-				equipmentRepository.save(e);
+		distanceRepository.findAllByVehicleId(vehicle.getId()).forEach(distance -> {
+			distance.setVehicle(null);
+			distanceRepository.save(distance);
 
-//				equipmentRepository.delete(e);
-			}
+//			distanceRepository.delete(distance);
+		});
 
-			List<Trip> trips = tripRepository.findAllByVehicleId(vehicle.getId());
-			for (Trip trip : trips) {
-				trip.setVehicle(null);
-				tripRepository.save(trip);
+		equipmentRepository.findAllByVehicleId(vehicle.getId()).forEach(equipment -> {
+			equipment.setVehicle(null);
+			equipmentRepository.save(equipment);
 
-//				tripRepository.delete(trip);
-			}
+//			equipmentRepository.delete(equipment);
+		});
 
-			List<FileDB> files = fileRepository.findAllByVehicleId(vehicle.getId());
-			for (FileDB file : files) {
-				file.setVehicle(null);
-				fileRepository.save(file);
+		fileRepository.findAllByVehicleId(vehicle.getId()).forEach(file -> {
+			file.setVehicle(null);
+			fileRepository.save(file);
 
-//				fileRepository.delete(file);
-			}
-
-			List<Refuel> refuels = refuelRepository.findAllByVehicleId(vehicle.getId());
-			for (Refuel refuel : refuels) {
-				refuel.setVehicle(null);
-				refuelRepository.save(refuel);
-
-//				refuelRepository.delete(refuel);
-			}
+//			fileRepository.delete(file);
+		});
 
 
+		System.out.println("delete -> vehicleFleets: " + vehicle.getFleets());
 
-			vehicleRepository.delete(vehicle);
+		if (vehicle.getFleets() != null) {
+			vehicle.getFleets().forEach(fleet -> {
+				fleet.getVehicles().remove(vehicle);
+				fleetRepository.save(fleet);
+			});
 		}
+
+		refuelRepository.findAllByVehicleId(vehicle.getId()).forEach(refuel -> {
+			refuel.setVehicle(null);
+			refuelRepository.save(refuel);
+
+//			refuelRepository.delete(refuel);
+		});
+
+		tripRepository.findAllByVehicleId(vehicle.getId()).forEach(trip -> {
+			trip.setVehicle(null);
+			tripRepository.save(trip);
+
+//			tripRepository.delete(trip);
+		});
+
+		vehicleEventRepository.findAllByVehicleId(vehicle.getId()).forEach(event -> {
+			event.setVehicle(null);
+			vehicleEventRepository.save(event);
+
+//			eventRepository.delete(event);
+		});
+
+		vehicleRepository.delete(vehicle);
 	}
 
 	public void deleteAll() {
 
-		// FIRST DELETE/SET NULL ALL ENTITIES THAT HAVE vehicle_id FOREIGN KEY
+		// FIRST DELETE/SET NULL ALL ENTITIES THAT HAVE FOREIGN KEY OF CURRENT ENTITY
 
-		//TODO: MAYBE HARD DELETE INSTEAD OF SET NULL
-//		equipmentRepository.deleteAll();
+		distanceRepository.findAll().forEach(distance -> {
+			distance.setVehicle(null);
+			distanceRepository.save(distance);
 
-		List<Equipment> equipment = equipmentRepository.findAll();
-		for (Equipment e : equipment) {
-			e.setVehicle(null);
-			equipmentRepository.save(e);
-		}
+//			distanceRepository.delete(distance);
+		});
 
-		//TODO: MAYBE HARD DELETE INSTEAD OF SET NULL
-//		tripRepository.deleteAll();
+		equipmentRepository.findAll().forEach(equipment -> {
+			equipment.setVehicle(null);
+			equipmentRepository.save(equipment);
 
-		List<Trip> trips = tripRepository.findAll();
-		for (Trip trip : trips) {
-			trip.setVehicle(null);
-			tripRepository.save(trip);
-		}
+//			equipmentRepository.delete(equipment);
+		});
 
-		//TODO: MAYBE HARD DELETE INSTEAD OF SET NULL
-//		fileRepository.deleteAll();
-
-		List<FileDB> files = fileRepository.findAll();
-		for (FileDB file : files) {
+		fileRepository.findAll().forEach(file -> {
 			file.setVehicle(null);
 			fileRepository.save(file);
-		}
 
-		//TODO: MAYBE HARD DELETE INSTEAD OF SET NULL
-//		refuelRepository.deleteAll();
+//			fileRepository.delete(file);
+		});
 
-		List<Refuel> refuels = refuelRepository.findAll();
-		for (Refuel refuel : refuels) {
+		fleetRepository.findAll().forEach(fleet -> {
+			fleet.getVehicles().clear();
+			fleetRepository.save(fleet);
+
+//			fleetRepository.delete(fleet);
+		});
+
+		refuelRepository.findAll().forEach(refuel -> {
 			refuel.setVehicle(null);
 			refuelRepository.save(refuel);
-		}
 
+//			refuelRepository.delete(refuel);
+		});
 
+		tripRepository.findAll().forEach(trip -> {
+			trip.setVehicle(null);
+			tripRepository.save(trip);
 
+//			tripRepository.delete(trip);
+		});
 
+		vehicleEventRepository.findAll().forEach(event -> {
+			event.setVehicle(null);
+			vehicleEventRepository.save(event);
+
+//			eventRepository.delete(event);
+		});
 
 		vehicleRepository.deleteAll();
 	}
@@ -185,48 +210,71 @@ public class VehicleService {
 
 		if (mapping.equals(Mapping.PUT) || mapping.equals(Mapping.PATCH)) {
 			if (vehicle.getId() == null) {
-				return new ValidationResponse(false, "ID parameter is required");
+				return new ValidationResponse(false, "entity ID parameter is required");
 			}
 
 			// CHECK ID
 			Vehicle vehicleFromDatabase = getById(vehicle.getId());
 
 			if (vehicleFromDatabase == null) {
-				return new ValidationResponse(false, "ID parameter is invalid");
+				return new ValidationResponse(false, "entity ID parameter is invalid");
 			}
 		}
 
 		if (mapping.equals(Mapping.POST) || mapping.equals(Mapping.PUT) || mapping.equals(Mapping.PATCH)) {
 
-			List<Field> stringFields = new ArrayList<>();
+			if (vehicle.getFleets() != null) {
+				Set<Fleet> fleets = new HashSet<>();
 
-			Field[] allFields = Vehicle.class.getDeclaredFields();
-			for (Field field : allFields) {
-				if (field.getType().equals(String.class)) {
-					stringFields.add(field);
+				for (Fleet fleet : vehicle.getFleets()) {
+					if (fleet.getId() == null) {
+						return new ValidationResponse(false, "fleet ID is required: " + fleet);
+					}
+
+					Optional<Fleet> fleetFromDatabase = fleetRepository.findById(fleet.getId());
+
+					if (fleetFromDatabase.isEmpty()) {
+						return new ValidationResponse(false, "fleet ID is invalid: " + fleet);
+					}
+
+					fleets.add(fleetFromDatabase.get());
+					fleet.getVehicles().add(vehicle);
 				}
+
+				vehicle.setFleets(fleets);
 			}
 
-			for (Field field : stringFields) {
-				field.setAccessible(true);
-				Object object = ReflectionUtils.getField(field, vehicle);
 
-				if (object != null) {
-					if (object instanceof String) {
-						if (((String) object).length() <= 0) {
-							return new ValidationResponse(false, "'" + field.getName() + "' cannot be empty");
-						}
-					}
+			if (vehicle.getOrganisation() != null) {
+				if (vehicle.getOrganisation().getId() == null) {
+					return new ValidationResponse(false, "organisation ID is required");
 				}
+
+				Optional<Organisation> organisation = organisationRepository.findById(vehicle.getOrganisation().getId());
+
+				if (organisation.isEmpty()) {
+					return new ValidationResponse(false, "organisation ID is invalid");
+				}
+
+				vehicle.setOrganisation(organisation.get());
+			}
+
+			ValidationResponse stringFieldsValidation = new FieldReflectionUtils<Vehicle>().validateStringFields(vehicle);
+
+			if (!stringFieldsValidation.isValid()) {
+				return stringFieldsValidation;
 			}
 		}
 
 		if (mapping.equals(Mapping.DELETE)) {
 			if (vehicle.getId() == null) {
-				return new ValidationResponse(false, "ID parameter is required");
+				return new ValidationResponse(false, "entity ID parameter is required");
 			}
 		}
 
 		return new ValidationResponse(true, "validation success");
 	}
+
+
+
 }

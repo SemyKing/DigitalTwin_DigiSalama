@@ -1,12 +1,19 @@
 package com.example.demo.api.rest_controllers.vehicle;
 
-import com.example.demo.database.models.Organisation;
+import com.example.demo.database.models.EventHistoryLog;
 import com.example.demo.database.models.utils.Mapping;
 import com.example.demo.database.models.utils.RestResponse;
 import com.example.demo.database.models.utils.ValidationResponse;
 import com.example.demo.database.models.vehicle.FileDB;
+import com.example.demo.database.models.vehicle.Refuel;
+import com.example.demo.database.models.vehicle.Vehicle;
+import com.example.demo.database.models.vehicle.VehicleEvent;
+import com.example.demo.database.services.EventHistoryLogService;
 import com.example.demo.database.services.vehicle.FileService;
-import com.example.demo.utils.StringUtils;
+import com.example.demo.utils.Constants;
+import com.example.demo.utils.DateUtils;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -19,17 +26,24 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.time.LocalDateTime;
 import java.util.*;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping(StringUtils.JSON_API + "/files")
+@RequestMapping(Constants.JSON_API + "/files")
 public class FileRestController {
 
 	private final String ENTITY = "file";
 
 	@Autowired
+	private final EventHistoryLogService eventHistoryLogService;
+
+	@Autowired
 	private final FileService fileService;
+
+	@Autowired
+	private ObjectMapper objectMapper;
 
 
 	@PostMapping(value = {"/batch"}, consumes = MediaType.MULTIPART_FORM_DATA_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
@@ -67,9 +81,13 @@ public class FileRestController {
 					if (fileFromDatabase == null) {
 						response.setHttp_status(HttpStatus.INTERNAL_SERVER_ERROR);
 						response.setMessage("failed to save " + ENTITY + " in database");
+
+						errorOccurred = true;
 					} else {
 						response.setHttp_status(HttpStatus.OK);
 						response.setMessage("file uploaded and saved successfully");
+
+						addLog("create " + ENTITY, ENTITY + " created:\n" + fileFromDatabase);
 					}
 				} catch (IOException e) {
 					System.out.println("FILE UPLOAD ERROR");
@@ -89,7 +107,6 @@ public class FileRestController {
 			return ResponseEntity.status(HttpStatus.OK).body(responseList);
 		}
 	}
-
 
 	@PostMapping(value = {"", "/"}, consumes = MediaType.MULTIPART_FORM_DATA_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<RestResponse<String>> post(@RequestBody MultipartFile file) {
@@ -123,6 +140,9 @@ public class FileRestController {
 				} else {
 					response.setHttp_status(HttpStatus.OK);
 					response.setMessage("file uploaded and saved successfully");
+
+					addLog("create " + ENTITY, ENTITY + " created:\n" + fileFromDatabase);
+
 					return ResponseEntity.status(HttpStatus.OK).body(response);
 				}
 
@@ -166,6 +186,10 @@ public class FileRestController {
 	@PutMapping(value = {"", "/"}, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<List<RestResponse<FileDB>>> putList(@RequestBody List<FileDB> files) {
 
+		if (files == null || files.isEmpty()) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "NULL or empty array was provided");
+		}
+
 		boolean errorOccurred = false;
 
 		List<RestResponse<FileDB>> responseList = new ArrayList<>();
@@ -180,23 +204,26 @@ public class FileRestController {
 				restResponse.setHttp_status(HttpStatus.BAD_REQUEST);
 				restResponse.setMessage(response.getMessage());
 
-				responseList.add(restResponse);
-
 				errorOccurred = true;
 			} else {
+				String oldFileFromDatabase = fileService.getById(file.getId()).toString();
 				FileDB fileFromDatabase = fileService.save(file);
 
 				if (fileFromDatabase == null) {
 					restResponse.setHttp_status(HttpStatus.INTERNAL_SERVER_ERROR);
 					restResponse.setMessage("failed to save " + ENTITY + " in database");
+
+					errorOccurred = true;
 				} else {
 					restResponse.setBody(fileFromDatabase);
 					restResponse.setHttp_status(HttpStatus.OK);
 					restResponse.setMessage(ENTITY + " saved successfully");
-				}
 
-				responseList.add(restResponse);
+					addLog("update (PUT) " + ENTITY, ENTITY + " updated from:\n" + oldFileFromDatabase + "\nto:\n" + fileFromDatabase);
+				}
 			}
+
+			responseList.add(restResponse);
 		}
 
 		if (errorOccurred) {
@@ -221,6 +248,7 @@ public class FileRestController {
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(restResponse);
 		}
 
+		String oldFileFromDatabase = fileService.getById(file.getId()).toString();
 		FileDB fileFromDatabase = fileService.save(file);
 
 		if (fileFromDatabase == null) {
@@ -233,6 +261,8 @@ public class FileRestController {
 			restResponse.setHttp_status(HttpStatus.OK);
 			restResponse.setMessage(ENTITY + " saved successfully");
 
+			addLog("update (PUT) " + ENTITY, ENTITY + " updated from:\n" + oldFileFromDatabase + "\nto:\n" + fileFromDatabase);
+
 			return ResponseEntity.status(HttpStatus.OK).body(restResponse);
 		}
 	}
@@ -242,6 +272,10 @@ public class FileRestController {
 	@PatchMapping(value = {"", "/"}, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<List<RestResponse<?>>> patchList(@RequestBody List<Map<String, Object>> changesList) {
 
+		if (changesList == null || changesList.isEmpty()) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "NULL or empty array was provided");
+		}
+
 		List<RestResponse<?>> responseList = new ArrayList<>();
 		boolean errorOccurred = false;
 
@@ -249,6 +283,14 @@ public class FileRestController {
 
 			RestResponse<Map<String, Object>> mapResponse = new RestResponse<>();
 			mapResponse.setBody(changes);
+
+			if (changes == null) {
+				mapResponse.setHttp_status(HttpStatus.BAD_REQUEST);
+				mapResponse.setMessage("NULL array element was provided");
+				responseList.add(mapResponse);
+				errorOccurred = true;
+				continue;
+			}
 
 			if (!changes.containsKey("id")) {
 				mapResponse.setHttp_status(HttpStatus.BAD_REQUEST);
@@ -268,19 +310,11 @@ public class FileRestController {
 
 					errorOccurred = true;
 				} else {
-					Integer id = (Integer) idObj;
-
-					FileDB fileFromDatabase = fileService.getById(Long.valueOf(id));
-
+					long idLong = (long) ((Integer) idObj);
 					changes.remove("id");
 
-					changes.forEach((key, value) -> {
-						Field field = ReflectionUtils.findField(FileDB.class, key);
-						if (field != null) {
-							field.setAccessible(true);
-							ReflectionUtils.setField(field, fileFromDatabase, value);
-						}
-					});
+					String oldFileFromDatabase = fileService.getById(idLong).toString();
+					FileDB fileFromDatabase = handlePatchChanges(idLong, changes);
 
 					ValidationResponse response = fileService.validate(fileFromDatabase, Mapping.PATCH);
 
@@ -293,8 +327,21 @@ public class FileRestController {
 
 						errorOccurred = true;
 					} else {
-						restResponse.setHttp_status(HttpStatus.OK);
-						restResponse.setMessage(ENTITY + "patched successfully");
+
+						FileDB updatedFileFromDatabase = fileService.save(fileFromDatabase);
+
+						if (updatedFileFromDatabase == null) {
+							restResponse.setHttp_status(HttpStatus.INTERNAL_SERVER_ERROR);
+							restResponse.setMessage("failed to save " + ENTITY + " in database");
+
+							errorOccurred = true;
+						} else {
+							restResponse.setBody(updatedFileFromDatabase);
+							restResponse.setHttp_status(HttpStatus.OK);
+							restResponse.setMessage(ENTITY + "patched successfully");
+
+							addLog("update (PATCH) " + ENTITY, ENTITY + " updated from:\n" + oldFileFromDatabase + "\nto:\n" + updatedFileFromDatabase);
+						}
 					}
 
 					responseList.add(restResponse);
@@ -312,21 +359,21 @@ public class FileRestController {
 	@PatchMapping(value = "/{id}", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<RestResponse<FileDB>> patchById(@RequestBody Map<String, Object> changes, @PathVariable Long id) {
 
+		if (changes == null || changes.isEmpty()) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "NULL or empty array was provided");
+		}
+
 		FileDB fileFromDatabase = fileService.getById(id);
 
 		if (fileFromDatabase == null) {
 			throw new ResponseStatusException(HttpStatus.NOT_FOUND, ENTITY + " with ID: '" + id + "' not found");
 		}
 
+		String oldFileFromDatabase = fileFromDatabase.toString();
+
 		changes.remove("id");
 
-		changes.forEach((key, value) -> {
-			Field field = ReflectionUtils.findField(FileDB.class, key);
-			if (field != null) {
-				field.setAccessible(true);
-				ReflectionUtils.setField(field, fileFromDatabase, value);
-			}
-		});
+		fileFromDatabase = handlePatchChanges(id, changes);
 
 		RestResponse<FileDB> restResponse = new RestResponse<>();
 		restResponse.setBody(fileFromDatabase);
@@ -352,6 +399,8 @@ public class FileRestController {
 			restResponse.setHttp_status(HttpStatus.OK);
 			restResponse.setMessage(ENTITY + " saved successfully");
 
+			addLog("update (PATCH) " + ENTITY, ENTITY + " updated from:\n" + oldFileFromDatabase + "\nto:\n" + patchedFileDB);
+
 			return ResponseEntity.status(HttpStatus.OK).body(restResponse);
 		}
 	}
@@ -360,6 +409,10 @@ public class FileRestController {
 
 	@DeleteMapping(value = {"", "/"}, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<List<RestResponse<FileDB>>> deleteList(@RequestBody List<FileDB> files) {
+
+		if (files == null || files.isEmpty()) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "NULL or empty array was provided");
+		}
 
 		boolean errorOccurred = false;
 
@@ -375,8 +428,6 @@ public class FileRestController {
 				restResponse.setHttp_status(HttpStatus.BAD_REQUEST);
 				restResponse.setMessage(response.getMessage());
 
-				responseList.add(restResponse);
-
 				errorOccurred = true;
 			} else {
 				try {
@@ -384,15 +435,17 @@ public class FileRestController {
 
 					restResponse.setHttp_status(HttpStatus.OK);
 					restResponse.setMessage(ENTITY + " deleted successfully");
+
+					addLog("delete " + ENTITY, ENTITY + " deleted:\n" + file);
 				} catch (Exception e) {
 					restResponse.setHttp_status(HttpStatus.INTERNAL_SERVER_ERROR);
 					restResponse.setMessage("failed to delete " + ENTITY + " from database \n" + e.getMessage());
 
 					errorOccurred = true;
 				}
-
-				responseList.add(restResponse);
 			}
+
+			responseList.add(restResponse);
 		}
 
 		if (errorOccurred) {
@@ -410,6 +463,12 @@ public class FileRestController {
 			throw new ResponseStatusException(HttpStatus.NOT_FOUND, ENTITY + " with ID: '" + id + "' not found");
 		}
 
+		ValidationResponse response = fileService.validate(fileFromDatabase, Mapping.DELETE);
+
+		if (!response.isValid()) {
+			throw new ResponseStatusException(HttpStatus.METHOD_NOT_ALLOWED, response.getMessage());
+		}
+
 		try {
 			fileService.delete(fileFromDatabase);
 		} catch (Exception e) {
@@ -421,19 +480,74 @@ public class FileRestController {
 		restResponse.setHttp_status(HttpStatus.OK);
 		restResponse.setMessage(ENTITY + " deleted successfully");
 
+		addLog("delete " + ENTITY, ENTITY + " deleted:\n" + fileFromDatabase);
+
 		return ResponseEntity.ok(restResponse);
 	}
 
 
+	private void addLog(String action, String description) {
+		if (eventHistoryLogService.isLoggingEnabledForFiles()) {
+			EventHistoryLog log = new EventHistoryLog();
+			log.setWho_did(eventHistoryLogService.getCurrentUser() == null ? "NULL" : eventHistoryLogService.getCurrentUser().toString());
+			log.setAction(action);
+			log.setDescription(description);
 
-	//TODO FOR TESTING -> REMOVE IN PRODUCTION
-	@PostMapping("/populate_with_test_data")
-	public void populateWithTestData() {
+			eventHistoryLogService.save(log);
+		}
 	}
 
-	//TODO FOR TESTING -> REMOVE IN PRODUCTION
-	@DeleteMapping("/delete_all")
-	public void deleteAll() {
-		fileService.deleteAll();
+	private FileDB handlePatchChanges(Long id, Map<String, Object> changes) {
+		FileDB entity = fileService.getById(id);
+
+		if (entity != null) {
+			changes.forEach((key, value) -> {
+				Field field = ReflectionUtils.findField(entity.getClass(), key);
+
+				if (field != null) {
+					field.setAccessible(true);
+
+					if (field.getType().equals(String.class)) {
+						ReflectionUtils.setField(field, entity, value);
+					} else {
+
+						if (field.getType().equals(Date.class)) {
+							LocalDateTime localDateTime = LocalDateTime.parse((String) value, DateUtils.getFormat());
+							ReflectionUtils.setField(field, entity, localDateTime);
+						}
+
+						if (field.getType().equals(Vehicle.class)) {
+							try {
+								Vehicle vehicle = objectMapper.readValue((String) value, Vehicle.class);
+								entity.setVehicle(vehicle);
+							} catch (JsonProcessingException e) {
+								System.err.println("FileRestController -> handlePatchChanges(): Vehicle json parsing error: " + e.getMessage());
+							}
+						}
+
+						if (field.getType().equals(Refuel.class)) {
+							try {
+								Refuel refuel = objectMapper.readValue((String) value, Refuel.class);
+								entity.setRefuel(refuel);
+							} catch (JsonProcessingException e) {
+								System.err.println("FileRestController -> handlePatchChanges(): Refuel json parsing error: " + e.getMessage());
+							}
+						}
+
+						if (field.getType().equals(VehicleEvent.class)) {
+							try {
+								VehicleEvent vehicleEvent = objectMapper.readValue((String) value, VehicleEvent.class);
+								entity.setVehicle_event(vehicleEvent);
+							} catch (JsonProcessingException e) {
+								System.err.println("FileRestController -> handlePatchChanges(): VehicleEvent json parsing error: " + e.getMessage());
+							}
+						}
+
+					}
+				}
+			});
+		}
+
+		return entity;
 	}
 }

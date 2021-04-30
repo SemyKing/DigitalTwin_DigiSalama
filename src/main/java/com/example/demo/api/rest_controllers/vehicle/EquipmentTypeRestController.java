@@ -1,12 +1,15 @@
 package com.example.demo.api.rest_controllers.vehicle;
 
-import com.example.demo.database.models.Organisation;
+import com.example.demo.database.models.EventHistoryLog;
 import com.example.demo.database.models.utils.Mapping;
 import com.example.demo.database.models.utils.RestResponse;
 import com.example.demo.database.models.utils.ValidationResponse;
 import com.example.demo.database.models.vehicle.EquipmentType;
+import com.example.demo.database.services.EventHistoryLogService;
 import com.example.demo.database.services.vehicle.EquipmentTypeService;
-import com.example.demo.utils.StringUtils;
+import com.example.demo.utils.Constants;
+import com.example.demo.utils.DateUtils;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -17,24 +20,33 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.lang.reflect.Field;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Comparator;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping(StringUtils.JSON_API + "/equipment_type")
+@RequestMapping(Constants.JSON_API + "/equipment_type")
 public class EquipmentTypeRestController {
 
 	private final String ENTITY = "equipment_type";
 
 	@Autowired
+	private final EventHistoryLogService eventHistoryLogService;
+
+	@Autowired
 	private final EquipmentTypeService equipmentTypeService;
+
 
 
 	@PostMapping(value = {"/batch"}, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<List<RestResponse<EquipmentType>>> postList(@RequestBody List<EquipmentType> equipmentTypes) {
+
+		if (equipmentTypes == null || equipmentTypes.isEmpty()) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "NULL or empty array was provided");
+		}
 
 		boolean errorOccurred = false;
 
@@ -50,23 +62,25 @@ public class EquipmentTypeRestController {
 				restResponse.setHttp_status(HttpStatus.BAD_REQUEST);
 				restResponse.setMessage(response.getMessage());
 
-				responseList.add(restResponse);
-
 				errorOccurred = true;
 			} else {
-				EquipmentType equipmentFromDatabase = equipmentTypeService.save(equipmentType);
+				EquipmentType equipmentTypeFromDatabase = equipmentTypeService.save(equipmentType);
 
-				if (equipmentFromDatabase == null) {
+				if (equipmentTypeFromDatabase == null) {
 					restResponse.setHttp_status(HttpStatus.INTERNAL_SERVER_ERROR);
 					restResponse.setMessage("failed to save " + ENTITY + " in database");
+
+					errorOccurred = true;
 				} else {
-					restResponse.setBody(equipmentFromDatabase);
+					restResponse.setBody(equipmentTypeFromDatabase);
 					restResponse.setHttp_status(HttpStatus.OK);
 					restResponse.setMessage(ENTITY + " saved successfully");
-				}
 
-				responseList.add(restResponse);
+					addLog("create " + ENTITY, ENTITY + " created:\n" + equipmentTypeFromDatabase);
+				}
 			}
+
+			responseList.add(restResponse);
 		}
 
 		if (errorOccurred) {
@@ -75,7 +89,6 @@ public class EquipmentTypeRestController {
 			return ResponseEntity.status(HttpStatus.OK).body(responseList);
 		}
 	}
-
 
 	@PostMapping(value = {"", "/"}, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<RestResponse<EquipmentType>> post(@RequestBody EquipmentType equipmentType) {
@@ -91,17 +104,19 @@ public class EquipmentTypeRestController {
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(restResponse);
 		}
 
-		EquipmentType equipmentFromDatabase = equipmentTypeService.save(equipmentType);
+		EquipmentType equipmentTypeFromDatabase = equipmentTypeService.save(equipmentType);
 
-		if (equipmentFromDatabase == null) {
+		if (equipmentTypeFromDatabase == null) {
 			restResponse.setHttp_status(HttpStatus.INTERNAL_SERVER_ERROR);
 			restResponse.setMessage("failed to save " + ENTITY + " in database");
 
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(restResponse);
 		} else {
-			restResponse.setBody(equipmentFromDatabase);
+			restResponse.setBody(equipmentTypeFromDatabase);
 			restResponse.setHttp_status(HttpStatus.OK);
 			restResponse.setMessage(ENTITY + " saved successfully");
+
+			addLog("create " + ENTITY, ENTITY + " created:\n" + equipmentTypeFromDatabase);
 
 			return ResponseEntity.status(HttpStatus.OK).body(restResponse);
 		}
@@ -121,19 +136,23 @@ public class EquipmentTypeRestController {
 
 	@GetMapping(value = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
 	public EquipmentType getByID(@PathVariable Long id) {
-		EquipmentType equipmentFromDatabase = equipmentTypeService.getById(id);
+		EquipmentType equipmentTypeFromDatabase = equipmentTypeService.getById(id);
 
-		if (equipmentFromDatabase == null) {
+		if (equipmentTypeFromDatabase == null) {
 			throw new ResponseStatusException(HttpStatus.NOT_FOUND, ENTITY + " with ID: '" + id + "' not found");
 		}
 
-		return equipmentFromDatabase;
+		return equipmentTypeFromDatabase;
 	}
 
 
 
 	@PutMapping(value = {"", "/"}, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<List<RestResponse<EquipmentType>>> putList(@RequestBody List<EquipmentType> equipmentTypes) {
+
+		if (equipmentTypes == null || equipmentTypes.isEmpty()) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "NULL or empty array was provided");
+		}
 
 		boolean errorOccurred = false;
 
@@ -149,23 +168,26 @@ public class EquipmentTypeRestController {
 				restResponse.setHttp_status(HttpStatus.BAD_REQUEST);
 				restResponse.setMessage(response.getMessage());
 
-				responseList.add(restResponse);
-
 				errorOccurred = true;
 			} else {
+				String oldEquipmentTypeFromDatabase = equipmentTypeService.getById(equipmentType.getId()).toString();
 				EquipmentType equipmentTypeFromDatabase = equipmentTypeService.save(equipmentType);
 
 				if (equipmentTypeFromDatabase == null) {
 					restResponse.setHttp_status(HttpStatus.INTERNAL_SERVER_ERROR);
 					restResponse.setMessage("failed to save " + ENTITY + " in database");
+
+					errorOccurred = true;
 				} else {
 					restResponse.setBody(equipmentTypeFromDatabase);
 					restResponse.setHttp_status(HttpStatus.OK);
 					restResponse.setMessage(ENTITY + " saved successfully");
-				}
 
-				responseList.add(restResponse);
+					addLog("update (PUT) " + ENTITY, ENTITY + " updated from:\n" + oldEquipmentTypeFromDatabase + "\nto:\n" + equipmentTypeFromDatabase);
+				}
 			}
+
+			responseList.add(restResponse);
 		}
 
 		if (errorOccurred) {
@@ -190,6 +212,7 @@ public class EquipmentTypeRestController {
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(restResponse);
 		}
 
+		String oldEquipmentTypeFromDatabase = equipmentTypeService.getById(equipmentType.getId()).toString();
 		EquipmentType equipmentTypeFromDatabase = equipmentTypeService.save(equipmentType);
 
 		if (equipmentTypeFromDatabase == null) {
@@ -202,6 +225,8 @@ public class EquipmentTypeRestController {
 			restResponse.setHttp_status(HttpStatus.OK);
 			restResponse.setMessage(ENTITY + " saved successfully");
 
+			addLog("update (PUT) " + ENTITY, ENTITY + " updated from:\n" + oldEquipmentTypeFromDatabase + "\nto:\n" + equipmentTypeFromDatabase);
+
 			return ResponseEntity.status(HttpStatus.OK).body(restResponse);
 		}
 	}
@@ -211,6 +236,10 @@ public class EquipmentTypeRestController {
 	@PatchMapping(value = {"", "/"}, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<List<RestResponse<?>>> patchList(@RequestBody List<Map<String, Object>> changesList) {
 
+		if (changesList == null || changesList.isEmpty()) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "NULL or empty array was provided");
+		}
+
 		List<RestResponse<?>> responseList = new ArrayList<>();
 		boolean errorOccurred = false;
 
@@ -218,6 +247,14 @@ public class EquipmentTypeRestController {
 
 			RestResponse<Map<String, Object>> mapResponse = new RestResponse<>();
 			mapResponse.setBody(changes);
+
+			if (changes == null) {
+				mapResponse.setHttp_status(HttpStatus.BAD_REQUEST);
+				mapResponse.setMessage("NULL array element was provided");
+				responseList.add(mapResponse);
+				errorOccurred = true;
+				continue;
+			}
 
 			if (!changes.containsKey("id")) {
 				mapResponse.setHttp_status(HttpStatus.METHOD_NOT_ALLOWED);
@@ -237,23 +274,16 @@ public class EquipmentTypeRestController {
 
 					errorOccurred = true;
 				} else {
-					Integer id = (Integer) idObj;
-
-					EquipmentType equipmentFromDatabase = equipmentTypeService.getById(Long.valueOf(id));
-
+					long idLong = (long) ((Integer) idObj);
 					changes.remove("id");
 
-					changes.forEach((key, value) -> {
-						Field field = ReflectionUtils.findField(EquipmentType.class, key);
-						if (field != null) {
-							field.setAccessible(true);
-							ReflectionUtils.setField(field, equipmentFromDatabase, value);
-						}
-					});
+					String oldEquipmentTypeFromDatabase = equipmentTypeService.getById(idLong).toString();
+					EquipmentType equipmentTypeFromDatabase = handlePatchChanges(idLong, changes);
+
 					RestResponse<EquipmentType> restResponse = new RestResponse<>();
-					restResponse.setBody(equipmentFromDatabase);
+					restResponse.setBody(equipmentTypeFromDatabase);
 					
-					ValidationResponse response = equipmentTypeService.validate(equipmentFromDatabase, Mapping.PATCH);
+					ValidationResponse response = equipmentTypeService.validate(equipmentTypeFromDatabase, Mapping.PATCH);
 
 					if (!response.isValid()) {
 						restResponse.setHttp_status(HttpStatus.BAD_REQUEST);
@@ -261,8 +291,21 @@ public class EquipmentTypeRestController {
 
 						errorOccurred = true;
 					} else {
-						restResponse.setHttp_status(HttpStatus.OK);
-						restResponse.setMessage(ENTITY + "patched successfully");
+
+						EquipmentType updatedEquipmentTypeFromDatabase = equipmentTypeService.save(equipmentTypeFromDatabase);
+
+						if (updatedEquipmentTypeFromDatabase == null) {
+							restResponse.setHttp_status(HttpStatus.INTERNAL_SERVER_ERROR);
+							restResponse.setMessage("failed to save " + ENTITY + " in database");
+
+							errorOccurred = true;
+						} else {
+							restResponse.setBody(updatedEquipmentTypeFromDatabase);
+							restResponse.setHttp_status(HttpStatus.OK);
+							restResponse.setMessage(ENTITY + "patched successfully");
+
+							addLog("update (PATCH) " + ENTITY, ENTITY + " updated from:\n" + oldEquipmentTypeFromDatabase + "\nto:\n" + updatedEquipmentTypeFromDatabase);
+						}
 					}
 
 					responseList.add(restResponse);
@@ -280,26 +323,26 @@ public class EquipmentTypeRestController {
 	@PatchMapping(value = "/{id}", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<RestResponse<EquipmentType>> patchById(@RequestBody Map<String, Object> changes, @PathVariable Long id) {
 
-		EquipmentType equipmentFromDatabase = equipmentTypeService.getById(id);
+		if (changes == null || changes.isEmpty()) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "NULL or empty array was provided");
+		}
 
-		if (equipmentFromDatabase == null) {
+		EquipmentType equipmentTypeFromDatabase = equipmentTypeService.getById(id);
+
+		if (equipmentTypeFromDatabase == null) {
 			throw new ResponseStatusException(HttpStatus.NOT_FOUND, ENTITY + " with ID: '" + id + "' not found");
 		}
 
+		String oldEquipmentTypeFromDatabase = equipmentTypeFromDatabase.toString();
+
 		changes.remove("id");
 
-		changes.forEach((key, value) -> {
-			Field field = ReflectionUtils.findField(EquipmentType.class, key);
-			if (field != null) {
-				field.setAccessible(true);
-				ReflectionUtils.setField(field, equipmentFromDatabase, value);
-			}
-		});
+		equipmentTypeFromDatabase = handlePatchChanges(id, changes);
 		
 		RestResponse<EquipmentType> restResponse = new RestResponse<>();
-		restResponse.setBody(equipmentFromDatabase);
+		restResponse.setBody(equipmentTypeFromDatabase);
 		
-		ValidationResponse response = equipmentTypeService.validate(equipmentFromDatabase, Mapping.PATCH);
+		ValidationResponse response = equipmentTypeService.validate(equipmentTypeFromDatabase, Mapping.PATCH);
 
 		if (!response.isValid()) {
 			restResponse.setHttp_status(HttpStatus.BAD_REQUEST);
@@ -308,7 +351,7 @@ public class EquipmentTypeRestController {
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(restResponse);
 		}
 
-		EquipmentType patchedEquipmentType = equipmentTypeService.save(equipmentFromDatabase);
+		EquipmentType patchedEquipmentType = equipmentTypeService.save(equipmentTypeFromDatabase);
 		restResponse.setBody(patchedEquipmentType);
 
 		if (patchedEquipmentType == null) {
@@ -320,6 +363,8 @@ public class EquipmentTypeRestController {
 			restResponse.setHttp_status(HttpStatus.OK);
 			restResponse.setMessage(ENTITY + " saved successfully");
 
+			addLog("update (PATCH) " + ENTITY, ENTITY + " updated from:\n" + oldEquipmentTypeFromDatabase + "\nto:\n" + patchedEquipmentType);
+
 			return ResponseEntity.status(HttpStatus.OK).body(restResponse);
 		}
 	}
@@ -328,6 +373,10 @@ public class EquipmentTypeRestController {
 
 	@DeleteMapping(value = {"", "/"}, consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<List<RestResponse<EquipmentType>>> deleteList(@RequestBody List<EquipmentType> equipmentTypes) {
+
+		if (equipmentTypes == null || equipmentTypes.isEmpty()) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "NULL or empty array was provided");
+		}
 
 		boolean errorOccurred = false;
 
@@ -343,8 +392,6 @@ public class EquipmentTypeRestController {
 				restResponse.setHttp_status(HttpStatus.BAD_REQUEST);
 				restResponse.setMessage(response.getMessage());
 
-				responseList.add(restResponse);
-
 				errorOccurred = true;
 			} else {
 				try {
@@ -352,13 +399,15 @@ public class EquipmentTypeRestController {
 
 					restResponse.setHttp_status(HttpStatus.OK);
 					restResponse.setMessage(ENTITY + " deleted successfully");
+
+					addLog("delete " + ENTITY, ENTITY + " deleted:\n" + equipmentType);
 				} catch (Exception e) {
 					restResponse.setHttp_status(HttpStatus.INTERNAL_SERVER_ERROR);
 					restResponse.setMessage("failed to delete " + ENTITY + " from database \n" + e.getMessage());
 				}
-
-				responseList.add(restResponse);
 			}
+
+			responseList.add(restResponse);
 		}
 
 		if (errorOccurred) {
@@ -370,42 +419,70 @@ public class EquipmentTypeRestController {
 
 	@DeleteMapping(value = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<RestResponse<EquipmentType>> deleteById(@PathVariable Long id) {
-		EquipmentType equipmentFromDatabase = equipmentTypeService.getById(id);
+		EquipmentType equipmentTypeFromDatabase = equipmentTypeService.getById(id);
 
-		if (equipmentFromDatabase == null) {
+		if (equipmentTypeFromDatabase == null) {
 			throw new ResponseStatusException(HttpStatus.NOT_FOUND, ENTITY + " with ID: '" + id + "' not found");
 		}
 
+		ValidationResponse response = equipmentTypeService.validate(equipmentTypeFromDatabase, Mapping.DELETE);
+
+		if (!response.isValid()) {
+			throw new ResponseStatusException(HttpStatus.METHOD_NOT_ALLOWED, response.getMessage());
+		}
+
 		try {
-			equipmentTypeService.delete(equipmentFromDatabase);
+			equipmentTypeService.delete(equipmentTypeFromDatabase);
 		} catch (Exception e) {
 			throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "failed to delete " + ENTITY + " from database \n" + e.getMessage());
 		}
 
 		RestResponse<EquipmentType> restResponse = new RestResponse<>();
-		restResponse.setBody(equipmentFromDatabase);
+		restResponse.setBody(equipmentTypeFromDatabase);
 		restResponse.setHttp_status(HttpStatus.OK);
 		restResponse.setMessage(ENTITY + " deleted successfully");
+
+		addLog("delete " + ENTITY, ENTITY + " deleted:\n" + equipmentTypeFromDatabase);
 
 		return ResponseEntity.ok(restResponse);
 	}
 
 
+	private void addLog(String action, String description) {
+		if (eventHistoryLogService.isLoggingEnabledForEquipmentTypes()) {
+			EventHistoryLog log = new EventHistoryLog();
+			log.setWho_did(eventHistoryLogService.getCurrentUser() == null ? "NULL" : eventHistoryLogService.getCurrentUser().toString());
+			log.setAction(action);
+			log.setDescription(description);
 
-	//TODO FOR TESTING -> REMOVE IN PRODUCTION
-	@PostMapping("/populate_with_test_data")
-	public void populateWithTestData() {
-		for (int i = 1; i < 5; i++) {
-			EquipmentType equipmentType = new EquipmentType();
-			equipmentType.setName("EquipmentType_" + i);
-
-			equipmentTypeService.save(equipmentType);
+			eventHistoryLogService.save(log);
 		}
 	}
 
-	//TODO FOR TESTING -> REMOVE IN PRODUCTION
-	@DeleteMapping("/delete_all")
-	public void deleteAll() {
-		equipmentTypeService.deleteAll();
+	private EquipmentType handlePatchChanges(Long id, Map<String, Object> changes) {
+		EquipmentType entity = equipmentTypeService.getById(id);
+
+		if (entity != null) {
+			changes.forEach((key, value) -> {
+				Field field = ReflectionUtils.findField(entity.getClass(), key);
+
+				if (field != null) {
+					field.setAccessible(true);
+
+					if (field.getType().equals(String.class)) {
+						ReflectionUtils.setField(field, entity, value);
+					} else {
+
+						if (field.getType().equals(Date.class)) {
+							LocalDateTime localDateTime = LocalDateTime.parse((String) value, DateUtils.getFormat());
+							ReflectionUtils.setField(field, entity, localDateTime);
+						}
+
+					}
+				}
+			});
+		}
+
+		return entity;
 	}
 }

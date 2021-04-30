@@ -1,6 +1,6 @@
 package com.example.demo.utils;
 
-public class StringUtils {
+public class Constants {
 
 	// HAS LIMITED PRIVILEGES
 	public final static String ROLE_USER = "ROLE_USER";
@@ -17,8 +17,8 @@ public class StringUtils {
 
 	public final static String REDIRECT = 	"redirect:";
 
-	public final static String ERROR_PAGE =               "error1";
-	public final static String ERROR_TITLE_ATTRIBUTE =    "error_title_attribute";
-	public final static String ERROR_MESSAGE_ATTRIBUTE =  "error_message_attribute";
-	public final static String SUCCESS_MESSAGE_ATTRIBUTE ="success_message_attribute";
+	public final static String ERROR_PAGE =               	"error_page";
+	public final static String ERROR_TITLE_ATTRIBUTE =    	"error_title_attribute";
+	public final static String ERROR_MESSAGE_ATTRIBUTE =  	"error_message_attribute";
+	public final static String SUCCESS_MESSAGE_ATTRIBUTE =	"success_message_attribute";
 }

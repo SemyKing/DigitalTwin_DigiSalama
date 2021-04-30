@@ -25,7 +25,7 @@
 					</thead>
 				<tbody>
 					<tr th:if="${vehicles.empty}">
-						<td colspan="3"> No Vehicles Available </td>
+						<td colspan="3"> No Vehicles In Selected Fleet </td>
 					</tr>
 
 					<tr th:each="vehicle : ${vehicles}">
@@ -40,9 +40,6 @@
 						</td>
 						<td>
 							<span th:text="${vehicle.vin}"></span>
-						</td>
-						<td>
-							<span th:text="${vehicle.organisation == null ? 'NOT SELECTED' : vehicle.organisation.name}"></span>
 						</td>
 						<td style="width: 1px;">
 							<form action="#" th:action="${'/api1/vehicles/' + vehicle.id}" class="m-0 p-0" method="get">

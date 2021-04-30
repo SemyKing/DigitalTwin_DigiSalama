@@ -34,7 +34,7 @@
 						</tr>
 						<tr>
 							<td> Date </td>
-							<td> <span th:text="${#dates.format(trip.date, 'dd/MM/yyyy')}"></span> </td>
+							<td> <span th:text="${#temporals.format(trip.timestamp, 'dd/MM/yyyy HH:mm')}"></span> </td>
 						</tr>
 						<tr>
 							<td> Vehicle </td>

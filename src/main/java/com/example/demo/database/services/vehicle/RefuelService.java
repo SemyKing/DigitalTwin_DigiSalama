@@ -2,19 +2,16 @@ package com.example.demo.database.services.vehicle;
 
 import com.example.demo.database.models.utils.Mapping;
 import com.example.demo.database.models.utils.ValidationResponse;
-import com.example.demo.database.models.vehicle.FileDB;
 import com.example.demo.database.models.vehicle.Refuel;
-import com.example.demo.database.models.vehicle.Trip;
+import com.example.demo.database.models.vehicle.Vehicle;
 import com.example.demo.database.repositories.vehicle.FileRepository;
 import com.example.demo.database.repositories.vehicle.RefuelRepository;
+import com.example.demo.database.repositories.vehicle.VehicleRepository;
+import com.example.demo.utils.FieldReflectionUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.util.ReflectionUtils;
 
 import javax.transaction.Transactional;
-import java.lang.reflect.Field;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -26,9 +23,7 @@ public class RefuelService {
 	private final RefuelRepository repository;
 
 	private final FileRepository fileRepository;
-
-	private final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("dd/MM/yyyy");
-	private final SimpleDateFormat DATE_TIME_FORMAT = new SimpleDateFormat("dd/MM/yyyy HH:mm");
+	private final VehicleRepository vehicleRepository;
 
 
 	public List<Refuel> getAll() {
@@ -60,33 +55,32 @@ public class RefuelService {
 	}
 
 	public void delete(Refuel refuel) {
-		if (refuel == null) {
+		if (refuel == null || refuel.getId() == null) {
 			return;
 		}
 
-		if (refuel.getId() != null) {
-			List<FileDB> files = fileRepository.findAllByRefuelId(refuel.getId());
-			for (FileDB file : files) {
-				file.setVehicle(null);
-				fileRepository.save(file);
+		// FIRST DELETE/SET NULL ALL ENTITIES THAT HAVE FOREIGN KEY OF CURRENT ENTITY
 
-//				fileRepository.delete(file);
-			}
-		}
+		fileRepository.findAllByRefuelId(refuel.getId()).forEach(file -> {
+			file.setRefuel(null);
+			fileRepository.save(file);
+
+//			fileRepository.delete(file);
+		});
 
 		repository.delete(refuel);
 	}
 
 	public void deleteAll() {
-		List<FileDB> files = fileRepository.findAll();
 
-		//TODO: MAYBE HARD DELETE INSTEAD OF SET NULL
-//		fileRepository.deleteAll();
+		// FIRST DELETE/SET NULL ALL ENTITIES THAT HAVE FOREIGN KEY OF CURRENT ENTITY
 
-		for (FileDB file : files) {
+		fileRepository.findAll().forEach(file -> {
 			file.setRefuel(null);
 			fileRepository.save(file);
-		}
+
+//			fileRepository.delete(file);
+		});
 
 		repository.deleteAll();
 	}
@@ -104,51 +98,50 @@ public class RefuelService {
 
 		if (mapping.equals(Mapping.PUT) || mapping.equals(Mapping.PATCH)) {
 			if (refuel.getId() == null) {
-				return new ValidationResponse(false, "ID parameter is required");
+				return new ValidationResponse(false, "entity ID parameter is required");
 			}
 
 			Refuel refuelFromDatabase = getById(refuel.getId());
 
 			if (refuelFromDatabase == null) {
-				return new ValidationResponse(false, "ID parameter is invalid");
+				return new ValidationResponse(false, "entity ID parameter is invalid");
 			}
 		}
 
 		if (mapping.equals(Mapping.POST) || mapping.equals(Mapping.PUT) || mapping.equals(Mapping.PATCH)) {
 
-			// EMPTY STRING CHECK
-			List<Field> stringFields = new ArrayList<>();
-
-			Field[] allFields = Refuel.class.getDeclaredFields();
-			for (Field field : allFields) {
-				if (field.getType().equals(String.class)) {
-					stringFields.add(field);
-				}
+			if (refuel.getVehicle() == null) {
+				return new ValidationResponse(false, "vehicle is required");
 			}
 
-			for (Field field : stringFields) {
-				field.setAccessible(true);
-				Object object = ReflectionUtils.getField(field, refuel);
+			if (refuel.getVehicle().getId() == null) {
+				return new ValidationResponse(false, "vehicle ID is required");
+			}
 
-				if (object != null) {
-					if (object instanceof String) {
-						if (((String) object).length() <= 0) {
-							return new ValidationResponse(false, "'" + field.getName() + "' cannot be empty");
-						}
-					}
-				}
+			Optional<Vehicle> vehicle = vehicleRepository.findById(refuel.getVehicle().getId());
+
+			if (vehicle.isEmpty()) {
+				return new ValidationResponse(false, "vehicle ID is invalid");
+			}
+
+			refuel.setVehicle(vehicle.get());
+
+			ValidationResponse stringFieldsValidation = new FieldReflectionUtils<Refuel>().validateStringFields(refuel);
+
+			if (!stringFieldsValidation.isValid()) {
+				return stringFieldsValidation;
 			}
 		}
 
 		if (mapping.equals(Mapping.DELETE)) {
 			if (refuel.getId() == null) {
-				return new ValidationResponse(false, "ID parameter is required");
+				return new ValidationResponse(false, "entity ID parameter is required");
 			}
 
 			Refuel refuelFromDatabase = getById(refuel.getId());
 
 			if (refuelFromDatabase == null) {
-				return new ValidationResponse(false, "ID parameter is invalid");
+				return new ValidationResponse(false, "entity ID parameter is invalid");
 			}
 		}
 

@@ -1,35 +1,66 @@
 package com.example.demo.database.models.vehicle;
 
 import com.example.demo.database.models.Organisation;
+import com.example.demo.utils.LocalDateTimeConverter;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.*;
 import org.springframework.format.annotation.DateTimeFormat;
 
 import javax.persistence.*;
-import java.util.Date;
-import java.util.Set;
+import java.time.LocalDateTime;
+import java.util.*;
 
 @Entity
 @Table
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@EqualsAndHashCode(exclude="fleets")
-@ToString(exclude = {"fleets", "isSelected"})
 public class Vehicle {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 
+
 	@Column
 	private String name;
 
-	@ManyToMany(cascade = {CascadeType.MERGE})
+
+	/**
+	 * This Set is not visible in toString() nor in JSON GET requests
+	 * {@link #fleet_ids} is displayed instead
+	 * because {@link #fleets} and {@link Fleet#vehicles} are in ManyToMany relationship and recursively call each other in toString() and JSON GET
+	 *
+	 * however this Set must be used in POST, PATCH and PUT requests containing Fleet objects with IDs (other parameters are not necessary)
+	 */
+	@JsonIgnore
+	@ToString.Exclude
+	@EqualsAndHashCode.Exclude
+	@ManyToMany(fetch = FetchType.EAGER)
 	@JoinTable(
 			name = "vehicle_fleets",
 			joinColumns = @JoinColumn(name = "vehicle_id"),
 			inverseJoinColumns = @JoinColumn(name = "fleet_id"))
-	private Set<Fleet> fleets;
+	private Set<Fleet> fleets = new HashSet<>();
+
+
+	@Transient
+	@ToString.Include
+	@Getter(AccessLevel.NONE)
+	private List<Long> fleet_ids = new ArrayList<>();
+
+	// CUSTOM GETTER
+	public List<Long> getFleet_ids() {
+		fleet_ids.clear();
+
+		for (Fleet fleet : fleets) {
+			fleet_ids.add(fleet.getId());
+		}
+
+		Collections.sort(fleet_ids);
+
+		return fleet_ids;
+	}
 
 	@ManyToOne
 	@JoinColumn(name="organisation_id", referencedColumnName = "id")
@@ -52,19 +83,19 @@ public class Vehicle {
 	private String vin;
 
 	@Column
-	@Temporal(TemporalType.DATE)
-	@DateTimeFormat(pattern = "yyyy-MM-dd")
+	@DateTimeFormat(pattern = "yyyy-MM-dd'T'HH:mm")
+	@Convert(converter = LocalDateTimeConverter.class)
 	//Käyttöönottotarkastus suoritettu (pvm)
-	private Date commissioning_check_performed_date = new Date();
+	private LocalDateTime commissioning_check_performed_date = LocalDateTime.now();
 
 	@Column
 	private String purity_marking;
 
 	@Column
-	@Temporal(TemporalType.DATE)
-	@DateTimeFormat(pattern = "yyyy-MM-dd")
+	@DateTimeFormat(pattern = "yyyy-MM-dd'T'HH:mm")
+	@Convert(converter = LocalDateTimeConverter.class)
 	//Ensimmäinen käyttöönottopäivä
-	private Date first_commissioning_date = new Date();
+	private LocalDateTime first_commissioning_date = LocalDateTime.now();
 
 	@Column
 	private String brand;
@@ -95,9 +126,10 @@ public class Vehicle {
 	private String euro_emission_class;
 
 	@Column
-	@Temporal(TemporalType.DATE)
-	@DateTimeFormat(pattern = "yyyy-MM-dd")
-	private Date next_inspection_date = new Date();
+	@DateTimeFormat(pattern = "yyyy-MM-dd'T'HH:mm")
+	@Convert(converter = LocalDateTimeConverter.class)
+//	private Date next_inspection_date = new Date();
+	private LocalDateTime next_inspection_date = LocalDateTime.now();
 
 	@Column
 	private String engine_capacity;
@@ -356,5 +388,7 @@ public class Vehicle {
 
 
 	@Transient
+	@JsonIgnore
+	@ToString.Exclude
 	private Boolean isSelected = false;
 }

@@ -47,7 +47,7 @@
 						<span th:text="${trip.kilometres_driven}"></span>
 					</td>
 					<td>
-						<span th:text="${#dates.format(trip.date, 'dd/MM/yyyy')}"></span>
+						<span th:text="${#temporals.format(trip.timestamp, 'dd/MM/yyyy HH:mm')}"></span>
 					</td>
 					<td style="width: 1px;">
 						<form action="#" th:action="${'/api1/trips/' + trip.id}" class="m-0 p-0" method="get">
