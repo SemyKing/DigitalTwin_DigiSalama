@@ -4,7 +4,6 @@ import com.example.demo.database.models.Organisation;
 import com.example.demo.database.models.user.User;
 import com.example.demo.database.models.utils.Mapping;
 import com.example.demo.database.models.utils.ValidationResponse;
-import com.example.demo.database.repositories.EventHistoryLogRepository;
 import com.example.demo.database.repositories.RoleRepository;
 import com.example.demo.database.repositories.UserRepository;
 import com.example.demo.utils.Constants;
@@ -39,8 +38,6 @@ public class UserService implements UserDetailsService {
 	private final UserRepository repository;
 
 	private final RoleRepository roleRepository;
-	private final EventHistoryLogRepository eventHistoryLogRepository;
-	private final ApplicationSettingsService applicationSettingsService;
 	private final OrganisationService organisationService;
 
 
@@ -145,7 +142,6 @@ public class UserService implements UserDetailsService {
 		return getBcryptEncoder().matches(password, user.getPassword());
 	}
 
-
 	public boolean emailAlreadyExists(String email) {
 		User user = getByEmail(email);
 		return (user != null);
@@ -155,6 +151,7 @@ public class UserService implements UserDetailsService {
 		User user = getByUsername(username);
 		return (user != null);
 	}
+
 
 	public int getSystemAdminsCount() {
 		return repository.findSystemAdmins().size();
@@ -315,6 +312,7 @@ public class UserService implements UserDetailsService {
 			//PROTECTION AGAINST PASSWORD MANIPULATIONS
 			user.setPassword(userFromDatabase.getPassword());
 			user.setPassword_update_token(userFromDatabase.getPassword_update_token());
+			user.setRole(userFromDatabase.getRole());
 		}
 
 		if (mapping.equals(Mapping.POST) || mapping.equals(Mapping.PUT) || mapping.equals(Mapping.PATCH)) {
@@ -389,7 +387,7 @@ public class UserService implements UserDetailsService {
 
 		if (mapping.equals(Mapping.DELETE)) {
 			if (user.getId() == null) {
-				return new ValidationResponse(false, "ID is required");
+				return new ValidationResponse(false, "entity ID is required");
 			}
 
 			if (isUserSystemAdmin(user.getId())) {
@@ -402,6 +400,15 @@ public class UserService implements UserDetailsService {
 		return new ValidationResponse(true, "validation success");
     }
 
+
+	public String generatePasswordUpdateToken(User user) {
+		String uuid = UUID.randomUUID().toString();
+
+		user.setPassword_update_token(uuid);
+		save(user);
+
+		return uuid;
+	}
 
 	public PasswordEncoder getBcryptEncoder() {
 		return new BCryptPasswordEncoder();
@@ -419,14 +426,5 @@ public class UserService implements UserDetailsService {
 		authorities.add(new SimpleGrantedAuthority(userFromDatabase.getRole().getName()));
 
 		return new org.springframework.security.core.userdetails.User(userFromDatabase.getUsername(), userFromDatabase.getPassword(), authorities);
-	}
-
-	public String generatePasswordUpdateToken(User user) {
-		String uuid = UUID.randomUUID().toString();
-
-		user.setPassword_update_token(uuid);
-		save(user);
-
-		return uuid;
 	}
 }

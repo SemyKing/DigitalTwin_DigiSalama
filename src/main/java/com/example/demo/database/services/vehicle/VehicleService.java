@@ -15,7 +15,6 @@ import javax.transaction.Transactional;
 import java.util.*;
 
 @Service
-@Transactional
 @RequiredArgsConstructor
 public class VehicleService {
 
@@ -74,11 +73,12 @@ public class VehicleService {
 		return vehiclesNotInFleet;
 	}
 
+	@Transactional
 	public Vehicle save(Vehicle vehicle) {
 		return vehicleRepository.save(vehicle);
 	}
 
-
+	@Transactional
 	public void delete(Vehicle vehicle) {
 		if (vehicle == null || vehicle.getId() == null) {
 			return;
@@ -107,8 +107,6 @@ public class VehicleService {
 //			fileRepository.delete(file);
 		});
 
-
-		System.out.println("delete -> vehicleFleets: " + vehicle.getFleets());
 
 		if (vehicle.getFleets() != null) {
 			vehicle.getFleets().forEach(fleet -> {
@@ -141,6 +139,7 @@ public class VehicleService {
 		vehicleRepository.delete(vehicle);
 	}
 
+	@Transactional
 	public void deleteAll() {
 
 		// FIRST DELETE/SET NULL ALL ENTITIES THAT HAVE FOREIGN KEY OF CURRENT ENTITY
@@ -233,14 +232,9 @@ public class VehicleService {
 
 					Optional<Fleet> fleetFromDatabase = fleetRepository.findById(fleet.getId());
 
-					System.out.println("fleetFromDatabase: " + fleetFromDatabase);
-
 					if (fleetFromDatabase.isEmpty()) {
-						System.out.println("EMPTY -> RETURN");
 						return new ValidationResponse(false, "fleet ID is invalid: " + fleet);
 					}
-
-					System.out.println("AFTER RETURN");
 
 					fleets.add(fleetFromDatabase.get());
 					fleet.getVehicles().add(vehicle);
@@ -248,7 +242,6 @@ public class VehicleService {
 
 				vehicle.setFleets(fleets);
 			}
-
 
 			if (vehicle.getOrganisation() != null) {
 				if (vehicle.getOrganisation().getId() == null) {
@@ -279,7 +272,4 @@ public class VehicleService {
 
 		return new ValidationResponse(true, "validation success");
 	}
-
-
-
 }

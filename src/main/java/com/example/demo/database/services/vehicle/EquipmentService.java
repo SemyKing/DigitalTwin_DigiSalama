@@ -17,7 +17,6 @@ import java.util.List;
 import java.util.Optional;
 
 @Service
-@Transactional
 @RequiredArgsConstructor
 public class EquipmentService {
 
@@ -51,10 +50,12 @@ public class EquipmentService {
 		return repository.findAllByVehicleId(id);
 	}
 
+	@Transactional
 	public Equipment save(Equipment equipment) {
 		return repository.save(equipment);
 	}
 
+	@Transactional
 	public void delete(Equipment equipment) {
 		if (equipment == null) {
 			return;
@@ -66,6 +67,7 @@ public class EquipmentService {
 		repository.delete(equipment);
 	}
 
+	@Transactional
 	public void deleteAll() {
 		repository.deleteAll();
 	}

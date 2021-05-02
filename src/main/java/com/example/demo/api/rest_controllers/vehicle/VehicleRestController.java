@@ -9,6 +9,7 @@ import com.example.demo.database.models.vehicle.Fleet;
 import com.example.demo.database.models.vehicle.Vehicle;
 import com.example.demo.database.services.EventHistoryLogService;
 import com.example.demo.database.services.OrganisationService;
+import com.example.demo.database.services.vehicle.FleetService;
 import com.example.demo.database.services.vehicle.VehicleService;
 import com.example.demo.utils.Constants;
 import com.example.demo.utils.DateUtils;
@@ -16,6 +17,7 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
+import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.json.JsonParseException;
 import org.springframework.http.HttpStatus;
@@ -41,6 +43,9 @@ public class VehicleRestController {
 
 	@Autowired
 	private final VehicleService vehicleService;
+
+	@Autowired
+	private final FleetService fleetService;
 
 	@Autowired
 	private final OrganisationService organisationService;
@@ -103,7 +108,7 @@ public class VehicleRestController {
 	public ResponseEntity<RestResponse<Vehicle>> post(@RequestBody Vehicle vehicle) {
 		RestResponse<Vehicle> restResponse = new RestResponse<>();
 		restResponse.setBody(vehicle);
-		
+
 		ValidationResponse response = vehicleService.validate(vehicle, Mapping.POST);
 
 		if (!response.isValid()) {
@@ -363,8 +368,6 @@ public class VehicleRestController {
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(restResponse);
 		}
 
-		restResponse.setBody(vehicleFromDatabase);
-
 		ValidationResponse response = vehicleService.validate(vehicleFromDatabase, Mapping.PATCH);
 
 		if (!response.isValid()) {
@@ -537,8 +540,17 @@ public class VehicleRestController {
 								try {
 									Set<Fleet> fleetsFromPatch = objectMapper.readValue(json, objectMapper.getTypeFactory().constructCollectionType(HashSet.class, Fleet.class));
 
-									// ADD FLEET TO VEHICLE IF ALREADY NOT THERE
-									fleetsFromPatch.forEach(fleet -> entity.getFleets().add(fleet));
+									entity.getFleets().clear();
+
+									fleetsFromPatch.forEach(fleet -> {
+//										Fleet fleetFromDatabase = fleetService.getById(fleet.getId());
+
+//										if (fleetFromDatabase == null) {
+//											throw new JsonParseException(new Throwable("Invalid fleet ID: '" + fleet));
+//										}
+
+										entity.getFleets().add(fleet);
+									});
 								} catch (JsonProcessingException e) {
 									throw new JsonParseException(new Throwable("Fleets Set: '" + value + "' json parsing error: " + e.getMessage()));
 								}

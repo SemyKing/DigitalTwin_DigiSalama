@@ -1,10 +1,10 @@
 package com.example.demo.database.models.vehicle;
 
 import com.example.demo.database.models.Organisation;
-import com.example.demo.utils.DateUtils;
 import com.example.demo.utils.LocalDateTimeConverter;
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.*;
 import lombok.*;
+import org.apache.commons.lang3.builder.HashCodeExclude;
 import org.springframework.format.annotation.DateTimeFormat;
 
 import javax.persistence.*;
@@ -26,17 +26,10 @@ public class Vehicle {
 	private String name;
 
 
-	/**
-	 * This Set is not visible in toString() nor in JSON GET requests
-	 * {@link #fleet_ids} is displayed instead
-	 * because this Set and {@link Fleet#vehicles} are in ManyToMany relationship and recursively call each other in toString() and JSON GET
-	 *
-	 * however this Set must be used in POST, PATCH and PUT requests containing Fleet objects with IDs (other parameters are not necessary)
-	 */
-	@JsonIgnore
 	@ToString.Exclude
 	@EqualsAndHashCode.Exclude
 	@ManyToMany(fetch = FetchType.EAGER)
+	@JsonIgnoreProperties("vehicles")
 	@JoinTable(
 			name = "vehicle_fleets",
 			joinColumns = @JoinColumn(name = "vehicle_id"),
@@ -45,7 +38,9 @@ public class Vehicle {
 
 
 	@Transient
+	@JsonIgnore
 	@ToString.Include
+	@EqualsAndHashCode.Exclude
 	@Getter(AccessLevel.NONE)
 	private List<Long> fleet_ids = new ArrayList<>();
 

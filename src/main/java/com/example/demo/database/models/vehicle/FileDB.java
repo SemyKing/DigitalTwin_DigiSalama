@@ -24,13 +24,13 @@ public class FileDB {
 	@Column
 	private String file_type;
 
-	@Column(columnDefinition="TEXT")
-	private String description;
-
 	@Lob
 	@Column
 	@ToString.Exclude
 	private byte[] data;
+
+	@Column(columnDefinition="TEXT")
+	private String description;
 
 	@ManyToOne
 	@JoinColumn(name="vehicle_id", referencedColumnName = "id")

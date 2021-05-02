@@ -15,7 +15,6 @@ import java.util.List;
 import java.util.Optional;
 
 @Service
-@Transactional
 @RequiredArgsConstructor
 public class DistanceService {
 
@@ -58,10 +57,12 @@ public class DistanceService {
 		return null;
 	}
 
+	@Transactional
 	public Distance save(Distance refuel) {
 		return repository.save(refuel);
 	}
 
+	@Transactional
 	public void delete(Distance refuel) {
 		if (refuel == null) {
 			return;
@@ -70,6 +71,7 @@ public class DistanceService {
 		repository.delete(refuel);
 	}
 
+	@Transactional
 	public void deleteAll() {
 		repository.deleteAll();
 	}

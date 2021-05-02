@@ -1,16 +1,16 @@
 package com.example.demo.database.models.vehicle;
 
 import com.example.demo.database.models.Organisation;
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.*;
 import lombok.*;
+import org.apache.commons.lang3.builder.HashCodeExclude;
 
 import javax.persistence.*;
 import java.util.*;
 
 @Entity
 @Table
-@Getter
-@Setter
+@Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class Fleet {
@@ -23,20 +23,17 @@ public class Fleet {
 	@Column
 	private String name;
 
-	/**
-	 * This Set is not visible in toString() nor in JSON GET requests
-	 * {@link #vehicle_ids} is displayed instead
-	 * because {@link #vehicles} and {@link Vehicle#fleets} are in ManyToMany relationship and recursively call each other in toString() and JSON GET
-	 *
-	 * however this Set must be used in POST, PATCH and PUT requests containing Vehicle objects with IDs (other parameters are not necessary)
-	 */
-	@JsonIgnore
+	@ToString.Exclude
 	@EqualsAndHashCode.Exclude
+	@JsonIgnoreProperties("fleets")
 	@ManyToMany(mappedBy = "fleets", fetch = FetchType.EAGER)
 	private Set<Vehicle> vehicles = new HashSet<>();
 
 
 	@Transient
+	@JsonIgnore
+	@ToString.Include
+	@EqualsAndHashCode.Exclude
 	@Getter(AccessLevel.NONE)
 	private List<Long> vehicle_ids = new ArrayList<>();
 
@@ -64,8 +61,8 @@ public class Fleet {
 	private Boolean isSelected = false;
 
 
-	@Override
-	public String toString() {
-		return "Fleet(id=" + id + ", name=" + name + ", vehicle_ids=" + getVehicle_ids() + ", organisation=" + organisation;
-	}
+//	@Override
+//	public String toString() {
+//		return "Fleet(id=" + id + ", name=" + name + ", vehicle_ids=" + getVehicle_ids() + ", organisation=" + organisation;
+//	}
 }

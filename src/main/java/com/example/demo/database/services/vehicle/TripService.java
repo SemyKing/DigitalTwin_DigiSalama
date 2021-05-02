@@ -15,7 +15,6 @@ import java.util.List;
 import java.util.Optional;
 
 @Service
-@Transactional
 @RequiredArgsConstructor
 public class TripService {
 
@@ -48,10 +47,12 @@ public class TripService {
 		return repository.findAllByVehicleId(id);
 	}
 
+	@Transactional
 	public Trip save(Trip trip) {
 		return repository.save(trip);
 	}
 
+	@Transactional
 	public void delete(Trip trip) {
 		if (trip == null) {
 			return;
@@ -64,6 +65,7 @@ public class TripService {
 		repository.delete(trip);
 	}
 
+	@Transactional
 	public void deleteAll() {
 		repository.deleteAll();
 	}

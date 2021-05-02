@@ -2,6 +2,7 @@ package com.example.demo.database.services.vehicle;
 
 import com.example.demo.database.models.utils.Mapping;
 import com.example.demo.database.models.utils.ValidationResponse;
+import com.example.demo.database.models.vehicle.FileDB;
 import com.example.demo.database.models.vehicle.Refuel;
 import com.example.demo.database.models.vehicle.Vehicle;
 import com.example.demo.database.repositories.vehicle.FileRepository;
@@ -16,7 +17,6 @@ import java.util.List;
 import java.util.Optional;
 
 @Service
-@Transactional
 @RequiredArgsConstructor
 public class RefuelService {
 
@@ -50,10 +50,12 @@ public class RefuelService {
 		return repository.findAllByVehicleId(id);
 	}
 
+	@Transactional
 	public Refuel save(Refuel refuel) {
 		return repository.save(refuel);
 	}
 
+	@Transactional
 	public void delete(Refuel refuel) {
 		if (refuel == null || refuel.getId() == null) {
 			return;
@@ -71,6 +73,7 @@ public class RefuelService {
 		repository.delete(refuel);
 	}
 
+	@Transactional
 	public void deleteAll() {
 
 		// FIRST DELETE/SET NULL ALL ENTITIES THAT HAVE FOREIGN KEY OF CURRENT ENTITY
@@ -125,6 +128,18 @@ public class RefuelService {
 			}
 
 			refuel.setVehicle(vehicle.get());
+
+
+			if (refuel.getFile() != null && refuel.getFile().getId() != null) {
+				Optional<FileDB> fileFromDatabase = fileRepository.findById(refuel.getFile().getId());
+
+				if (fileFromDatabase.isEmpty()) {
+					return new ValidationResponse(false, "selected file not found");
+				}
+
+				fileFromDatabase.get().setRefuel(refuel);
+			}
+
 
 			ValidationResponse stringFieldsValidation = new FieldReflectionUtils<Refuel>().validateStringFields(refuel);
 

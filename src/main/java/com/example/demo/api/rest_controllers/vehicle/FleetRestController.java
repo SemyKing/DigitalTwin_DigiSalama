@@ -527,7 +527,8 @@ public class FleetRestController {
 								try {
 									Set<Vehicle> vehiclesFromPatch = objectMapper.readValue((String) value, objectMapper.getTypeFactory().constructCollectionType(HashSet.class, Vehicle.class));
 
-									// ADD VEHICLE TO FLEET IF ALREADY NOT THERE
+									entity.getVehicles().clear();
+
 									vehiclesFromPatch.forEach(vehicle -> entity.getVehicles().add(vehicle));
 								} catch (JsonProcessingException e) {
 									throw new JsonParseException(new Throwable("Vehicles Set: '" + value + "' json parsing error: " + e.getMessage()));

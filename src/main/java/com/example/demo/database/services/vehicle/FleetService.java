@@ -16,7 +16,6 @@ import javax.transaction.Transactional;
 import java.util.*;
 
 @Service
-@Transactional
 @RequiredArgsConstructor
 public class FleetService {
 
@@ -90,10 +89,12 @@ public class FleetService {
 		return fleetsNotContainingVehicle;
 	}
 
+	@Transactional
 	public Fleet save(Fleet fleet) {
 		return repository.save(fleet);
 	}
 
+	@Transactional
 	public void delete(Fleet fleet) {
 		if (fleet == null || fleet.getId() == null) {
 			return;
@@ -114,6 +115,7 @@ public class FleetService {
 		repository.delete(fleet);
 	}
 
+	@Transactional
 	public void deleteAll() {
 
 		// FIRST DELETE/SET NULL ALL ENTITIES THAT HAVE FOREIGN KEY OF CURRENT ENTITY

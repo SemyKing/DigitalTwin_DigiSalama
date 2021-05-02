@@ -25,7 +25,6 @@ import java.util.Objects;
 import java.util.Optional;
 
 @Service
-@Transactional
 @RequiredArgsConstructor
 public class FileService {
 
@@ -68,10 +67,12 @@ public class FileService {
 		return repository.findAllByRefuelId(id);
 	}
 
+	@Transactional
 	public FileDB save(FileDB file) {
 		return repository.save(file);
 	}
 
+	@Transactional
 	public FileDB save(MultipartFile file) throws IOException {
 		String fileName = StringUtils.cleanPath(Objects.requireNonNull(file.getOriginalFilename()));
 
@@ -88,7 +89,7 @@ public class FileService {
 		return repository.save(fileDB);
 	}
 
-
+	@Transactional
 	public void delete(FileDB fileDB) {
 		if (fileDB == null) {
 			return;
@@ -100,6 +101,7 @@ public class FileService {
 		repository.delete(fileDB);
 	}
 
+	@Transactional
 	public void deleteAll() {
 		repository.deleteAll();
 	}

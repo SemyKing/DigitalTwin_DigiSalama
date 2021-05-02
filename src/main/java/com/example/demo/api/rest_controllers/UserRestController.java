@@ -8,7 +8,6 @@ import com.example.demo.database.models.user.User;
 import com.example.demo.database.models.utils.Mapping;
 import com.example.demo.database.models.utils.RestResponse;
 import com.example.demo.database.models.utils.ValidationResponse;
-import com.example.demo.database.models.vehicle.Vehicle;
 import com.example.demo.database.repositories.RoleRepository;
 import com.example.demo.database.services.EventHistoryLogService;
 import com.example.demo.database.services.OrganisationService;
@@ -34,7 +33,6 @@ import javax.servlet.http.HttpServletRequest;
 import java.lang.reflect.Field;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 

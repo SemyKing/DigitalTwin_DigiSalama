@@ -44,8 +44,7 @@ public class RefuelController {
 
 	@GetMapping({"", "/"})
 	public String getAll(Model model) {
-		List<Refuel> refuels = refuelService.getAll();
-		model.addAttribute("refuels", refuels);
+		model.addAttribute("refuels", refuelService.getAll());
 
 		return "vehicle/refuels/refuels_list_page";
 	}

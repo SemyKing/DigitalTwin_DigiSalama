@@ -14,7 +14,6 @@ import java.util.List;
 import java.util.Optional;
 
 @Service
-@Transactional
 @RequiredArgsConstructor
 public class EquipmentTypeService {
 
@@ -39,10 +38,12 @@ public class EquipmentTypeService {
 		return type.get();
 	}
 
+	@Transactional
 	public EquipmentType save(EquipmentType type) {
 		return repository.save(type);
 	}
 
+	@Transactional
 	public void delete(EquipmentType type) {
 		if (type == null || type.getId() == null) {
 			return;
@@ -60,6 +61,7 @@ public class EquipmentTypeService {
 		repository.delete(type);
 	}
 
+	@Transactional
 	public void deleteAll() {
 
 		// FIRST DELETE/SET NULL ALL ENTITIES THAT HAVE FOREIGN KEY OF CURRENT ENTITY
@@ -97,9 +99,6 @@ public class EquipmentTypeService {
 		}
 
 		if (mapping.equals(Mapping.POST) || mapping.equals(Mapping.PUT) || mapping.equals(Mapping.PATCH)) {
-
-
-
 
 			ValidationResponse stringFieldsValidation = new FieldReflectionUtils<EquipmentType>().validateStringFields(type);
 

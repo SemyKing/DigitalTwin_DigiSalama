@@ -16,7 +16,6 @@ import java.util.List;
 import java.util.Optional;
 
 @Service
-@Transactional
 @RequiredArgsConstructor
 public class VehicleEventService {
 
@@ -50,10 +49,12 @@ public class VehicleEventService {
 		return repository.findAllByVehicleId(id);
 	}
 
+	@Transactional
 	public VehicleEvent save(VehicleEvent event) {
 		return repository.save(event);
 	}
 
+	@Transactional
 	public void delete(VehicleEvent event) {
 		if (event == null || event.getId() == null) {
 			return;
@@ -71,6 +72,7 @@ public class VehicleEventService {
 		repository.delete(event);
 	}
 
+	@Transactional
 	public void deleteAll() {
 
 		// FIRST DELETE/SET NULL ALL ENTITIES THAT HAVE FOREIGN KEY OF CURRENT ENTITY

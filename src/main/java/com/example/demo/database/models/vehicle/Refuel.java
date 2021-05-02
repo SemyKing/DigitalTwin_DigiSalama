@@ -1,14 +1,15 @@
 package com.example.demo.database.models.vehicle;
 
-import com.example.demo.utils.DateUtils;
 import com.example.demo.utils.LocalDateTimeConverter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.ToString;
 import org.springframework.format.annotation.DateTimeFormat;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
-import java.util.Date;
 
 @Entity
 @Data
