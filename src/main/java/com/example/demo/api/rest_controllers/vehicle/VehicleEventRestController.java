@@ -288,9 +288,9 @@ public class VehicleEventRestController {
 
 					try {
 						eventFromDatabase = handlePatchChanges(idLong, changes);
-					} catch (Exception e) {
+					} catch (JsonParseException jsonParseException) {
 						mapResponse.setHttp_status(HttpStatus.BAD_REQUEST);
-						mapResponse.setMessage(e.getMessage());
+						mapResponse.setMessage(jsonParseException.getMessage() + " " + jsonParseException.getCause());
 						responseList.add(mapResponse);
 						continue;
 					}
@@ -356,10 +356,10 @@ public class VehicleEventRestController {
 
 		try {
 			eventFromDatabase = handlePatchChanges(id, changes);
-		} catch (Exception e) {
+		} catch (JsonParseException jsonParseException) {
 			restResponse.setBody(eventFromDatabase);
 			restResponse.setHttp_status(HttpStatus.BAD_REQUEST);
-			restResponse.setMessage(e.getMessage());
+			restResponse.setMessage(jsonParseException.getMessage() + " " + jsonParseException.getCause());
 
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(restResponse);
 		}
@@ -482,7 +482,7 @@ public class VehicleEventRestController {
 		}
 	}
 
-	private VehicleEvent handlePatchChanges(Long id, Map<String, Object> changes) throws Exception {
+	private VehicleEvent handlePatchChanges(Long id, Map<String, Object> changes) throws JsonParseException {
 		VehicleEvent entity = vehicleEventService.getById(id);
 
 		if (entity != null) {
@@ -492,29 +492,35 @@ public class VehicleEventRestController {
 				if (field != null) {
 					field.setAccessible(true);
 
-					if (field.getType().equals(String.class)) {
-						ReflectionUtils.setField(field, entity, value);
+					String json = value == null ? null : value.toString();
+
+					if (json == null) {
+						ReflectionUtils.setField(field, entity, null);
 					} else {
+						if (field.getType().equals(String.class)) {
+							ReflectionUtils.setField(field, entity, json);
+						} else {
 
-						if (field.getType().equals(LocalDateTime.class)) {
-							LocalDateTime localDateTime = null;
+							if (field.getType().equals(LocalDateTime.class)) {
+								LocalDateTime localDateTime = null;
 
-							try {
-								localDateTime = DateUtils.stringToLocalDateTime((String) value);
-							} catch (Exception e) {
-								throw new StringIndexOutOfBoundsException(e.getMessage());
+								try {
+									localDateTime = DateUtils.stringToLocalDateTime((String) value);
+								} catch (Exception e) {
+									throw new StringIndexOutOfBoundsException(e.getMessage());
+								}
+
+								ReflectionUtils.setField(field, entity, localDateTime);
 							}
 
-							ReflectionUtils.setField(field, entity, localDateTime);
-						}
-
-						if (field.getType().equals(Vehicle.class)) {
-							try {
-								Vehicle vehicle = objectMapper.readValue((String) value, Vehicle.class);
-								entity.setVehicle(vehicle);
-							} catch (JsonProcessingException e) {
-								System.err.println("UserRestController -> handlePatchChanges(): Vehicle json parsing error: " + e.getMessage());
+							if (field.getType().equals(Vehicle.class)) {
+								try {
+									entity.setVehicle(objectMapper.readValue((String) value, Vehicle.class));
+								} catch (JsonProcessingException e) {
+									throw new JsonParseException(new Throwable("Vehicle json parsing error: " + e.getMessage()));
+								}
 							}
+
 						}
 					}
 				}

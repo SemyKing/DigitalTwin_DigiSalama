@@ -233,9 +233,14 @@ public class VehicleService {
 
 					Optional<Fleet> fleetFromDatabase = fleetRepository.findById(fleet.getId());
 
+					System.out.println("fleetFromDatabase: " + fleetFromDatabase);
+
 					if (fleetFromDatabase.isEmpty()) {
+						System.out.println("EMPTY -> RETURN");
 						return new ValidationResponse(false, "fleet ID is invalid: " + fleet);
 					}
+
+					System.out.println("AFTER RETURN");
 
 					fleets.add(fleetFromDatabase.get());
 					fleet.getVehicles().add(vehicle);

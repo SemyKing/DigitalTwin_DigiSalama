@@ -12,11 +12,12 @@ import com.example.demo.database.services.OrganisationService;
 import com.example.demo.database.services.vehicle.VehicleService;
 import com.example.demo.utils.Constants;
 import com.example.demo.utils.DateUtils;
+import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.json.JsonParseException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -284,9 +285,9 @@ public class VehicleRestController {
 
 						try {
 							vehicleFromDatabase = handlePatchChanges(idLong, changes);
-						} catch (Exception e) {
+						} catch (JsonParseException jsonParseException) {
 							mapResponse.setHttp_status(HttpStatus.BAD_REQUEST);
-							mapResponse.setMessage(e.getMessage());
+							mapResponse.setMessage(jsonParseException.getMessage() + " " + jsonParseException.getCause());
 							responseList.add(mapResponse);
 							continue;
 						}
@@ -354,10 +355,10 @@ public class VehicleRestController {
 
 		try {
 			vehicleFromDatabase = handlePatchChanges(id, changes);
-		} catch (Exception e) {
+		} catch (JsonParseException jsonParseException) {
 			restResponse.setBody(vehicleFromDatabase);
 			restResponse.setHttp_status(HttpStatus.BAD_REQUEST);
-			restResponse.setMessage(e.getMessage());
+			restResponse.setMessage(jsonParseException.getMessage() + " " + jsonParseException.getCause());
 
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(restResponse);
 		}
@@ -484,7 +485,7 @@ public class VehicleRestController {
 		}
 	}
 
-	private Vehicle handlePatchChanges(Long id, Map<String, Object> changes) throws Exception {
+	private Vehicle handlePatchChanges(Long id, Map<String, Object> changes) throws JsonParseException {
 		Vehicle entity = vehicleService.getById(id);
 
 		if (entity != null) {
@@ -494,60 +495,56 @@ public class VehicleRestController {
 				if (field != null) {
 					field.setAccessible(true);
 
-					if (field.getType().equals(String.class)) {
-						if (value == null) {
-							ReflectionUtils.setField(field, entity, null);
-						} else {
-							ReflectionUtils.setField(field, entity, value.toString());
-						}
+					String json = value == null ? null : value.toString();
+
+					if (json == null) {
+						ReflectionUtils.setField(field, entity, null);
 					} else {
+						if (field.getType().equals(String.class)) {
+							ReflectionUtils.setField(field, entity, json);
+						} else {
 
-						if (field.getType().equals(LocalDateTime.class)) {
-							LocalDateTime localDateTime = null;
+							if (field.getType().equals(LocalDateTime.class)) {
+								LocalDateTime localDateTime = null;
 
-							try {
-								localDateTime = DateUtils.stringToLocalDateTime((String) value);
-							} catch (Exception e) {
-								throw new StringIndexOutOfBoundsException(e.getMessage());
-							}
-
-							ReflectionUtils.setField(field, entity, localDateTime);
-						}
-
-						if (field.getType().equals(Organisation.class)) {
-							try {
-								Organisation organisation = null;
-
-								if (value != null) {
-									organisation = objectMapper.readValue((String) value, Organisation.class);
+								try {
+									localDateTime = DateUtils.stringToLocalDateTime(json);
+								} catch (Exception e) {
+									throw new JsonParseException(new Throwable(e.getMessage()));
 								}
 
-								entity.setOrganisation(organisation);
-							} catch (JsonProcessingException e) {
-								System.err.println("VehicleRestController -> handlePatchChanges(): Organisation json parsing error: " + e.getMessage());
+								ReflectionUtils.setField(field, entity, localDateTime);
 							}
-						}
 
-						if (field.getType().equals(Boolean.class)) {
-							try {
-								Boolean booleanValue = Boolean.valueOf(value.toString());
-								ReflectionUtils.setField(field, entity, booleanValue);
-							} catch (Exception e) {
-								System.err.println("VehicleRestController -> handlePatchChanges(): Boolean json parsing error: " + e.getMessage());
+							if (field.getType().equals(Organisation.class)) {
+								try {
+									objectMapper.configure(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES, true);
+									entity.setOrganisation(objectMapper.readValue(json, Organisation.class));
+								} catch (JsonProcessingException e) {
+									throw new JsonParseException(new Throwable("Organisation json parsing error: " + e.getMessage()));
+								}
 							}
-						}
 
-						if (field.getType().equals(Set.class) && field.getName().equals("fleets")) {
-							try {
-								Set<Fleet> fleetsFromPatch = objectMapper.readValue((String) value, objectMapper.getTypeFactory().constructCollectionType(HashSet.class, Fleet.class));
-
-								// ADD FLEET TO VEHICLE IF ALREADY NOT THERE
-								fleetsFromPatch.forEach(fleet -> entity.getFleets().add(fleet));
-							} catch (JsonProcessingException e) {
-								System.err.println("VehicleRestController -> handlePatchChanges(): Fleets Set: '" + value + "' json parsing error: " + e.getMessage());
+							if (field.getType().equals(Boolean.class)) {
+								try {
+									ReflectionUtils.setField(field, entity, Boolean.valueOf(json));
+								} catch (Exception e) {
+									throw new JsonParseException(new Throwable("Boolean json parsing error: " + e.getMessage()));
+								}
 							}
-						}
 
+							if (field.getType().equals(Set.class) && field.getName().equals("fleets")) {
+								try {
+									Set<Fleet> fleetsFromPatch = objectMapper.readValue(json, objectMapper.getTypeFactory().constructCollectionType(HashSet.class, Fleet.class));
+
+									// ADD FLEET TO VEHICLE IF ALREADY NOT THERE
+									fleetsFromPatch.forEach(fleet -> entity.getFleets().add(fleet));
+								} catch (JsonProcessingException e) {
+									throw new JsonParseException(new Throwable("Fleets Set: '" + value + "' json parsing error: " + e.getMessage()));
+								}
+							}
+
+						}
 					}
 				}
 			});

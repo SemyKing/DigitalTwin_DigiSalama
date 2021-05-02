@@ -204,7 +204,7 @@ class VehicleRestControllerTest {
 				.accept(MediaType.APPLICATION_JSON))
 				.andExpect(status().is(HttpStatus.BAD_REQUEST.value()))
 				.andExpect(jsonPath("$.http_status").value("BAD_REQUEST"))
-				.andExpect(jsonPath("$.message").value("'name' cannot be empty"))
+				.andExpect(jsonPath("$.message").value(containsString("cannot be empty")))
 				.andDo(print())
 				.andReturn();
 	}
@@ -559,6 +559,7 @@ class VehicleRestControllerTest {
 		Mockito.when(vehicleRepository.findById(ID_FOUND)).thenReturn(vehicle);
 		Mockito.when(vehicleRepository.save(vehicle.get())).thenReturn(toBeSaved);
 
+
 		this.mockMvc.perform(MockMvcRequestBuilders
 				.patch(URL + "/" + ID_FOUND).header("Authorization", "Bearer " + JWT_TOKEN)
 				.content(objectMapper.writeValueAsString(changes))
@@ -572,7 +573,6 @@ class VehicleRestControllerTest {
 
 	@Test
 	public void testPatch_changeOrganisation() throws Exception {
-
 		Organisation organisation = new Organisation();
 		organisation.setId(11L);
 		organisation.setName("VEDIA");
@@ -581,7 +581,8 @@ class VehicleRestControllerTest {
 
 		Map<String, Object> changes = new HashMap<>();
 		changes.put("name", "vehicle_name_patch");
-		changes.put("organisation", "{\"id\":11,\"name\":\"VEDIA\"}");
+//		changes.put("organisation", "{\"id\":11,\"name\":\"VEDIA\"}");
+		changes.put("organisation", objectMapper.writeValueAsString(organisation));
 
 		Vehicle toBeSaved = getVehicle(ID_FOUND, "vehicle_name_patch");
 		toBeSaved.setOrganisation(organisation);
@@ -590,7 +591,6 @@ class VehicleRestControllerTest {
 
 		Mockito.when(vehicleRepository.findById(ID_FOUND)).thenReturn(vehicle);
 		Mockito.when(vehicleRepository.save(vehicle.get())).thenReturn(toBeSaved);
-
 
 
 		this.mockMvc.perform(MockMvcRequestBuilders
@@ -606,7 +606,6 @@ class VehicleRestControllerTest {
 
 	@Test
 	public void testPatch_changeFleets() throws Exception {
-
 		Fleet fleet1 = getFleet(1L, "FLEET 1");
 		Fleet fleet2 = getFleet(2L, "FLEET 2");
 
@@ -629,7 +628,6 @@ class VehicleRestControllerTest {
 
 		Mockito.when(vehicleRepository.findById(ID_FOUND)).thenReturn(vehicle);
 		Mockito.when(vehicleRepository.save(vehicle.get())).thenReturn(toBeSaved);
-
 
 
 		this.mockMvc.perform(MockMvcRequestBuilders

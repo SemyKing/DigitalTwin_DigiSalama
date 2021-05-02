@@ -22,7 +22,6 @@ public class Vehicle {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 
-
 	@Column
 	private String name;
 
@@ -30,7 +29,7 @@ public class Vehicle {
 	/**
 	 * This Set is not visible in toString() nor in JSON GET requests
 	 * {@link #fleet_ids} is displayed instead
-	 * because {@link #fleets} and {@link Fleet#vehicles} are in ManyToMany relationship and recursively call each other in toString() and JSON GET
+	 * because this Set and {@link Fleet#vehicles} are in ManyToMany relationship and recursively call each other in toString() and JSON GET
 	 *
 	 * however this Set must be used in POST, PATCH and PUT requests containing Fleet objects with IDs (other parameters are not necessary)
 	 */

@@ -14,6 +14,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.json.JsonParseException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -287,9 +288,9 @@ public class DistanceRestController {
 
 					try {
 						distanceFromDatabase = handlePatchChanges(idLong, changes);
-					} catch (Exception e) {
+					} catch (JsonParseException jsonParseException) {
 						mapResponse.setHttp_status(HttpStatus.BAD_REQUEST);
-						mapResponse.setMessage(e.getMessage());
+						mapResponse.setMessage(jsonParseException.getMessage() + " " + jsonParseException.getCause());
 						responseList.add(mapResponse);
 						continue;
 					}
@@ -354,10 +355,10 @@ public class DistanceRestController {
 
 		try {
 			distanceFromDatabase = handlePatchChanges(id, changes);
-		} catch (Exception e) {
+		} catch (JsonParseException jsonParseException) {
 			restResponse.setBody(distanceFromDatabase);
 			restResponse.setHttp_status(HttpStatus.BAD_REQUEST);
-			restResponse.setMessage(e.getMessage());
+			restResponse.setMessage(jsonParseException.getMessage() + " " + jsonParseException.getCause());
 
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(restResponse);
 		}
@@ -483,7 +484,7 @@ public class DistanceRestController {
 		}
 	}
 
-	private Distance handlePatchChanges(Long id, Map<String, Object> changes) throws Exception {
+	private Distance handlePatchChanges(Long id, Map<String, Object> changes) throws JsonParseException {
 		Distance entity = distanceService.getById(id);
 
 		changes.forEach((key, value) -> {
@@ -492,40 +493,46 @@ public class DistanceRestController {
 			if (field != null) {
 				field.setAccessible(true);
 
-				if (field.getType().equals(String.class)) {
-					ReflectionUtils.setField(field, entity, value);
+				String json = value == null ? null : value.toString();
+
+				if (json == null) {
+					ReflectionUtils.setField(field, entity, null);
 				} else {
+					if (field.getType().equals(String.class)) {
+						ReflectionUtils.setField(field, entity, json);
+					} else {
 
-					if (field.getType().equals(LocalDateTime.class)) {
-						LocalDateTime localDateTime = null;
+						if (field.getType().equals(LocalDateTime.class)) {
+							LocalDateTime localDateTime = null;
 
-						try {
-							localDateTime = DateUtils.stringToLocalDateTime((String) value);
-						} catch (Exception e) {
-							throw new StringIndexOutOfBoundsException(e.getMessage());
+							try {
+								localDateTime = DateUtils.stringToLocalDateTime((String) value);
+							} catch (Exception e) {
+								throw new JsonParseException(new Throwable(e.getMessage()));
+							}
+
+							ReflectionUtils.setField(field, entity, localDateTime);
 						}
 
-						ReflectionUtils.setField(field, entity, localDateTime);
-					}
-
-					if (field.getType().equals(Vehicle.class)) {
-						try {
-							Vehicle vehicle = objectMapper.readValue((String) value, Vehicle.class);
-							entity.setVehicle(vehicle);
-						} catch (JsonProcessingException e) {
-							System.err.println("DistanceRestController -> handlePatchChanges(): Vehicle parsing error: " + e.getMessage());
+						if (field.getType().equals(Vehicle.class)) {
+							try {
+								Vehicle vehicle = objectMapper.readValue((String) value, Vehicle.class);
+								entity.setVehicle(vehicle);
+							} catch (JsonProcessingException e) {
+								throw new JsonParseException(new Throwable("Vehicle parsing error: " + e.getMessage()));
+							}
 						}
-					}
 
-					if (field.getType().equals(Integer.class)) {
-						try {
-							Integer intValue = Integer.parseInt((String) value);
-							ReflectionUtils.setField(field, entity, intValue);
-						} catch (NumberFormatException e) {
-							System.err.println("DistanceRestController -> handlePatchChanges(): Integer value: '" + value + "' json parsing error: " + e.getMessage());
+						if (field.getType().equals(Integer.class)) {
+							try {
+								Integer intValue = Integer.parseInt((String) value);
+								ReflectionUtils.setField(field, entity, intValue);
+							} catch (NumberFormatException e) {
+								throw new JsonParseException(new Throwable("Integer value: '" + value + "' json parsing error: " + e.getMessage()));
+							}
 						}
-					}
 
+					}
 				}
 			}
 		});

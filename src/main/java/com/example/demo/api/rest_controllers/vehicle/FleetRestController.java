@@ -15,6 +15,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.json.JsonParseException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -284,9 +285,9 @@ public class FleetRestController {
 
 					try {
 						fleetFromDatabase = handlePatchChanges(idLong, changes);
-					} catch (Exception e) {
+					} catch (JsonParseException jsonParseException) {
 						mapResponse.setHttp_status(HttpStatus.BAD_REQUEST);
-						mapResponse.setMessage(e.getMessage());
+						mapResponse.setMessage(jsonParseException.getMessage() + " " + jsonParseException.getCause());
 						responseList.add(mapResponse);
 						continue;
 					}
@@ -352,10 +353,10 @@ public class FleetRestController {
 
 		try {
 			fleetFromDatabase = handlePatchChanges(id, changes);
-		} catch (Exception e) {
+		} catch (JsonParseException jsonParseException) {
 			restResponse.setBody(fleetFromDatabase);
 			restResponse.setHttp_status(HttpStatus.BAD_REQUEST);
-			restResponse.setMessage(e.getMessage());
+			restResponse.setMessage(jsonParseException.getMessage() + " " + jsonParseException.getCause());
 
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(restResponse);
 		}
@@ -481,7 +482,7 @@ public class FleetRestController {
 		}
 	}
 
-	private Fleet  handlePatchChanges(Long id, Map<String, Object> changes) throws Exception {
+	private Fleet handlePatchChanges(Long id, Map<String, Object> changes) throws JsonParseException {
 		Fleet entity = fleetService.getById(id);
 
 		if (entity != null) {
@@ -493,47 +494,47 @@ public class FleetRestController {
 				if (field != null) {
 					field.setAccessible(true);
 
-					if (field.getType().equals(String.class)) {
-						ReflectionUtils.setField(field, entity, value);
+					String json = value == null ? null : value.toString();
+
+					if (json == null) {
+						ReflectionUtils.setField(field, entity, null);
 					} else {
+						if (field.getType().equals(String.class)) {
+							ReflectionUtils.setField(field, entity, json);
+						} else {
 
-						if (field.getType().equals(LocalDateTime.class)) {
-							LocalDateTime localDateTime = null;
+							if (field.getType().equals(LocalDateTime.class)) {
+								LocalDateTime localDateTime = null;
 
-							try {
-								localDateTime = DateUtils.stringToLocalDateTime((String) value);
-							} catch (Exception e) {
-								throw new StringIndexOutOfBoundsException(e.getMessage());
-							}
-
-							ReflectionUtils.setField(field, entity, localDateTime);
-						}
-
-						if (field.getType().equals(Organisation.class)) {
-							try {
-								Organisation organisation = null;
-
-								if (value != null) {
-									organisation = objectMapper.readValue((String) value, Organisation.class);
+								try {
+									localDateTime = DateUtils.stringToLocalDateTime((String) value);
+								} catch (Exception e) {
+									throw new JsonParseException(new Throwable(e.getMessage()));
 								}
 
-								entity.setOrganisation(organisation);
-							} catch (JsonProcessingException e) {
-								e.printStackTrace();
+								ReflectionUtils.setField(field, entity, localDateTime);
 							}
-						}
 
-						if (field.getType().equals(Set.class) && field.getName().equals("vehicles")) {
-							try {
-								Set<Vehicle> vehiclesFromPatch = objectMapper.readValue((String) value, objectMapper.getTypeFactory().constructCollectionType(HashSet.class, Vehicle.class));
-
-								// ADD VEHICLE TO FLEET IF ALREADY NOT THERE
-								vehiclesFromPatch.forEach(vehicle -> entity.getVehicles().add(vehicle));
-							} catch (JsonProcessingException e) {
-								System.err.println("FleetRestController -> handlePatchChanges(): Vehicles Set: '" + value + "' json parsing error: " + e.getMessage());
+							if (field.getType().equals(Organisation.class)) {
+								try {
+									entity.setOrganisation(objectMapper.readValue((String) value, Organisation.class));
+								} catch (JsonProcessingException e) {
+									throw new JsonParseException(new Throwable("Organisation json parsing error: " + e.getMessage()));
+								}
 							}
-						}
 
+							if (field.getType().equals(Set.class) && field.getName().equals("vehicles")) {
+								try {
+									Set<Vehicle> vehiclesFromPatch = objectMapper.readValue((String) value, objectMapper.getTypeFactory().constructCollectionType(HashSet.class, Vehicle.class));
+
+									// ADD VEHICLE TO FLEET IF ALREADY NOT THERE
+									vehiclesFromPatch.forEach(vehicle -> entity.getVehicles().add(vehicle));
+								} catch (JsonProcessingException e) {
+									throw new JsonParseException(new Throwable("Vehicles Set: '" + value + "' json parsing error: " + e.getMessage()));
+								}
+							}
+
+						}
 					}
 				}
 			}

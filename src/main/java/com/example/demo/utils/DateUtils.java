@@ -16,6 +16,10 @@ public class DateUtils {
     }
 
     public static LocalDateTime stringToLocalDateTime(String dateString) throws Exception {
+        if (dateString == null) {
+            return null;
+        }
+
         if (dateString.length() < 16) {
             throw new Exception("Date: '" + dateString + "' is invalid, required date format: 'yyyy-MM-ddTHH:mm'");
         }

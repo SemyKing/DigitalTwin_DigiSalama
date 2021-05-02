@@ -11,6 +11,7 @@ import com.example.demo.utils.Constants;
 import com.example.demo.utils.DateUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.json.JsonParseException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -281,9 +282,9 @@ public class OrganisationRestController {
 
 					try {
 						organisationFromDatabase = handlePatchChanges(idLong, changes);
-					} catch (Exception e) {
+					} catch (JsonParseException jsonParseException) {
 						mapResponse.setHttp_status(HttpStatus.BAD_REQUEST);
-						mapResponse.setMessage(e.getMessage());
+						mapResponse.setMessage(jsonParseException.getMessage() + " " + jsonParseException.getCause());
 						responseList.add(mapResponse);
 						continue;
 					}
@@ -349,10 +350,10 @@ public class OrganisationRestController {
 
 		try {
 			organisationFromDatabase = handlePatchChanges(id, changes);
-		} catch (Exception e) {
+		} catch (JsonParseException jsonParseException) {
 			restResponse.setBody(organisationFromDatabase);
 			restResponse.setHttp_status(HttpStatus.BAD_REQUEST);
-			restResponse.setMessage(e.getMessage());
+			restResponse.setMessage(jsonParseException.getMessage() + " " + jsonParseException.getCause());
 
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(restResponse);
 		}
@@ -478,7 +479,7 @@ public class OrganisationRestController {
 		}
 	}
 
-	private Organisation  handlePatchChanges(Long id, Map<String, Object> changes) throws Exception {
+	private Organisation handlePatchChanges(Long id, Map<String, Object> changes) throws JsonParseException {
 		Organisation entity = organisationService.getById(id);
 
 		if (entity != null) {
@@ -488,19 +489,26 @@ public class OrganisationRestController {
 				if (field != null) {
 					field.setAccessible(true);
 
-					if (field.getType().equals(String.class)) {
-						ReflectionUtils.setField(field, entity, value);
+					String json = value == null ? null : value.toString();
+
+					if (json == null) {
+						ReflectionUtils.setField(field, entity, null);
 					} else {
-						if (field.getType().equals(LocalDateTime.class)) {
-							LocalDateTime localDateTime = null;
+						if (field.getType().equals(String.class)) {
+							ReflectionUtils.setField(field, entity, json);
+						} else {
 
-							try {
-								localDateTime = DateUtils.stringToLocalDateTime((String) value);
-							} catch (Exception e) {
-								throw new StringIndexOutOfBoundsException(e.getMessage());
+							if (field.getType().equals(LocalDateTime.class)) {
+								LocalDateTime localDateTime = null;
+
+								try {
+									localDateTime = DateUtils.stringToLocalDateTime((String) value);
+								} catch (Exception e) {
+									throw new StringIndexOutOfBoundsException(e.getMessage());
+								}
+
+								ReflectionUtils.setField(field, entity, localDateTime);
 							}
-
-							ReflectionUtils.setField(field, entity, localDateTime);
 						}
 					}
 				}
