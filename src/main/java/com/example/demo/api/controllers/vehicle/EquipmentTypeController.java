@@ -101,9 +101,7 @@ public class EquipmentTypeController {
 			return Constants.ERROR_PAGE;
 		} else {
 
-			addLog(
-					"create " + ENTITY,
-					ENTITY + " created:\n" + typeFromDatabase);
+			eventHistoryLogService.addEquipmentTypeLog("create " + ENTITY, ENTITY + " created:\n" + typeFromDatabase);
 
 			return Constants.REDIRECT + Constants.UI_API + "/equipment_types";
 		}
@@ -132,9 +130,7 @@ public class EquipmentTypeController {
 			return Constants.ERROR_PAGE;
 		} else {
 
-			addLog(
-					"update " + ENTITY,
-					ENTITY + " updated from:\n" + oldTypeFromDatabase + "\nto:\n" + typeFromDatabase);
+			eventHistoryLogService.addEquipmentTypeLog("update " + ENTITY, ENTITY + " updated from:\n" + oldTypeFromDatabase + "\nto:\n" + typeFromDatabase);
 
 			return Constants.REDIRECT + Constants.UI_API + "/equipment_types/" + typeFromDatabase.getId();
 		}
@@ -153,21 +149,8 @@ public class EquipmentTypeController {
 
 		typeService.delete(typeFromDatabase);
 
-		addLog(
-				"delete " + ENTITY,
-				ENTITY + " deleted:\n" + typeFromDatabase);
+		eventHistoryLogService.addEquipmentTypeLog("delete " + ENTITY, ENTITY + " deleted:\n" + typeFromDatabase);
 
 		return Constants.REDIRECT + "/equipment_types";
-	}
-
-	private void addLog(String action, String description) {
-		if (eventHistoryLogService.isLoggingEnabledForEquipmentTypes()) {
-			EventHistoryLog log = new EventHistoryLog();
-			log.setWho_did(eventHistoryLogService.getCurrentUser() == null ? "NULL" : eventHistoryLogService.getCurrentUser().toString());
-			log.setAction(action);
-			log.setDescription(description);
-
-			eventHistoryLogService.save(log);
-		}
 	}
 }

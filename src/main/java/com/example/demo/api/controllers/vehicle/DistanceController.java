@@ -17,6 +17,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.Comparator;
 import java.util.List;
 
 @Controller
@@ -41,6 +42,7 @@ public class DistanceController {
 	@GetMapping({"", "/"})
 	public String getAll(Model model) {
 		List<Distance> distances = distanceService.getAll();
+		distances.sort(Comparator.comparing(Distance::getTimestamp).reversed());
 		model.addAttribute("distances", distances);
 
 		return "vehicle/distance/distances_list_page";
@@ -117,9 +119,7 @@ public class DistanceController {
 			return Constants.ERROR_PAGE;
 		} else {
 
-			addLog(
-					"create " + ENTITY,
-					ENTITY + " created:\n" + distanceFromDatabase);
+			eventHistoryLogService.addDistanceLog("create " + ENTITY, ENTITY + " created:\n" + distanceFromDatabase);
 
 			return Constants.REDIRECT + Constants.UI_API + "/distances";
 		}
@@ -159,9 +159,7 @@ public class DistanceController {
 			return Constants.ERROR_PAGE;
 		} else {
 
-			addLog(
-					"update " + ENTITY,
-					ENTITY + " updated from:\n" + oldDistanceFromDatabase + "\nto:\n" + distanceFromDatabase);
+			eventHistoryLogService.addDistanceLog("update " + ENTITY, ENTITY + " updated from:\n" + oldDistanceFromDatabase + "\nto:\n" + distanceFromDatabase);
 
 			return Constants.REDIRECT + Constants.UI_API + "/distances/" + distanceFromDatabase.getId();
 		}
@@ -180,21 +178,8 @@ public class DistanceController {
 
 		distanceService.delete(distanceFromDatabase);
 
-		addLog(
-				"delete " + ENTITY,
-				ENTITY + " deleted:\n" + distanceFromDatabase);
+		eventHistoryLogService.addDistanceLog("delete " + ENTITY, ENTITY + " deleted:\n" + distanceFromDatabase);
 
 		return Constants.REDIRECT + Constants.UI_API + "/distances";
-	}
-
-	private void addLog(String action, String description) {
-		if (eventHistoryLogService.isLoggingEnabledForDistances()) {
-			EventHistoryLog log = new EventHistoryLog();
-			log.setWho_did(eventHistoryLogService.getCurrentUser() == null ? "NULL" : eventHistoryLogService.getCurrentUser().toString());
-			log.setAction(action);
-			log.setDescription(description);
-
-			eventHistoryLogService.save(log);
-		}
 	}
 }

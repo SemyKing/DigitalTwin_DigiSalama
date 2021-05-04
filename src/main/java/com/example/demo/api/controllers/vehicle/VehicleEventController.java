@@ -1,9 +1,10 @@
 package com.example.demo.api.controllers.vehicle;
 
 import com.example.demo.database.models.EventHistoryLog;
+import com.example.demo.database.models.utils.ListWrapper;
 import com.example.demo.database.models.utils.Mapping;
 import com.example.demo.database.models.utils.ValidationResponse;
-import com.example.demo.database.models.vehicle.FileDB;
+import com.example.demo.database.models.vehicle.FileMetaData;
 import com.example.demo.database.models.vehicle.Vehicle;
 import com.example.demo.database.models.vehicle.VehicleEvent;
 import com.example.demo.database.services.EventHistoryLogService;
@@ -19,7 +20,9 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Controller
 @RequiredArgsConstructor
@@ -67,6 +70,26 @@ public class VehicleEventController {
 	}
 
 
+	@GetMapping("/{id}/files")
+	public String getFilesByVehicleEventId(@PathVariable Long id, Model model) {
+		VehicleEvent vehicleEventFromDatabase = vehicleEventService.getById(id);
+
+		if (vehicleEventFromDatabase == null) {
+			model.addAttribute(Constants.ERROR_TITLE_ATTRIBUTE, "No such entity");
+			model.addAttribute(Constants.ERROR_MESSAGE_ATTRIBUTE, ENTITY + " with id: " + id + " not found");
+			return Constants.ERROR_PAGE;
+		}
+
+		System.out.println("vehicleEventFromDatabase.getFiles(): \n");
+		vehicleEventFromDatabase.getFiles().forEach(System.out::println);
+
+		model.addAttribute(ENTITY, vehicleEventFromDatabase);
+		model.addAttribute("files", vehicleEventFromDatabase.getFiles());
+
+		return "vehicle/events/event_files_list_page";
+	}
+
+
 	@GetMapping("/new")
 	public String newForm(Model model) {
 		model.addAttribute(ENTITY, new VehicleEvent());
@@ -74,7 +97,7 @@ public class VehicleEventController {
 		List<Vehicle> vehicles = vehicleService.getAll();
 		model.addAttribute("vehicles", vehicles);
 
-		List<FileDB> files = fileService.getAll();
+		List<FileMetaData> files = fileService.getAll();
 		model.addAttribute("files", files);
 
 		return "vehicle/events/new_event_page";
@@ -96,7 +119,7 @@ public class VehicleEventController {
 		List<Vehicle> vehicles = vehicleService.getAll();
 		model.addAttribute("vehicles", vehicles);
 
-		List<FileDB> files = fileService.getAll();
+		List<FileMetaData> files = fileService.getAll();
 		model.addAttribute("files", files);
 
 		return "vehicle/events/edit_event_page";
@@ -116,7 +139,7 @@ public class VehicleEventController {
 			List<Vehicle> vehicles = vehicleService.getAll();
 			model.addAttribute("vehicles", vehicles);
 
-			List<FileDB> files = fileService.getAll();
+			List<FileMetaData> files = fileService.getAll();
 			model.addAttribute("files", files);
 
 			return "vehicle/events/new_event_page";
@@ -130,9 +153,7 @@ public class VehicleEventController {
 			return Constants.ERROR_PAGE;
 		} else {
 
-			addLog(
-					"create " + ENTITY,
-					ENTITY + " created:\n" + eventFromDatabase);
+			eventHistoryLogService.addVehicleEventLog("create " + ENTITY, ENTITY + " created:\n" + eventFromDatabase);
 
 			return Constants.REDIRECT + Constants.UI_API + "/vehicle_events";
 		}
@@ -159,7 +180,7 @@ public class VehicleEventController {
 				List<Vehicle> vehicles = vehicleService.getAll();
 				model.addAttribute("vehicles", vehicles);
 
-				List<FileDB> files = fileService.getAll();
+				List<FileMetaData> files = fileService.getAll();
 				model.addAttribute("files", files);
 
 				return referer;
@@ -176,9 +197,7 @@ public class VehicleEventController {
 			return Constants.ERROR_PAGE;
 		} else {
 
-			addLog(
-					"update " + ENTITY,
-					ENTITY + " updated from:\n" + oldEventFromDatabase + "\nto:\n" + eventFromDatabase);
+			eventHistoryLogService.addVehicleEventLog("update " + ENTITY, ENTITY + " updated from:\n" + oldEventFromDatabase + "\nto:\n" + eventFromDatabase);
 
 			return Constants.REDIRECT + Constants.UI_API + "/vehicle_events/" + eventFromDatabase.getId();
 		}
@@ -197,21 +216,8 @@ public class VehicleEventController {
 
 		vehicleEventService.delete(eventFromDatabase);
 
-		addLog(
-				"delete " + ENTITY,
-				ENTITY + " deleted:\n" + eventFromDatabase);
+		eventHistoryLogService.addVehicleEventLog("delete " + ENTITY, ENTITY + " deleted:\n" + eventFromDatabase);
 
 		return Constants.REDIRECT + Constants.UI_API + "/vehicle_events";
-	}
-
-	private void addLog(String action, String description) {
-		if (eventHistoryLogService.isLoggingEnabledForVehicleEvents()) {
-			EventHistoryLog log = new EventHistoryLog();
-			log.setWho_did(eventHistoryLogService.getCurrentUser() == null ? "NULL" : eventHistoryLogService.getCurrentUser().toString());
-			log.setAction(action);
-			log.setDescription(description);
-
-			eventHistoryLogService.save(log);
-		}
 	}
 }

@@ -131,13 +131,12 @@ public class FleetController {
 			return Constants.ERROR_PAGE;
 		}
 
-		List<Vehicle> fleetVehicles = new ArrayList<>(fleetFromDatabase.getVehicles());
+		Set<Vehicle> fleetVehicles = fleetFromDatabase.getVehicles();
 		for (Vehicle vehicle : fleetVehicles) {
 			vehicle.setIsSelected(true);
 		}
 
-		List<Vehicle> vehiclesNotInFleet = vehicleService.getVehiclesNotInFleet(id);
-		fleetVehicles.addAll(vehiclesNotInFleet);
+		fleetVehicles.addAll(vehicleService.getAll());
 
 		ListWrapper vehiclesWrapper = new ListWrapper();
 		vehiclesWrapper.getVehicles().addAll(fleetVehicles);
@@ -185,9 +184,7 @@ public class FleetController {
 			fleetFromDatabase.setVehicles(vehicles);
 			fleetFromDatabase = fleetService.save(fleetFromDatabase);
 
-//			System.out.println("fleetFromDatabase: " + fleetFromDatabase);
-
-			addLog("add/remove vehicles to/from " + ENTITY, ENTITY + " updated from:\n" + oldFleetFromDatabase + "\nto:\n" + fleetFromDatabase);
+			eventHistoryLogService.addFleetLog("add/remove vehicles to/from " + ENTITY, ENTITY + " updated from:\n" + oldFleetFromDatabase + "\nto:\n" + fleetFromDatabase);
 		}
 
 		return Constants.REDIRECT + Constants.UI_API + "/fleets";
@@ -214,9 +211,7 @@ public class FleetController {
 			return Constants.ERROR_PAGE;
 		} else {
 
-			addLog(
-					"create " + ENTITY,
-					ENTITY + " created:\n" + fleetFromDatabase);
+			eventHistoryLogService.addFleetLog("create " + ENTITY, ENTITY + " created:\n" + fleetFromDatabase);
 
 			return Constants.REDIRECT + Constants.UI_API + "/fleets";
 		}
@@ -245,9 +240,7 @@ public class FleetController {
 			return Constants.ERROR_PAGE;
 		} else {
 
-			addLog(
-					"update " + ENTITY,
-					ENTITY + " updated from:\n" + oldFleetFromDatabase + "\nto:\n" + fleetFromDatabase);
+			eventHistoryLogService.addFleetLog("update " + ENTITY, ENTITY + " updated from:\n" + oldFleetFromDatabase + "\nto:\n" + fleetFromDatabase);
 
 			return Constants.REDIRECT + Constants.UI_API + "/fleets/" + fleetFromDatabase.getId();
 		}
@@ -266,21 +259,8 @@ public class FleetController {
 
 		fleetService.delete(fleetFromDatabase);
 
-		addLog(
-				"delete " + ENTITY,
-				ENTITY + " deleted:\n" + fleetFromDatabase);
+		eventHistoryLogService.addFleetLog("delete " + ENTITY, ENTITY + " deleted:\n" + fleetFromDatabase);
 
 		return Constants.REDIRECT + Constants.UI_API + "/fleets";
-	}
-
-	private void addLog(String action, String description) {
-		if (eventHistoryLogService.isLoggingEnabledForFleets()) {
-			EventHistoryLog log = new EventHistoryLog();
-			log.setWho_did(eventHistoryLogService.getCurrentUser() == null ? "NULL" : eventHistoryLogService.getCurrentUser().toString());
-			log.setAction(action);
-			log.setDescription(description);
-
-			eventHistoryLogService.save(log);
-		}
 	}
 }

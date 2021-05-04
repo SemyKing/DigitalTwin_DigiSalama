@@ -11,6 +11,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import javax.transaction.Transactional;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 
@@ -23,10 +26,12 @@ public class DistanceService {
 	private final VehicleRepository vehicleRepository;
 
 
+	@Transactional
 	public List<Distance> getAll() {
 		return repository.findAll();
 	}
 
+	@Transactional
 	public Distance getById(Long id) {
 		if (id == null) {
 			return null;
@@ -39,22 +44,13 @@ public class DistanceService {
 		return refuel.get();
 	}
 
+	@Transactional
 	public List<Distance> getAllByVehicleId(Long id) {
 		if (id == null) {
 			return null;
 		}
 
 		return repository.findAllByVehicleId(id);
-	}
-
-	public Distance getLatestByVehicleId(Long id) {
-		List<Distance> distances = getAllByVehicleId(id);
-
-		if (distances.size() > 0) {
-			return distances.get(0);
-		}
-
-		return null;
 	}
 
 	@Transactional
@@ -74,6 +70,70 @@ public class DistanceService {
 	@Transactional
 	public void deleteAll() {
 		repository.deleteAll();
+	}
+
+
+	public boolean distanceWithSameTimestampAlreadyExists(Distance distance) {
+		List<Distance> vehicleDistances = getAllByVehicleId(distance.getVehicle().getId());
+
+		for (Distance d : vehicleDistances) {
+			if (d.getTimestamp().equals(distance.getTimestamp())) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	public ValidationResponse checkDistanceDateAndKilometres(Distance distanceToCheck) {
+		List<Distance> vehicleDistances = new ArrayList<>(getAllByVehicleId(distanceToCheck.getVehicle().getId()));
+
+		// REMOVE DISTANCE IF ALREADY THERE (PATCH, PUT)
+		if (distanceToCheck.getId() != null) {
+			vehicleDistances.removeIf(distanceToRemove -> distanceToRemove.getId().equals(distanceToCheck.getId()));
+		}
+
+		if (vehicleDistances.size() == 0) {
+			return new ValidationResponse(true, "");
+		}
+
+		if (vehicleDistances.size() == 1) {
+			if ((vehicleDistances.get(0).getTimestamp().isBefore(distanceToCheck.getTimestamp()) && vehicleDistances.get(0).getKilometres() < distanceToCheck.getKilometres()) ||
+					(vehicleDistances.get(0).getTimestamp().isAfter(distanceToCheck.getTimestamp()) && vehicleDistances.get(0).getKilometres() > distanceToCheck.getKilometres())) {
+				return new ValidationResponse(true, "");
+			}
+		}
+
+		vehicleDistances.add(distanceToCheck);
+
+		// SORT BY TIMESTAMP FROM NEWEST TO OLDEST
+		vehicleDistances.sort(Comparator.comparing(Distance::getTimestamp).reversed());
+
+		// CHECK SURROUNDING DISTANCES
+		int leftDistanceIndex = -1;
+		int rightDistanceIndex = -1;
+		int distanceIndex = vehicleDistances.indexOf(distanceToCheck);
+
+		leftDistanceIndex = distanceIndex - 1;
+		rightDistanceIndex = distanceIndex + 1;
+
+		if (leftDistanceIndex >= 0) {
+			Distance leftDistance = vehicleDistances.get(leftDistanceIndex);
+
+			if (leftDistance.getKilometres() < distanceToCheck.getKilometres()) {
+				return new ValidationResponse(false, "invalid kilometres value, distance: '" + distanceToCheck + "' cannot be before: '" + leftDistance + "'");
+			}
+		}
+
+		if (rightDistanceIndex < vehicleDistances.size()) {
+			Distance rightDistance = vehicleDistances.get(rightDistanceIndex);
+
+			if (rightDistance.getKilometres() > distanceToCheck.getKilometres()) {
+				return new ValidationResponse(false, "invalid kilometres value, distance: '" + distanceToCheck + "' cannot be after: '" + rightDistance + "'");
+			}
+		}
+
+		return new ValidationResponse(true, "");
 	}
 
 
@@ -126,12 +186,21 @@ public class DistanceService {
 			distance.setVehicle(vehicle.get());
 
 
-			Distance latestDistanceForVehicleFromDatabase = getLatestByVehicleId(distance.getVehicle().getId());
+			if (distance.getTimestamp() == null) {
+				return new ValidationResponse(false, "timestamp value is required");
+			}
 
-			if (latestDistanceForVehicleFromDatabase != null) {
-				if (distance.getKilometres() < latestDistanceForVehicleFromDatabase.getKilometres()) {
-					return new ValidationResponse(false, "kilometres value: '" + distance.getKilometres() + "' cannot be lower than previous value: '" + latestDistanceForVehicleFromDatabase.getKilometres() + "'");
-				}
+			System.out.println("VALIDATION DISTANCE: \n" + distance);
+
+
+			if (distanceWithSameTimestampAlreadyExists(distance)) {
+				return new ValidationResponse(false, "distance with the same timestamp already exists");
+			}
+
+			ValidationResponse distanceValidation = checkDistanceDateAndKilometres(distance);
+
+			if (!distanceValidation.isValid()) {
+				return distanceValidation;
 			}
 
 			ValidationResponse stringFieldsValidation = new FieldReflectionUtils<Distance>().validateStringFields(distance);

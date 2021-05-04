@@ -102,7 +102,7 @@ public class UserController {
 
 
 	@GetMapping("/new")
-	public String newForm(Model model, boolean alreadySet) {
+	public String newForm(Model model) {
 //		ResponseEntity<Organisation[]> response = this.restTemplate.getForEntity(ORGANISATION_JSON_URL, Organisation[].class);
 //
 //		List<Organisation> organisations = new ArrayList<>();
@@ -117,9 +117,7 @@ public class UserController {
 //			return StringUtils.ERROR_PAGE;
 //		}
 
-		if (!alreadySet) {
-			model.addAttribute(ENTITY, new User());
-		}
+		model.addAttribute(ENTITY, new User());
 
 		List<Role> roles = roleRepository.findAll();
 		model.addAttribute("roles", roles);
@@ -240,6 +238,7 @@ public class UserController {
 		model.addAttribute("userId", id);
 		model.addAttribute("password", userPassword);
 
+
 		if (!userService.isPasswordCorrect(userFromDatabase, userPassword.getCurrent_password())) {
 			model.addAttribute(Constants.ERROR_MESSAGE_ATTRIBUTE, "Current password invalid");
 			return "user/change_password_page";
@@ -253,7 +252,7 @@ public class UserController {
 		userFromDatabase.setPassword(userService.getBcryptEncoder().encode(userPassword.getNew_password_1()));
 		userService.save(userFromDatabase);
 
-		addLog("change password", "password changed for user:\n" + userFromDatabase);
+		eventHistoryLogService.addUserLog("change password", "password changed for user:\n" + userFromDatabase);
 
 		model.addAttribute(Constants.SUCCESS_MESSAGE_ATTRIBUTE, "Password changed");
 
@@ -315,7 +314,7 @@ public class UserController {
 			return Constants.ERROR_PAGE;
 		} else {
 
-			addLog("create " + ENTITY, ENTITY + " created:\n" + userFromDatabase);
+			eventHistoryLogService.addUserLog("create " + ENTITY, ENTITY + " created:\n" + userFromDatabase);
 
 			return Constants.REDIRECT + Constants.UI_API + "/users";
 		}
@@ -380,7 +379,7 @@ public class UserController {
 			return Constants.ERROR_PAGE;
 		} else {
 
-			addLog("update " + ENTITY, ENTITY + " update from:\n" + oldUser + "\nto:\n" + userFromDatabase);
+			eventHistoryLogService.addUserLog("update " + ENTITY, ENTITY + " update from:\n" + oldUser + "\nto:\n" + userFromDatabase);
 
 			if (request.getHeader("Referer").contains("/profile")) {
 				return Constants.REDIRECT + Constants.UI_API + "/";
@@ -411,20 +410,8 @@ public class UserController {
 
 		userService.delete(userFromDatabase);
 
-		addLog("delete " + ENTITY, ENTITY + " deleted:\n" + userFromDatabase);
+		eventHistoryLogService.addUserLog("delete " + ENTITY, ENTITY + " deleted:\n" + userFromDatabase);
 
 		return Constants.REDIRECT + Constants.UI_API + "/users";
-	}
-
-
-	private void addLog(String action, String description) {
-		if (eventHistoryLogService.isLoggingEnabledForUsers()) {
-			EventHistoryLog log = new EventHistoryLog();
-			log.setWho_did(eventHistoryLogService.getCurrentUser() == null ? "NULL" : eventHistoryLogService.getCurrentUser().toString());
-			log.setAction(action);
-			log.setDescription(description);
-
-			eventHistoryLogService.save(log);
-		}
 	}
 }

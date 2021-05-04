@@ -4,7 +4,7 @@ import com.example.demo.database.models.utils.Mapping;
 import com.example.demo.database.models.utils.ValidationResponse;
 import com.example.demo.database.models.vehicle.Vehicle;
 import com.example.demo.database.models.vehicle.VehicleEvent;
-import com.example.demo.database.repositories.vehicle.FileRepository;
+import com.example.demo.database.repositories.vehicle.FileMetaDataRepository;
 import com.example.demo.database.repositories.vehicle.VehicleEventRepository;
 import com.example.demo.database.repositories.vehicle.VehicleRepository;
 import com.example.demo.utils.FieldReflectionUtils;
@@ -21,14 +21,16 @@ public class VehicleEventService {
 
 	private final VehicleEventRepository repository;
 
-	private final FileRepository fileRepository;
+	private final FileMetaDataRepository fileMetaDataRepository;
 	private final VehicleRepository vehicleRepository;
 
 
+	@Transactional
 	public List<VehicleEvent> getAll() {
 		return repository.findAll();
 	}
 
+	@Transactional
 	public VehicleEvent getById(Long id) {
 		if (id == null) {
 			return null;
@@ -41,6 +43,7 @@ public class VehicleEventService {
 		return event.get();
 	}
 
+	@Transactional
 	public List<VehicleEvent> getAllByVehicleId(Long id) {
 		if (id == null) {
 			return null;
@@ -62,9 +65,9 @@ public class VehicleEventService {
 
 		// FIRST DELETE/SET NULL ALL ENTITIES THAT HAVE FOREIGN KEY OF CURRENT ENTITY
 
-		fileRepository.findAllByVehicleEventId(event.getId()).forEach(file-> {
+		fileMetaDataRepository.findAllByVehicleEventId(event.getId()).forEach(file-> {
 			file.setVehicle_event(null);
-			fileRepository.save(file);
+			fileMetaDataRepository.save(file);
 
 //			fileRepository.delete(file);
 		});
@@ -77,9 +80,9 @@ public class VehicleEventService {
 
 		// FIRST DELETE/SET NULL ALL ENTITIES THAT HAVE FOREIGN KEY OF CURRENT ENTITY
 
-		fileRepository.findAll().forEach(file-> {
+		fileMetaDataRepository.findAll().forEach(file-> {
 			file.setVehicle_event(null);
-			fileRepository.save(file);
+			fileMetaDataRepository.save(file);
 
 //			fileRepository.delete(file);
 		});
@@ -127,6 +130,9 @@ public class VehicleEventService {
 			}
 
 			event.setVehicle(vehicle.get());
+
+
+
 
 
 			ValidationResponse stringFieldsValidation = new FieldReflectionUtils<VehicleEvent>().validateStringFields(event);

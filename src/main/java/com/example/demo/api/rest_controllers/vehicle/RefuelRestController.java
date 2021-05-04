@@ -80,7 +80,7 @@ public class RefuelRestController {
 					restResponse.setHttp_status(HttpStatus.OK);
 					restResponse.setMessage(ENTITY + " saved successfully");
 
-					addLog("create " + ENTITY, ENTITY + " created:\n" + refuelFromDatabase);
+					eventHistoryLogService.addRefuelLog("create " + ENTITY, ENTITY + " created:\n" + refuelFromDatabase);
 				}
 			}
 
@@ -121,7 +121,7 @@ public class RefuelRestController {
 			restResponse.setHttp_status(HttpStatus.OK);
 			restResponse.setMessage(ENTITY + " saved successfully");
 
-			addLog("create " + ENTITY, ENTITY + " created:\n" + refuelFromDatabase);
+			eventHistoryLogService.addRefuelLog("create " + ENTITY, ENTITY + " created:\n" + refuelFromDatabase);
 
 			return ResponseEntity.status(HttpStatus.OK).body(restResponse);
 		}
@@ -188,7 +188,7 @@ public class RefuelRestController {
 					restResponse.setHttp_status(HttpStatus.OK);
 					restResponse.setMessage(ENTITY + " saved successfully");
 
-					addLog("update (PUT) " + ENTITY, ENTITY + " updated from:\n" + oldRefuelFromDatabase + "\nto:\n" + refuelFromDatabase);
+					eventHistoryLogService.addRefuelLog("update (PUT) " + ENTITY, ENTITY + " updated from:\n" + oldRefuelFromDatabase + "\nto:\n" + refuelFromDatabase);
 				}
 			}
 			
@@ -230,7 +230,7 @@ public class RefuelRestController {
 			restResponse.setHttp_status(HttpStatus.OK);
 			restResponse.setMessage(ENTITY + " saved successfully");
 
-			addLog("update (PUT) " + ENTITY, ENTITY + " updated from:\n" + oldRefuelFromDatabase + "\nto:\n" + refuelFromDatabase);
+			eventHistoryLogService.addRefuelLog("update (PUT) " + ENTITY, ENTITY + " updated from:\n" + oldRefuelFromDatabase + "\nto:\n" + refuelFromDatabase);
 
 			return ResponseEntity.status(HttpStatus.OK).body(restResponse);
 		}
@@ -317,7 +317,7 @@ public class RefuelRestController {
 							restResponse.setHttp_status(HttpStatus.OK);
 							restResponse.setMessage(ENTITY + "patched successfully");
 
-							addLog("update (PATCH) " + ENTITY, ENTITY + " updated from:\n" + oldRefuelFromDatabase + "\nto:\n" + updatedRefuelFromDatabase);
+							eventHistoryLogService.addRefuelLog("update (PATCH) " + ENTITY, ENTITY + " updated from:\n" + oldRefuelFromDatabase + "\nto:\n" + updatedRefuelFromDatabase);
 						}
 					}
 
@@ -385,7 +385,7 @@ public class RefuelRestController {
 			restResponse.setHttp_status(HttpStatus.OK);
 			restResponse.setMessage(ENTITY + " saved successfully");
 
-			addLog("update (PATCH) " + ENTITY, ENTITY + " updated from:\n" + oldRefuelFromDatabase + "\nto:\n" + patchedRefuel);
+			eventHistoryLogService.addRefuelLog("update (PATCH) " + ENTITY, ENTITY + " updated from:\n" + oldRefuelFromDatabase + "\nto:\n" + patchedRefuel);
 
 			return ResponseEntity.status(HttpStatus.OK).body(restResponse);
 		}
@@ -422,7 +422,7 @@ public class RefuelRestController {
 					restResponse.setHttp_status(HttpStatus.OK);
 					restResponse.setMessage(ENTITY + " deleted successfully");
 
-					addLog("delete " + ENTITY, ENTITY + " deleted:\n" + refuel);
+					eventHistoryLogService.addRefuelLog("delete " + ENTITY, ENTITY + " deleted:\n" + refuel);
 				} catch (Exception e) {
 					restResponse.setHttp_status(HttpStatus.INTERNAL_SERVER_ERROR);
 					restResponse.setMessage("failed to delete " + ENTITY + " from database \n" + e.getMessage());
@@ -466,22 +466,11 @@ public class RefuelRestController {
 		restResponse.setHttp_status(HttpStatus.OK);
 		restResponse.setMessage(ENTITY + " deleted successfully");
 
-		addLog("delete " + ENTITY, ENTITY + " deleted:\n" + refuelFromDatabase);
+		eventHistoryLogService.addRefuelLog("delete " + ENTITY, ENTITY + " deleted:\n" + refuelFromDatabase);
 
 		return ResponseEntity.ok(restResponse);
 	}
 
-
-	private void addLog(String action, String description) {
-		if (eventHistoryLogService.isLoggingEnabledForRefuels()) {
-			EventHistoryLog log = new EventHistoryLog();
-			log.setWho_did(eventHistoryLogService.getCurrentUser() == null ? "NULL" : eventHistoryLogService.getCurrentUser().toString());
-			log.setAction(action);
-			log.setDescription(description);
-
-			eventHistoryLogService.save(log);
-		}
-	}
 
 	private Refuel handlePatchChanges(Long id, Map<String, Object> changes) throws JsonParseException {
 		Refuel entity = refuelService.getById(id);
@@ -516,8 +505,7 @@ public class RefuelRestController {
 
 							if (field.getType().equals(Vehicle.class)) {
 								try {
-									Vehicle vehicle = objectMapper.readValue((String) value, Vehicle.class);
-									entity.setVehicle(vehicle);
+									entity.setVehicle(objectMapper.readValue(json, Vehicle.class));
 								} catch (JsonProcessingException e) {
 									throw new JsonParseException(new Throwable("Vehicle json parsing error: " + e.getMessage()));
 								}

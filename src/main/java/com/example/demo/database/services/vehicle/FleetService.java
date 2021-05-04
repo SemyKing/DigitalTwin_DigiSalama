@@ -25,10 +25,12 @@ public class FleetService {
 	private final OrganisationRepository organisationRepository;
 
 
+	@Transactional
 	public List<Fleet> getAll() {
 		return repository.findAll();
 	}
 
+	@Transactional
 	public Fleet getById(Long id) {
 		if (id == null) {
 			return null;
@@ -41,30 +43,7 @@ public class FleetService {
 		return fleet.get();
 	}
 
-	public List<Fleet> getFleetsContainingVehicle(Long vehicleId) {
-		if (vehicleId == null) {
-			return null;
-		}
-
-		Optional<Vehicle> vehicleFromDatabase = vehicleRepository.findById(vehicleId);
-
-		if (vehicleFromDatabase.isEmpty()) {
-			return null;
-		}
-
-		List<Fleet> fleetsContainingVehicle = new ArrayList<>();
-
-		List<Fleet> allFleets = getAll();
-
-		for (Fleet fleet : allFleets) {
-			if (fleet.getVehicles().contains(vehicleFromDatabase.get())) {
-				fleetsContainingVehicle.add(fleet);
-			}
-		}
-
-		return fleetsContainingVehicle;
-	}
-
+	@Transactional
 	public List<Fleet> getFleetsNotContainingVehicle(Long vehicleId) {
 		if (vehicleId == null) {
 			return null;

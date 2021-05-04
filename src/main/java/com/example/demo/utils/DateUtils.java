@@ -23,6 +23,7 @@ public class DateUtils {
         if (dateString.length() < 16) {
             throw new Exception("Date: '" + dateString + "' is invalid, required date format: 'yyyy-MM-ddTHH:mm'");
         }
+
         return LocalDateTime.parse(dateString.substring(0, 16), databaseFormat);
     }
 }

@@ -24,19 +24,23 @@
 			<div class="col">
 
 				<div class="row">
-					<form action="#" th:action="${'/api1/files/upload'}" enctype="multipart/form-data" class="w-100" method="POST">
-						<table class="ml-auto">
-							<tr>
-								<td>File to upload:</td>
-								<td>
-									<input type="file" name="file" />
-								</td>
-								<td>
-									<input type="submit" class="btn btn-success" value="Upload" />
-								</td>
-							</tr>
-						</table>
-					</form>
+<!--					<form action="#" th:action="${'/api1/files/upload'}" enctype="multipart/form-data" class="w-100" method="POST">-->
+<!--						<table class="ml-auto">-->
+<!--							<tr>-->
+<!--								<td>File to upload:</td>-->
+<!--								<td>-->
+<!--									<input type="file" name="file" />-->
+<!--								</td>-->
+<!--								<td>-->
+<!--									<input type="submit" class="btn btn-success" value="Upload" />-->
+<!--								</td>-->
+<!--							</tr>-->
+<!--						</table>-->
+<!--					</form>-->
+
+						<form action="#" th:action="${'/api1/files/upload'}" class="w-100" method="GET">
+								<input type="submit" class="btn btn-success" value="Upload File" />
+						</form>
 				</div>
 
 				<table class="table table-hover table-sm table-bordered">
@@ -44,7 +48,6 @@
 						<tr>
 							<th scope="col">ID</th>
 							<th scope="col">Name</th>
-							<th scope="col">Vehicle</th>
 						</tr>
 					</thead>
 					<tbody>
@@ -57,10 +60,7 @@
 								<span th:text="${file.id}"></span>
 							</td>
 							<td>
-								<span th:text="${file.file_name}"></span>
-							</td>
-							<td>
-								<span th:text="${file.vehicle == null ? 'NOT SELECTED' : file.vehicle.registration_number}"></span>
+								<span th:text="${file.file_byte_data == null ? 'NO FILE DATA' : file.file_byte_data.file_name}"></span>
 							</td>
 							<td style="width: 1px;">
 								<form action="#" th:action="${'/api1/files/' + file.id}" class="m-0 p-0" method="GET">

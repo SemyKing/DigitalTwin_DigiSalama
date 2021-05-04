@@ -58,11 +58,6 @@ public class Fleet {
 
 	@Transient
 	@JsonIgnore
+	@ToString.Exclude
 	private Boolean isSelected = false;
-
-
-//	@Override
-//	public String toString() {
-//		return "Fleet(id=" + id + ", name=" + name + ", vehicle_ids=" + getVehicle_ids() + ", organisation=" + organisation;
-//	}
 }

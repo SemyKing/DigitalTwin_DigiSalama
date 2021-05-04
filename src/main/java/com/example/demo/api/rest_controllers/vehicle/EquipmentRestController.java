@@ -81,7 +81,7 @@ public class EquipmentRestController {
 					restResponse.setHttp_status(HttpStatus.OK);
 					restResponse.setMessage(ENTITY + " saved successfully");
 
-					addLog("create " + ENTITY, ENTITY + " created:\n" + equipmentFromDatabase);
+					eventHistoryLogService.addEquipmentLog("create " + ENTITY, ENTITY + " created:\n" + equipmentFromDatabase);
 				}
 			}
 
@@ -122,7 +122,7 @@ public class EquipmentRestController {
 			restResponse.setHttp_status(HttpStatus.OK);
 			restResponse.setMessage(ENTITY + " saved successfully");
 
-			addLog("create " + ENTITY, ENTITY + " created:\n" + equipmentFromDatabase);
+			eventHistoryLogService.addEquipmentLog("create " + ENTITY, ENTITY + " created:\n" + equipmentFromDatabase);
 
 			return ResponseEntity.status(HttpStatus.OK).body(restResponse);
 		}
@@ -189,7 +189,7 @@ public class EquipmentRestController {
 					restResponse.setHttp_status(HttpStatus.OK);
 					restResponse.setMessage(ENTITY + " saved successfully");
 
-					addLog("update (PUT) " + ENTITY, ENTITY + " updated from:\n" + oldEquipmentFromDatabase + "\nto:\n" + equipmentFromDatabase);
+					eventHistoryLogService.addEquipmentLog("update (PUT) " + ENTITY, ENTITY + " updated from:\n" + oldEquipmentFromDatabase + "\nto:\n" + equipmentFromDatabase);
 				}
 			}
 
@@ -231,7 +231,7 @@ public class EquipmentRestController {
 			restResponse.setHttp_status(HttpStatus.OK);
 			restResponse.setMessage(ENTITY + " saved successfully");
 
-			addLog("update (PUT) " + ENTITY, ENTITY + " updated from:\n" + oldEquipmentFromDatabase + "\nto:\n" + equipmentFromDatabase);
+			eventHistoryLogService.addEquipmentLog("update (PUT) " + ENTITY, ENTITY + " updated from:\n" + oldEquipmentFromDatabase + "\nto:\n" + equipmentFromDatabase);
 
 			return ResponseEntity.status(HttpStatus.OK).body(restResponse);
 		}
@@ -319,7 +319,7 @@ public class EquipmentRestController {
 							restResponse.setHttp_status(HttpStatus.OK);
 							restResponse.setMessage(ENTITY + "patched successfully");
 
-							addLog("update (PATCH) " + ENTITY, ENTITY + " updated from:\n" + oldEquipmentFromDatabase + "\nto:\n" + updatedEquipmentFromDatabase);
+							eventHistoryLogService.addEquipmentLog("update (PATCH) " + ENTITY, ENTITY + " updated from:\n" + oldEquipmentFromDatabase + "\nto:\n" + updatedEquipmentFromDatabase);
 						}
 					}
 
@@ -387,7 +387,7 @@ public class EquipmentRestController {
 			restResponse.setHttp_status(HttpStatus.OK);
 			restResponse.setMessage(ENTITY + " saved successfully");
 
-			addLog("update (PATCH) " + ENTITY, ENTITY + " updated from:\n" + oldEquipmentFromDatabase + "\nto:\n" + patchedEquipment);
+			eventHistoryLogService.addEquipmentLog("update (PATCH) " + ENTITY, ENTITY + " updated from:\n" + oldEquipmentFromDatabase + "\nto:\n" + patchedEquipment);
 
 			return ResponseEntity.status(HttpStatus.OK).body(restResponse);
 		}
@@ -424,7 +424,7 @@ public class EquipmentRestController {
 					restResponse.setHttp_status(HttpStatus.OK);
 					restResponse.setMessage(ENTITY + " deleted successfully");
 
-					addLog("delete " + ENTITY, ENTITY + " deleted:\n" + equipment);
+					eventHistoryLogService.addEquipmentLog("delete " + ENTITY, ENTITY + " deleted:\n" + equipment);
 				} catch (Exception e) {
 					restResponse.setHttp_status(HttpStatus.INTERNAL_SERVER_ERROR);
 					restResponse.setMessage("failed to delete " + ENTITY + " from database \n" + e.getMessage());
@@ -468,21 +468,9 @@ public class EquipmentRestController {
 		restResponse.setHttp_status(HttpStatus.OK);
 		restResponse.setMessage(ENTITY + " deleted successfully");
 
-		addLog("delete " + ENTITY, ENTITY + " deleted:\n" + equipmentFromDatabase);
+		eventHistoryLogService.addEquipmentLog("delete " + ENTITY, ENTITY + " deleted:\n" + equipmentFromDatabase);
 
 		return ResponseEntity.ok(restResponse);
-	}
-
-
-	private void addLog(String action, String description) {
-		if (eventHistoryLogService.isLoggingEnabledForEquipment()) {
-			EventHistoryLog log = new EventHistoryLog();
-			log.setWho_did(eventHistoryLogService.getCurrentUser() == null ? "NULL" : eventHistoryLogService.getCurrentUser().toString());
-			log.setAction(action);
-			log.setDescription(description);
-
-			eventHistoryLogService.save(log);
-		}
 	}
 
 
@@ -519,7 +507,7 @@ public class EquipmentRestController {
 
 							if (field.getType().equals(Vehicle.class)) {
 								try {
-									Vehicle vehicle = objectMapper.readValue((String) value, Vehicle.class);
+									Vehicle vehicle = objectMapper.readValue(json, Vehicle.class);
 									entity.setVehicle(vehicle);
 								} catch (JsonProcessingException e) {
 									throw new JsonParseException(new Throwable("Vehicle json parsing error: " + e.getMessage()));
@@ -528,7 +516,7 @@ public class EquipmentRestController {
 
 							if (field.getType().equals(EquipmentType.class)) {
 								try {
-									EquipmentType equipmentType = objectMapper.readValue((String) value, EquipmentType.class);
+									EquipmentType equipmentType = objectMapper.readValue(json, EquipmentType.class);
 									entity.setEquipment_type(equipmentType);
 								} catch (JsonProcessingException e) {
 									throw new JsonParseException(new Throwable("EquipmentType json parsing error: " + e.getMessage()));

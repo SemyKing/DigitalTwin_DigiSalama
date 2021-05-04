@@ -25,11 +25,12 @@ public class EquipmentService {
 	private final EquipmentTypeRepository equipmentTypeRepository;
 	private final VehicleRepository vehicleRepository;
 
-
+	@Transactional
 	public List<Equipment> getAll() {
 		return repository.findAll();
 	}
 
+	@Transactional
 	public Equipment getById(Long id) {
 		if (id == null) {
 			return null;
@@ -42,6 +43,7 @@ public class EquipmentService {
 		return equipment.get();
 	}
 
+	@Transactional
 	public List<Equipment> getAllByVehicleId(Long id) {
 		if (id == null) {
 			return null;

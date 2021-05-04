@@ -99,9 +99,7 @@ public class OrganisationController {
 			return Constants.ERROR_PAGE;
 		} else {
 
-			addLog(
-					"create " + ENTITY,
-					ENTITY + " created: \n" + organisationFromDatabase);
+			eventHistoryLogService.addOrganisationLog("create " + ENTITY, ENTITY + " created: \n" + organisationFromDatabase);
 
 			return Constants.REDIRECT + Constants.UI_API + "/organisations";
 		}
@@ -131,18 +129,8 @@ public class OrganisationController {
 			return Constants.ERROR_PAGE;
 		} else {
 
-			addLog(
-					"update " + ENTITY,
-					ENTITY + " updated from:\n" + organisationFromDatabase + "\nto:\n" + oldOrganisationDatabase);
+			eventHistoryLogService.addOrganisationLog("update " + ENTITY, ENTITY + " updated from:\n" + organisationFromDatabase + "\nto:\n" + oldOrganisationDatabase);
 
-			if (eventHistoryLogService.isLoggingEnabledForOrganisations()) {
-				EventHistoryLog log = new EventHistoryLog();
-				log.setWho_did(eventHistoryLogService.getCurrentUser() == null ? "NULL" : eventHistoryLogService.getCurrentUser().toString());
-				log.setAction("update " + ENTITY);
-				log.setDescription(ENTITY + " updated from:\n" + organisationFromDatabase + "\nto:\n" + oldOrganisationDatabase);
-
-				eventHistoryLogService.save(log);
-			}
 
 			return Constants.REDIRECT + Constants.UI_API + "/organisations/" + organisationFromDatabase.getId();
 		}
@@ -161,21 +149,8 @@ public class OrganisationController {
 
 		organisationService.delete(organisationFromDatabase);
 
-		addLog(
-				"delete " + ENTITY,
-				ENTITY + " deleted:\n" + organisationFromDatabase);
+		eventHistoryLogService.addOrganisationLog("delete " + ENTITY, ENTITY + " deleted:\n" + organisationFromDatabase);
 
 		return Constants.REDIRECT + Constants.UI_API + "/organisations";
-	}
-
-	private void addLog(String action, String description) {
-		if (eventHistoryLogService.isLoggingEnabledForOrganisations()) {
-			EventHistoryLog log = new EventHistoryLog();
-			log.setWho_did(eventHistoryLogService.getCurrentUser() == null ? "NULL" : eventHistoryLogService.getCurrentUser().toString());
-			log.setAction(action);
-			log.setDescription(description);
-
-			eventHistoryLogService.save(log);
-		}
 	}
 }

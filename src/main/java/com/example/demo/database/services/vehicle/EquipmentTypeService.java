@@ -22,10 +22,12 @@ public class EquipmentTypeService {
 	private final EquipmentRepository equipmentRepository;
 
 
+	@Transactional
 	public List<EquipmentType> getAll() {
 		return repository.findAll();
 	}
 
+	@Transactional
 	public EquipmentType getById(Long id) {
 		if (id == null) {
 			return null;
@@ -79,7 +81,7 @@ public class EquipmentTypeService {
 	public ValidationResponse validate(EquipmentType type, Mapping mapping) {
 
 		if (type == null) {
-			return new ValidationResponse(false, "provided NULL equipment_type");
+			return new ValidationResponse(false, "provided NULL entity");
 		}
 
 		if (mapping.equals(Mapping.POST)) {

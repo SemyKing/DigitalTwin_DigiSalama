@@ -99,7 +99,7 @@ public class UserRestController {
 					restResponse.setHttp_status(HttpStatus.OK);
 					restResponse.setMessage(ENTITY + " saved successfully");
 
-					addLog("create " + ENTITY, ENTITY + " created:\n" + userFromDatabase);
+					eventHistoryLogService.addUserLog("create " + ENTITY, ENTITY + " created:\n" + userFromDatabase);
 				}
 			}
 
@@ -140,7 +140,7 @@ public class UserRestController {
 			restResponse.setHttp_status(HttpStatus.OK);
 			restResponse.setMessage(ENTITY + " saved successfully");
 
-			addLog("create " + ENTITY, ENTITY + " created:\n" + userFromDatabase);
+			eventHistoryLogService.addUserLog("create " + ENTITY, ENTITY + " created:\n" + userFromDatabase);
 
 			return ResponseEntity.ok(restResponse);
 		}
@@ -207,7 +207,7 @@ public class UserRestController {
 					restResponse.setHttp_status(HttpStatus.OK);
 					restResponse.setMessage(ENTITY + " saved successfully");
 
-					addLog("update (PUT) " + ENTITY, ENTITY + " updated from:\n" + oldUserFromDatabase + "\nto:\n" + userFromDatabase);
+					eventHistoryLogService.addUserLog("update (PUT) " + ENTITY, ENTITY + " updated from:\n" + oldUserFromDatabase + "\nto:\n" + userFromDatabase);
 				}
 			}
 
@@ -251,7 +251,7 @@ public class UserRestController {
 			restResponse.setHttp_status(HttpStatus.OK);
 			restResponse.setMessage(ENTITY + " saved successfully");
 
-			addLog("update (PUT) " + ENTITY, ENTITY + " updated from:\n" + oldUserFromDatabase + "\nto:\n" + userFromDatabase);
+			eventHistoryLogService.addUserLog("update (PUT) " + ENTITY, ENTITY + " updated from:\n" + oldUserFromDatabase + "\nto:\n" + userFromDatabase);
 
 			return ResponseEntity.ok(restResponse);
 		}
@@ -343,7 +343,7 @@ public class UserRestController {
 							userResponse.setHttp_status(HttpStatus.OK);
 							userResponse.setMessage(ENTITY + "patched successfully");
 
-							addLog("update (PATCH) " + ENTITY, ENTITY + " updated from:\n" + oldUserFromDatabase + "\nto:\n" + updatedUserFromDatabase);
+							eventHistoryLogService.addUserLog("update (PATCH) " + ENTITY, ENTITY + " updated from:\n" + oldUserFromDatabase + "\nto:\n" + updatedUserFromDatabase);
 						}
 					}
 
@@ -412,7 +412,7 @@ public class UserRestController {
 			restResponse.setHttp_status(HttpStatus.OK);
 			restResponse.setMessage(ENTITY + " patched successfully");
 
-			addLog("update (PATCH) " + ENTITY, ENTITY + " updated from:\n" + oldUser + "\nto:\n" + patchedUser);
+			eventHistoryLogService.addUserLog("update (PATCH) " + ENTITY, ENTITY + " updated from:\n" + oldUser + "\nto:\n" + patchedUser);
 
 			return ResponseEntity.ok(restResponse);
 		}
@@ -440,7 +440,7 @@ public class UserRestController {
 			String passwordUpdateToken = userService.generatePasswordUpdateToken(userFromDatabase);
 			logger.info("user with email: " + user.getEmail() + " was found and password update token was created: " + passwordUpdateToken);
 
-			addLog("forgot password", "request was made by IP address:\n" + ip + "\nuser:\n" + user);
+			eventHistoryLogService.addUserLog("forgot password", "request was made by IP address:\n" + ip + "\nuser:\n" + user);
 
 			//TODO: SEND EMAIL WITH RESET LINK
 			// CURRENTLY WILL WORK BY CREATING POST REQUEST TO /update_password WITH passwordUpdateToken and NEW PASSWORD
@@ -511,7 +511,7 @@ public class UserRestController {
 		userFromDatabase.setPassword_update_token(null);
 		userService.save(userFromDatabase);
 
-		addLog("update password", "password updated for user:\n" + userFromDatabase);
+		eventHistoryLogService.addUserLog("update password", "password updated for user:\n" + userFromDatabase);
 
 		return ResponseEntity.ok("password updated successfully");
 	}
@@ -547,7 +547,7 @@ public class UserRestController {
 					restResponse.setHttp_status(HttpStatus.OK);
 					restResponse.setMessage(ENTITY + " deleted successfully");
 
-					addLog("delete " + ENTITY, ENTITY + " deleted:\n" + user);
+					eventHistoryLogService.addUserLog("delete " + ENTITY, ENTITY + " deleted:\n" + user);
 				} catch (Exception e) {
 					restResponse.setHttp_status(HttpStatus.INTERNAL_SERVER_ERROR);
 					restResponse.setMessage("failed to delete " + ENTITY + " from database \n" + e.getMessage());
@@ -592,25 +592,13 @@ public class UserRestController {
 		restResponse.setHttp_status(HttpStatus.OK);
 		restResponse.setMessage(ENTITY + " deleted successfully");
 
-		addLog("delete " + ENTITY, ENTITY + " deleted:\n" + userFromDatabase);
+		eventHistoryLogService.addUserLog("delete " + ENTITY, ENTITY + " deleted:\n" + userFromDatabase);
 
 		return ResponseEntity.ok(restResponse);
 	}
 
 
-	private void addLog(String action, String description) {
-		if (eventHistoryLogService.isLoggingEnabledForUsers()) {
-			EventHistoryLog log = new EventHistoryLog();
-			log.setWho_did(eventHistoryLogService.getCurrentUser() == null ? "NULL" : eventHistoryLogService.getCurrentUser().toString());
-			log.setAction(action);
-			log.setDescription(description);
-
-			eventHistoryLogService.save(log);
-		}
-	}
-
-
-	private User  handlePatchChanges(Long id, Map<String, Object> changes) throws JsonParseException {
+	private User handlePatchChanges(Long id, Map<String, Object> changes) throws JsonParseException {
 		User entity = userService.getById(id);
 
 		if (entity != null) {
@@ -643,7 +631,7 @@ public class UserRestController {
 
 							if (field.getType().equals(Organisation.class)) {
 								try {
-									entity.setOrganisation(objectMapper.readValue((String) value, Organisation.class));
+									entity.setOrganisation(objectMapper.readValue(json, Organisation.class));
 								} catch (JsonProcessingException e) {
 									e.printStackTrace();
 								}

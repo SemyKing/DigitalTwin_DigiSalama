@@ -22,7 +22,7 @@ public class VehicleService {
 
 	private final DistanceRepository distanceRepository;
 	private final EquipmentRepository equipmentRepository;
-	private final FileRepository fileRepository;
+	private final FileMetaDataRepository fileMetaDataRepository;
 	private final FleetRepository fleetRepository;
 	private final RefuelRepository refuelRepository;
 	private final TripRepository tripRepository;
@@ -31,10 +31,12 @@ public class VehicleService {
 	private final OrganisationRepository organisationRepository;
 
 
+	@Transactional
 	public List<Vehicle> getAll() {
 		return vehicleRepository.findAll();
 	}
 
+	@Transactional
 	public Vehicle getById(Long id) {
 		if (id == null) {
 			return null;
@@ -47,30 +49,6 @@ public class VehicleService {
 		}
 
 		return vehicle.get();
-	}
-
-	public List<Vehicle> getVehiclesNotInFleet(Long fleetId) {
-		if (fleetId == null) {
-			return null;
-		}
-
-		Optional<Fleet> fleetFromDatabase = fleetRepository.findById(fleetId);
-
-		if (fleetFromDatabase.isEmpty()) {
-			return null;
-		}
-
-		List<Vehicle> vehiclesNotInFleet = new ArrayList<>();
-
-		List<Vehicle> allVehicles = getAll();
-
-		for (Vehicle vehicle : allVehicles) {
-			if (vehicle.getFleets() == null || !vehicle.getFleets().contains(fleetFromDatabase.get())) {
-				vehiclesNotInFleet.add(vehicle);
-			}
-		}
-
-		return vehiclesNotInFleet;
 	}
 
 	@Transactional
@@ -100,9 +78,9 @@ public class VehicleService {
 //			equipmentRepository.delete(equipment);
 		});
 
-		fileRepository.findAllByVehicleId(vehicle.getId()).forEach(file -> {
+		fileMetaDataRepository.findAllByVehicleId(vehicle.getId()).forEach(file -> {
 			file.setVehicle(null);
-			fileRepository.save(file);
+			fileMetaDataRepository.save(file);
 
 //			fileRepository.delete(file);
 		});
@@ -158,9 +136,9 @@ public class VehicleService {
 //			equipmentRepository.delete(equipment);
 		});
 
-		fileRepository.findAll().forEach(file -> {
+		fileMetaDataRepository.findAll().forEach(file -> {
 			file.setVehicle(null);
-			fileRepository.save(file);
+			fileMetaDataRepository.save(file);
 
 //			fileRepository.delete(file);
 		});

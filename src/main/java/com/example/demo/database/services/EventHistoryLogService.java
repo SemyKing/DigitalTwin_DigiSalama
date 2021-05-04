@@ -52,51 +52,183 @@ public class EventHistoryLogService {
 	}
 
 
-	public boolean isLoggingEnabledForUsers() {
+	private User getCurrentUser() {
+		return userService.getCurrentUser();
+	}
+
+
+	public void addUserLog(String action, String description) {
+		if (isLoggingEnabledForUsers()) {
+			EventHistoryLog log = new EventHistoryLog();
+			log.setWho_did(getCurrentUser() == null ? "NULL" : getCurrentUser().toString());
+			log.setAction(action);
+			log.setDescription(description);
+
+			save(log);
+		}
+	}
+
+	private boolean isLoggingEnabledForUsers() {
 		return applicationSettingsService.getApplicationSettings().isUser_event_logging();
 	}
 
-	public boolean isLoggingEnabledForOrganisations() {
+
+	public void addOrganisationLog(String action, String description) {
+		if (isLoggingEnabledForOrganisations()) {
+			EventHistoryLog log = new EventHistoryLog();
+			log.setWho_did(getCurrentUser() == null ? "NULL" : getCurrentUser().toString());
+			log.setAction(action);
+			log.setDescription(description);
+
+			save(log);
+		}
+	}
+
+	private boolean isLoggingEnabledForOrganisations() {
 		return applicationSettingsService.getApplicationSettings().isOrganisation_event_logging();
 	}
 
-	public boolean isLoggingEnabledForFleets() {
+
+	public void addFleetLog(String action, String description) {
+		if (isLoggingEnabledForFleets()) {
+			EventHistoryLog log = new EventHistoryLog();
+			log.setWho_did(getCurrentUser() == null ? "NULL" : getCurrentUser().toString());
+			log.setAction(action);
+			log.setDescription(description);
+
+			save(log);
+		}
+	}
+
+	private boolean isLoggingEnabledForFleets() {
 		return applicationSettingsService.getApplicationSettings().isFleet_event_logging();
 	}
 
-	public boolean isLoggingEnabledForVehicles() {
+
+	public void addVehicleLog(String action, String description) {
+		if (isLoggingEnabledForVehicles()) {
+			EventHistoryLog log = new EventHistoryLog();
+			log.setWho_did(getCurrentUser() == null ? "NULL" : getCurrentUser().toString());
+			log.setAction(action);
+			log.setDescription(description);
+
+			save(log);
+		}
+	}
+
+	private boolean isLoggingEnabledForVehicles() {
 		return applicationSettingsService.getApplicationSettings().isVehicle_event_logging();
 	}
 
-	public boolean isLoggingEnabledForVehicleEvents() {
+
+	public void addVehicleEventLog(String action, String description) {
+		if (isLoggingEnabledForVehicleEvents()) {
+			EventHistoryLog log = new EventHistoryLog();
+			log.setWho_did(getCurrentUser() == null ? "NULL" : getCurrentUser().toString());
+			log.setAction(action);
+			log.setDescription(description);
+
+			save(log);
+		}
+	}
+
+	private boolean isLoggingEnabledForVehicleEvents() {
 		return applicationSettingsService.getApplicationSettings().isVehicle_event_event_logging();
 	}
 
-	public boolean isLoggingEnabledForDistances() {
+
+	public void addDistanceLog(String action, String description) {
+		if (isLoggingEnabledForDistances()) {
+			EventHistoryLog log = new EventHistoryLog();
+			log.setWho_did(getCurrentUser() == null ? "NULL" : getCurrentUser().toString());
+			log.setAction(action);
+			log.setDescription(description);
+
+			save(log);
+		}
+	}
+
+	private boolean isLoggingEnabledForDistances() {
 		return applicationSettingsService.getApplicationSettings().isDistance_event_logging();
 	}
 
-	public boolean isLoggingEnabledForRefuels() {
+
+	public void addRefuelLog(String action, String description) {
+		if (isLoggingEnabledForRefuels()) {
+			EventHistoryLog log = new EventHistoryLog();
+			log.setWho_did(getCurrentUser() == null ? "NULL" : getCurrentUser().toString());
+			log.setAction(action);
+			log.setDescription(description);
+
+			save(log);
+		}
+	}
+
+	private boolean isLoggingEnabledForRefuels() {
 		return applicationSettingsService.getApplicationSettings().isRefuel_event_logging();
 	}
 
-	public boolean isLoggingEnabledForTrips() {
+
+	public void addTripLog(String action, String description) {
+		if (isLoggingEnabledForTrips()) {
+			EventHistoryLog log = new EventHistoryLog();
+			log.setWho_did(getCurrentUser() == null ? "NULL" : getCurrentUser().toString());
+			log.setAction(action);
+			log.setDescription(description);
+
+			save(log);
+		}
+	}
+
+	private boolean isLoggingEnabledForTrips() {
 		return applicationSettingsService.getApplicationSettings().isTrip_event_logging();
 	}
 
-	public boolean isLoggingEnabledForEquipment() {
+
+	public void addEquipmentLog(String action, String description) {
+		if (isLoggingEnabledForEquipment()) {
+			EventHistoryLog log = new EventHistoryLog();
+			log.setWho_did(getCurrentUser() == null ? "NULL" : getCurrentUser().toString());
+			log.setAction(action);
+			log.setDescription(description);
+
+			save(log);
+		}
+	}
+
+	private boolean isLoggingEnabledForEquipment() {
 		return applicationSettingsService.getApplicationSettings().isEquipment_event_logging();
+	}
+
+
+	public void addEquipmentTypeLog(String action, String description) {
+		if (isLoggingEnabledForEquipmentTypes()) {
+			EventHistoryLog log = new EventHistoryLog();
+			log.setWho_did(getCurrentUser() == null ? "NULL" : getCurrentUser().toString());
+			log.setAction(action);
+			log.setDescription(description);
+
+			save(log);
+		}
 	}
 
 	public boolean isLoggingEnabledForEquipmentTypes() {
 		return applicationSettingsService.getApplicationSettings().isEquipment_type_event_logging();
 	}
 
-	public boolean isLoggingEnabledForFiles() {
-		return applicationSettingsService.getApplicationSettings().isFile_event_logging();
+
+	public void addFileLog(String action, String description) {
+		if (isLoggingEnabledForFiles()) {
+			EventHistoryLog log = new EventHistoryLog();
+			log.setWho_did(getCurrentUser() == null ? "NULL" : getCurrentUser().toString());
+			log.setAction(action);
+			log.setDescription(description);
+
+			save(log);
+		}
 	}
 
-	public User getCurrentUser() {
-		return userService.getCurrentUser();
+	private boolean isLoggingEnabledForFiles() {
+		return applicationSettingsService.getApplicationSettings().isFile_event_logging();
 	}
 }

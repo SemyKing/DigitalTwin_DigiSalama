@@ -2,14 +2,13 @@ package com.example.demo.database.models.vehicle;
 
 import com.example.demo.utils.LocalDateTimeConverter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import lombok.*;
 import org.springframework.format.annotation.DateTimeFormat;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
+import java.util.*;
 
 @Entity
 @Data
@@ -38,6 +37,34 @@ public class VehicleEvent {
 
 	@Column(columnDefinition="TEXT")
 	private String description;
+
+	@ToString.Exclude
+	@EqualsAndHashCode.Exclude
+	@JsonIgnoreProperties({"vehicle_event"})
+	@OneToMany(mappedBy = "vehicle_event")
+	private Set<FileMetaData> files = new HashSet<>();
+
+
+	@Transient
+	@JsonIgnore
+	@ToString.Include
+	@EqualsAndHashCode.Exclude
+	@Getter(AccessLevel.NONE)
+	private List<Long> files_ids = new ArrayList<>();
+
+	// CUSTOM GETTER
+	public List<Long> getFiles_ids() {
+		files_ids.clear();
+
+		for (FileMetaData file : files) {
+			files_ids.add(file.getId());
+		}
+
+		Collections.sort(files_ids);
+
+		return files_ids;
+	}
+
 
 	@Column
 	@DateTimeFormat(pattern = "yyyy-MM-dd'T'HH:mm")

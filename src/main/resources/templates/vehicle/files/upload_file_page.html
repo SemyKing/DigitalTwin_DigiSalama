@@ -1,0 +1,78 @@
+<html xmlns:th="http://www.thymeleaf.org" th:replace="~{main-layout :: main-fragment(~{:: #main-content})}">
+	<head>
+		<title>File Details</title>
+		<link rel="stylesheet"
+			  href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css"
+			  integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO"
+			  crossorigin="anonymous">
+	</head>
+
+	<body>
+
+		<form action="#" th:action="${'/api1/'}" class="mb-0 mx-2 mt-2" method="GET">
+			<button type="submit" class="btn btn-warning">Home</button>
+		</form>
+
+
+		<div id="main-content" class="container pt-2">
+
+			<h1>File Details</h1>
+
+			<form action="#" th:action="${'/api1/files/upload'}" enctype="multipart/form-data" th:object="${fileMetaData}" class="m-0 p-0" method="POST">
+
+				<div class="form-group">
+					<label for="description">Description</label>
+					<textarea id="description" style="min-height: 200px;" class="form-control" aria-label="Description" th:field="*{description}"></textarea>
+				</div>
+
+				<div class="form-group">
+					<label for="vehicleSelect">Vehicle</label>
+					<select class="form-control" id="vehicleSelect" th:field="*{vehicle}">
+						<option value=""></option>
+						<option th:each="vehicle : ${vehicles}"
+								th:value="${vehicle.id}"
+								th:utext="${vehicle.registration_number}">
+						</option>
+					</select>
+				</div>
+
+				<div class="form-group">
+					<label for="vehicleEventSelect">Vehicle Event</label>
+					<select class="form-control" id="vehicleEventSelect" th:field="*{vehicle_event}">
+						<option value=""></option>
+						<option th:each="event : ${vehicle_events}"
+								th:value="${event.id}"
+								th:utext="${event.name}">
+						</option>
+					</select>
+				</div>
+
+				<div class="form-group">
+					<label for="refuelSelect">Refuel</label>
+					<select class="form-control" id="refuelSelect" th:field="*{refuel}">
+						<option value=""></option>
+						<option th:each="refuel : ${refuels}"
+								th:value="${refuel.id}"
+								th:utext="${refuel.short_description}">
+						</option>
+					</select>
+				</div>
+
+				<div class="row">
+					<label for="name">File to upload:</label>
+
+					<table class="ml-auto">
+						<input id="name" type="file" name="file"/>
+						<tr>
+							<td>
+								<button type="submit" class="btn btn-primary">Upload</button>
+							</td>
+						</tr>
+					</table>
+				</div>
+
+			</form>
+
+		</div>
+	</body>
+</html>

@@ -44,4 +44,13 @@ public class Distance {
 	@DateTimeFormat(pattern = "yyyy-MM-dd'T'HH:mm")
 	@Convert(converter = LocalDateTimeConverter.class)
 	private LocalDateTime timestamp = LocalDateTime.now();
+
+
+	public Distance(Distance distance) {
+		this.setId(distance.getId());
+		this.setKilometres(distance.getKilometres());
+		this.setVehicle(distance.getVehicle());
+		this.setDescription(distance.getDescription());
+		this.setTimestamp(distance.getTimestamp());
+	}
 }

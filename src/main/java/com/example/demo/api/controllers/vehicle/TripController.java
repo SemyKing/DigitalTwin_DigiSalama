@@ -112,9 +112,7 @@ public class TripController {
 			return Constants.ERROR_PAGE;
 		} else {
 
-			addLog(
-					"create " + ENTITY,
-					ENTITY + " created:\n" + tripFromDatabase);
+			eventHistoryLogService.addTripLog("create " + ENTITY, ENTITY + " created:\n" + tripFromDatabase);
 
 			return Constants.REDIRECT + Constants.UI_API + "/trips";
 		}
@@ -143,9 +141,7 @@ public class TripController {
 			return Constants.ERROR_PAGE;
 		} else {
 
-			addLog(
-					"update " + ENTITY,
-					ENTITY + " updated from:\n" + oldTripFromDatabase + "\nto:\n" + tripFromDatabase);
+			eventHistoryLogService.addTripLog("update " + ENTITY, ENTITY + " updated from:\n" + oldTripFromDatabase + "\nto:\n" + tripFromDatabase);
 
 			return Constants.REDIRECT + Constants.UI_API + "/trips/" + tripFromDatabase.getId();
 		}
@@ -164,21 +160,8 @@ public class TripController {
 
 		tripService.delete(tripFromDatabase);
 
-		addLog(
-				"delete " + ENTITY,
-				ENTITY + " deleted:\n" + tripFromDatabase);
+		eventHistoryLogService.addTripLog("delete " + ENTITY, ENTITY + " deleted:\n" + tripFromDatabase);
 
 		return Constants.REDIRECT + Constants.UI_API + "/trips";
-	}
-
-	private void addLog(String action, String description) {
-		if (eventHistoryLogService.isLoggingEnabledForTrips()) {
-			EventHistoryLog log = new EventHistoryLog();
-			log.setWho_did(eventHistoryLogService.getCurrentUser() == null ? "NULL" : eventHistoryLogService.getCurrentUser().toString());
-			log.setAction(action);
-			log.setDescription(description);
-
-			eventHistoryLogService.save(log);
-		}
 	}
 }

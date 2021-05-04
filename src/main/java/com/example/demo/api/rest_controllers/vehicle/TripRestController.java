@@ -80,7 +80,7 @@ public class TripRestController {
 					restResponse.setHttp_status(HttpStatus.OK);
 					restResponse.setMessage(ENTITY + " saved successfully");
 
-					addLog("create " + ENTITY, ENTITY + " created:\n" + tripFromDatabase);
+					eventHistoryLogService.addTripLog("create " + ENTITY, ENTITY + " created:\n" + tripFromDatabase);
 				}
 			}
 
@@ -120,7 +120,7 @@ public class TripRestController {
 			restResponse.setHttp_status(HttpStatus.OK);
 			restResponse.setMessage(ENTITY + " saved successfully");
 
-			addLog("create " + ENTITY, ENTITY + " created:\n" + tripFromDatabase);
+			eventHistoryLogService.addTripLog("create " + ENTITY, ENTITY + " created:\n" + tripFromDatabase);
 
 			return ResponseEntity.status(HttpStatus.OK).body(restResponse);
 		}
@@ -187,7 +187,7 @@ public class TripRestController {
 					restResponse.setHttp_status(HttpStatus.OK);
 					restResponse.setMessage(ENTITY + " saved successfully");
 
-					addLog("update (PUT) " + ENTITY, ENTITY + " updated from:\n" + oldTripFromDatabase + "\nto:\n" + tripFromDatabase);
+					eventHistoryLogService.addTripLog("update (PUT) " + ENTITY, ENTITY + " updated from:\n" + oldTripFromDatabase + "\nto:\n" + tripFromDatabase);
 				}
 			}
 
@@ -229,7 +229,7 @@ public class TripRestController {
 			restResponse.setHttp_status(HttpStatus.OK);
 			restResponse.setMessage(ENTITY + " saved successfully");
 
-			addLog("update (PUT) " + ENTITY, ENTITY + " updated from:\n" + oldTripFromDatabase + "\nto:\n" + tripFromDatabase);
+			eventHistoryLogService.addTripLog("update (PUT) " + ENTITY, ENTITY + " updated from:\n" + oldTripFromDatabase + "\nto:\n" + tripFromDatabase);
 
 			return ResponseEntity.status(HttpStatus.OK).body(restResponse);
 		}
@@ -316,7 +316,7 @@ public class TripRestController {
 							restResponse.setHttp_status(HttpStatus.OK);
 							restResponse.setMessage(ENTITY + "patched successfully");
 
-							addLog("update (PATCH) " + ENTITY, ENTITY + " updated from:\n" + oldTripFromDatabase + "\nto:\n" + updatedTripFromDatabase);
+							eventHistoryLogService.addTripLog("update (PATCH) " + ENTITY, ENTITY + " updated from:\n" + oldTripFromDatabase + "\nto:\n" + updatedTripFromDatabase);
 						}
 					}
 
@@ -384,7 +384,7 @@ public class TripRestController {
 			restResponse.setHttp_status(HttpStatus.OK);
 			restResponse.setMessage(ENTITY + " saved successfully");
 
-			addLog("update (PATCH) " + ENTITY, ENTITY + " updated from:\n" + oldTripFromDatabase + "\nto:\n" + patchedTrip);
+			eventHistoryLogService.addTripLog("update (PATCH) " + ENTITY, ENTITY + " updated from:\n" + oldTripFromDatabase + "\nto:\n" + patchedTrip);
 
 			return ResponseEntity.status(HttpStatus.OK).body(restResponse);
 		}
@@ -421,7 +421,7 @@ public class TripRestController {
 					restResponse.setHttp_status(HttpStatus.OK);
 					restResponse.setMessage(ENTITY + " deleted successfully");
 
-					addLog("delete " + ENTITY, ENTITY + " deleted:\n" + trip);
+					eventHistoryLogService.addTripLog("delete " + ENTITY, ENTITY + " deleted:\n" + trip);
 				} catch (Exception e) {
 					restResponse.setHttp_status(HttpStatus.INTERNAL_SERVER_ERROR);
 					restResponse.setMessage("failed to delete " + ENTITY + " from database \n" + e.getMessage());
@@ -463,22 +463,11 @@ public class TripRestController {
 		restResponse.setHttp_status(HttpStatus.OK);
 		restResponse.setMessage(ENTITY + " deleted successfully");
 
-		addLog("delete " + ENTITY, ENTITY + " deleted:\n" + tripFromDatabase);
+		eventHistoryLogService.addTripLog("delete " + ENTITY, ENTITY + " deleted:\n" + tripFromDatabase);
 
 		return ResponseEntity.ok(restResponse);
 	}
 
-
-	private void addLog(String action, String description) {
-		if (eventHistoryLogService.isLoggingEnabledForTrips()) {
-			EventHistoryLog log = new EventHistoryLog();
-			log.setWho_did(eventHistoryLogService.getCurrentUser() == null ? "NULL" : eventHistoryLogService.getCurrentUser().toString());
-			log.setAction(action);
-			log.setDescription(description);
-
-			eventHistoryLogService.save(log);
-		}
-	}
 
 	private Trip handlePatchChanges(Long id, Map<String, Object> changes) throws JsonParseException {
 		Trip entity = tripService.getById(id);
@@ -513,8 +502,7 @@ public class TripRestController {
 
 							if (field.getType().equals(Vehicle.class)) {
 								try {
-									Vehicle vehicle = objectMapper.readValue((String) value, Vehicle.class);
-									entity.setVehicle(vehicle);
+									entity.setVehicle(objectMapper.readValue(json, Vehicle.class));
 								} catch (JsonProcessingException e) {
 									throw new JsonParseException(new Throwable("Vehicle json parsing error: " + e.getMessage()));
 								}
@@ -522,8 +510,7 @@ public class TripRestController {
 
 							if (field.getType().equals(Integer.class)) {
 								try {
-									Integer intValue = Integer.parseInt((String) value);
-
+									Integer intValue = Integer.parseInt(json);
 									ReflectionUtils.setField(field, entity, intValue);
 								} catch (NumberFormatException e) {
 									throw new JsonParseException(new Throwable("Integer value: '" + value + "' json parsing error: " + e.getMessage()));

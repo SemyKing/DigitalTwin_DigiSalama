@@ -75,7 +75,7 @@ public class OrganisationRestController {
 					restResponse.setHttp_status(HttpStatus.OK);
 					restResponse.setMessage(ENTITY + " saved successfully");
 
-					addLog("create " + ENTITY, ENTITY + " created:\n" + organisationFromDatabase);
+					eventHistoryLogService.addOrganisationLog("create " + ENTITY, ENTITY + " created:\n" + organisationFromDatabase);
 				}
 			}
 
@@ -116,7 +116,7 @@ public class OrganisationRestController {
 			restResponse.setHttp_status(HttpStatus.OK);
 			restResponse.setMessage(ENTITY + " saved successfully");
 
-			addLog("create " + ENTITY, ENTITY + " created:\n" + organisationFromDatabase);
+			eventHistoryLogService.addOrganisationLog("create " + ENTITY, ENTITY + " created:\n" + organisationFromDatabase);
 
 			return ResponseEntity.status(HttpStatus.OK).body(restResponse);
 		}
@@ -183,7 +183,7 @@ public class OrganisationRestController {
 					restResponse.setHttp_status(HttpStatus.OK);
 					restResponse.setMessage(ENTITY + " saved successfully");
 
-					addLog("update (PUT) " + ENTITY, ENTITY + " updated from:\n" + oldOrganisationFromDatabase + "\nto:\n" + organisationFromDatabase);
+					eventHistoryLogService.addOrganisationLog("update (PUT) " + ENTITY, ENTITY + " updated from:\n" + oldOrganisationFromDatabase + "\nto:\n" + organisationFromDatabase);
 				}
 			}
 
@@ -224,7 +224,7 @@ public class OrganisationRestController {
 			restResponse.setHttp_status(HttpStatus.OK);
 			restResponse.setMessage(ENTITY + " saved successfully");
 
-			addLog("update (PUT) " + ENTITY, ENTITY + " updated from:\n" + oldOrganisationFromDatabase + "\nto:\n" + organisationFromDatabase);
+			eventHistoryLogService.addOrganisationLog("update (PUT) " + ENTITY, ENTITY + " updated from:\n" + oldOrganisationFromDatabase + "\nto:\n" + organisationFromDatabase);
 
 			return ResponseEntity.status(HttpStatus.OK).body(restResponse);
 		}
@@ -312,7 +312,7 @@ public class OrganisationRestController {
 							restResponse.setHttp_status(HttpStatus.OK);
 							restResponse.setMessage(ENTITY + "patched successfully");
 
-							addLog("update (PATCH) " + ENTITY, ENTITY + " updated from:\n" + oldOrganisationFromDatabase + "\nto:\n" + updatedOrganisationFromDatabase);
+							eventHistoryLogService.addOrganisationLog("update (PATCH) " + ENTITY, ENTITY + " updated from:\n" + oldOrganisationFromDatabase + "\nto:\n" + updatedOrganisationFromDatabase);
 						}
 					}
 
@@ -380,7 +380,7 @@ public class OrganisationRestController {
 			restResponse.setHttp_status(HttpStatus.OK);
 			restResponse.setMessage(ENTITY + " saved successfully");
 
-			addLog("update (PATCH) " + ENTITY, ENTITY + " updated from:\n" + oldOrganisation + "\nto:\n" + patchedOrganisation);
+			eventHistoryLogService.addOrganisationLog("update (PATCH) " + ENTITY, ENTITY + " updated from:\n" + oldOrganisation + "\nto:\n" + patchedOrganisation);
 
 			return ResponseEntity.status(HttpStatus.OK).body(restResponse);
 		}
@@ -417,7 +417,7 @@ public class OrganisationRestController {
 					restResponse.setHttp_status(HttpStatus.OK);
 					restResponse.setMessage(ENTITY + " deleted successfully");
 
-					addLog("delete " + ENTITY, ENTITY + " deleted:\n" + organisation);
+					eventHistoryLogService.addOrganisationLog("delete " + ENTITY, ENTITY + " deleted:\n" + organisation);
 				} catch (Exception e) {
 					restResponse.setHttp_status(HttpStatus.INTERNAL_SERVER_ERROR);
 					restResponse.setMessage("failed to delete " + ENTITY + " from database \n" + e.getMessage());
@@ -461,22 +461,11 @@ public class OrganisationRestController {
 		restResponse.setHttp_status(HttpStatus.OK);
 		restResponse.setMessage(ENTITY + " deleted successfully");
 
-		addLog("delete " + ENTITY, ENTITY + " deleted:\n" + organisationFromDatabase);
+		eventHistoryLogService.addOrganisationLog("delete " + ENTITY, ENTITY + " deleted:\n" + organisationFromDatabase);
 
 		return ResponseEntity.ok(restResponse);
 	}
 
-
-	private void addLog(String action, String description) {
-		if (eventHistoryLogService.isLoggingEnabledForOrganisations()) {
-			EventHistoryLog log = new EventHistoryLog();
-			log.setWho_did(eventHistoryLogService.getCurrentUser() == null ? "NULL" : eventHistoryLogService.getCurrentUser().toString());
-			log.setAction(action);
-			log.setDescription(description);
-
-			eventHistoryLogService.save(log);
-		}
-	}
 
 	private Organisation handlePatchChanges(Long id, Map<String, Object> changes) throws JsonParseException {
 		Organisation entity = organisationService.getById(id);

@@ -2,10 +2,10 @@ package com.example.demo.database.services.vehicle;
 
 import com.example.demo.database.models.utils.Mapping;
 import com.example.demo.database.models.utils.ValidationResponse;
-import com.example.demo.database.models.vehicle.FileDB;
+import com.example.demo.database.models.vehicle.FileMetaData;
 import com.example.demo.database.models.vehicle.Refuel;
 import com.example.demo.database.models.vehicle.Vehicle;
-import com.example.demo.database.repositories.vehicle.FileRepository;
+import com.example.demo.database.repositories.vehicle.FileMetaDataRepository;
 import com.example.demo.database.repositories.vehicle.RefuelRepository;
 import com.example.demo.database.repositories.vehicle.VehicleRepository;
 import com.example.demo.utils.FieldReflectionUtils;
@@ -22,14 +22,16 @@ public class RefuelService {
 
 	private final RefuelRepository repository;
 
-	private final FileRepository fileRepository;
+	private final FileMetaDataRepository fileMetaDataRepository;
 	private final VehicleRepository vehicleRepository;
 
 
+	@Transactional
 	public List<Refuel> getAll() {
 		return repository.findAll();
 	}
 
+	@Transactional
 	public Refuel getById(Long id) {
 		if (id == null) {
 			return null;
@@ -40,14 +42,6 @@ public class RefuelService {
 			return null;
 		}
 		return refuel.get();
-	}
-
-	public List<Refuel> getAllByVehicleId(Long id) {
-		if (id == null) {
-			return null;
-		}
-
-		return repository.findAllByVehicleId(id);
 	}
 
 	@Transactional
@@ -63,9 +57,9 @@ public class RefuelService {
 
 		// FIRST DELETE/SET NULL ALL ENTITIES THAT HAVE FOREIGN KEY OF CURRENT ENTITY
 
-		fileRepository.findAllByRefuelId(refuel.getId()).forEach(file -> {
+		fileMetaDataRepository.findAllByRefuelId(refuel.getId()).forEach(file -> {
 			file.setRefuel(null);
-			fileRepository.save(file);
+			fileMetaDataRepository.save(file);
 
 //			fileRepository.delete(file);
 		});
@@ -78,9 +72,9 @@ public class RefuelService {
 
 		// FIRST DELETE/SET NULL ALL ENTITIES THAT HAVE FOREIGN KEY OF CURRENT ENTITY
 
-		fileRepository.findAll().forEach(file -> {
+		fileMetaDataRepository.findAll().forEach(file -> {
 			file.setRefuel(null);
-			fileRepository.save(file);
+			fileMetaDataRepository.save(file);
 
 //			fileRepository.delete(file);
 		});
@@ -131,7 +125,7 @@ public class RefuelService {
 
 
 			if (refuel.getFile() != null && refuel.getFile().getId() != null) {
-				Optional<FileDB> fileFromDatabase = fileRepository.findById(refuel.getFile().getId());
+				Optional<FileMetaData> fileFromDatabase = fileMetaDataRepository.findById(refuel.getFile().getId());
 
 				if (fileFromDatabase.isEmpty()) {
 					return new ValidationResponse(false, "selected file not found");

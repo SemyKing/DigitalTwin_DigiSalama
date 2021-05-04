@@ -161,7 +161,7 @@ public class VehicleController {
 		model.addAttribute(ENTITY, vehicleFromDatabase);
 
 
-		List<FileDB> files = fileService.getAllByVehicleId(id);
+		List<FileMetaData> files = fileService.getAllByVehicleId(id);
 		model.addAttribute("files", files);
 
 		return "vehicle/vehicle_files_list_page";
@@ -249,8 +249,6 @@ public class VehicleController {
 	}
 
 
-	//TODO: COPY WORKING CODE FROM FLEET_CONTROLLER
-
 	// SET FLEETS FOR VEHICLE
 	@PostMapping("/{id}/set_fleets")
 	public String addFleetsToVehicle(@ModelAttribute ListWrapper fleetsWrapper, @PathVariable Long id, Model model) {
@@ -277,9 +275,7 @@ public class VehicleController {
 			vehicleFromDatabase.setFleets(fleets);
 			vehicleFromDatabase = vehicleService.save(vehicleFromDatabase);
 
-			addLog(
-					"add/remove fleets to/from " + ENTITY,
-					ENTITY + " updated from:\n" + oldVehicle + "\nto:\n" + vehicleFromDatabase);
+			eventHistoryLogService.addVehicleLog("add/remove fleets to/from " + ENTITY, ENTITY + " updated from:\n" + oldVehicle + "\nto:\n" + vehicleFromDatabase);
 		}
 
 		return Constants.REDIRECT + Constants.UI_API + "/vehicles" + id + "/edit";
@@ -306,9 +302,7 @@ public class VehicleController {
 			return Constants.ERROR_PAGE;
 		} else {
 
-			addLog(
-					"create " + ENTITY,
-					ENTITY + " created:\n" + vehicleFromDatabase);
+			eventHistoryLogService.addVehicleLog("create " + ENTITY, ENTITY + " created:\n" + vehicleFromDatabase);
 
 			return Constants.REDIRECT + Constants.UI_API + "/vehicles";
 		}
@@ -337,9 +331,7 @@ public class VehicleController {
 			return Constants.ERROR_PAGE;
 		} else {
 
-			addLog(
-					"update " + ENTITY,
-					ENTITY + " updated from:\n" + oldVehicleFromDatabase + "\nto:\n" + vehicleFromDatabase);
+			eventHistoryLogService.addVehicleLog("update " + ENTITY, ENTITY + " updated from:\n" + oldVehicleFromDatabase + "\nto:\n" + vehicleFromDatabase);
 
 			return Constants.REDIRECT + Constants.UI_API + "/vehicles/" + vehicleFromDatabase.getId();
 		}
@@ -358,21 +350,8 @@ public class VehicleController {
 
 		vehicleService.delete(vehicleFromDatabase);
 
-		addLog(
-				"delete " + ENTITY,
-				ENTITY + " deleted:\n" + vehicleFromDatabase);
+		eventHistoryLogService.addVehicleLog("delete " + ENTITY, ENTITY + " deleted:\n" + vehicleFromDatabase);
 
 		return Constants.REDIRECT + Constants.UI_API + "/vehicles";
-	}
-
-	private void addLog(String action, String description) {
-		if (eventHistoryLogService.isLoggingEnabledForVehicles()) {
-			EventHistoryLog log = new EventHistoryLog();
-			log.setWho_did(eventHistoryLogService.getCurrentUser() == null ? "NULL" : eventHistoryLogService.getCurrentUser().toString());
-			log.setAction(action);
-			log.setDescription(description);
-
-			eventHistoryLogService.save(log);
-		}
 	}
 }

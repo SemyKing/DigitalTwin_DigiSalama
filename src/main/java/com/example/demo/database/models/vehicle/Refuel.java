@@ -2,10 +2,7 @@ package com.example.demo.database.models.vehicle;
 
 import com.example.demo.utils.LocalDateTimeConverter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
+import lombok.*;
 import org.springframework.format.annotation.DateTimeFormat;
 
 import javax.persistence.*;
@@ -54,5 +51,15 @@ public class Refuel {
 	private LocalDateTime timestamp = LocalDateTime.now();
 
 	@Transient
-	private FileDB file;
+	private FileMetaData file;
+
+	@Transient
+	@JsonIgnore
+	@ToString.Exclude
+	@Getter(AccessLevel.NONE)
+	private String short_description;
+
+	public String getShort_description() {
+		return "id:" + id + ", location: " + location + ", fuel name: " + fuel_name + ", refuel amount: " + refuel_amount;
+	}
 }

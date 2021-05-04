@@ -1,6 +1,5 @@
 package com.example.demo.api.controllers.vehicle;
 
-import com.example.demo.database.models.EventHistoryLog;
 import com.example.demo.database.models.utils.Mapping;
 import com.example.demo.database.models.utils.ValidationResponse;
 import com.example.demo.database.models.vehicle.Equipment;
@@ -26,7 +25,7 @@ import java.util.List;
 @RequestMapping(Constants.UI_API + "/equipment")
 public class EquipmentController {
 
-	private static final String ENTITY = "equipment";
+	private final String ENTITY = "equipment";
 
 	@Autowired
 	private final EventHistoryLogService eventHistoryLogService;
@@ -122,9 +121,7 @@ public class EquipmentController {
 			return Constants.ERROR_PAGE;
 		} else {
 
-			addLog(
-					"crate " + ENTITY,
-					ENTITY + " created:\n" + equipmentFromDatabase);
+			eventHistoryLogService.addEquipmentLog("crate " + ENTITY, ENTITY + " created:\n" + equipmentFromDatabase);
 
 			return Constants.REDIRECT + Constants.UI_API + "/equipment";
 		}
@@ -153,9 +150,7 @@ public class EquipmentController {
 			return Constants.ERROR_PAGE;
 		} else {
 
-			addLog(
-					"update " + ENTITY,
-					ENTITY + " updated from:\n" + oldEquipmentFromDatabase + "\nto:\n" + equipmentFromDatabase);
+			eventHistoryLogService.addEquipmentLog("update " + ENTITY, ENTITY + " updated from:\n" + oldEquipmentFromDatabase + "\nto:\n" + equipmentFromDatabase);
 
 			return Constants.REDIRECT + Constants.UI_API + "/equipment/" + equipmentFromDatabase.getId();
 		}
@@ -175,21 +170,8 @@ public class EquipmentController {
 
 		equipmentService.delete(equipmentFromDatabase);
 
-		addLog(
-				"delete " + ENTITY,
-				ENTITY + " deleted:\n" + equipmentFromDatabase);
+		eventHistoryLogService.addEquipmentLog("delete " + ENTITY, ENTITY + " deleted:\n" + equipmentFromDatabase);
 
 		return Constants.REDIRECT + "/equipment";
-	}
-
-	private void addLog(String action, String description) {
-		if (eventHistoryLogService.isLoggingEnabledForEquipment()) {
-			EventHistoryLog log = new EventHistoryLog();
-			log.setWho_did(eventHistoryLogService.getCurrentUser() == null ? "NULL" : eventHistoryLogService.getCurrentUser().toString());
-			log.setAction(action);
-			log.setDescription(description);
-
-			eventHistoryLogService.save(log);
-		}
 	}
 }

@@ -11,32 +11,38 @@
 
 	<div id="main-content" class="container pt-2">
 
-			<h1 th:text="${'Select Fleets For Vehicle: ' + vehicle.registration_number}"></h1>
+			<h1 th:text="${'Select Files For Event: ' + event.name}"></h1>
 
-			<form action="#" th:action="${'/api1/vehicles/' + vehicle.id + '/set_fleets'}" th:object="${fleetsWrapper}" method="POST">
+			<form action="#" th:action="${'/api1/vehicle_events/' + event.id + '/set_files'}" th:object="${filesWrapper}" method="POST">
 				<table class="table table-hover table-sm table-bordered">
 					<thead>
 						<tr>
 							<th> ID </th>
 							<th> Name </th>
+							<th> Timestamp </th>
 							<th> Select </th>
 						</tr>
 					</thead>
 
 					<tbody>
-						<tr th:each="fleet, itemStat : *{fleets}">
+						<tr th:each="file, itemStat : *{files}">
 							<td>
-								<span th:text="*{fleets[__${itemStat.index}__].id}"></span>
+								<span th:text="*{files[__${itemStat.index}__].id}"></span>
 							</td>
 							<td>
-								<span th:text="*{fleets[__${itemStat.index}__].name}"></span>
+								<span th:text="*{files[__${itemStat.index}__].file_name}"></span>
 							</td>
 							<td>
-								<input type="checkbox" th:field="*{fleets[__${itemStat.index}__].isSelected}" />
+								<span th:text="*{#temporals.format(files[__${itemStat.index}__].timestamp, 'dd/MM/yyyy HH:mm')}"></span>
 							</td>
+							<td>
+								<input type="checkbox" th:field="*{files[__${itemStat.index}__].isSelected}" />
+							</td>
+
 							<td hidden>
-								<input readonly hidden th:field="*{fleets[__${itemStat.index}__].id}"/>
+								<input readonly hidden th:field="*{files[__${itemStat.index}__].id}"/>
 							</td>
+
 						</tr>
 					</tbody>
 				</table>

@@ -19,7 +19,6 @@ import java.util.List;
 import java.util.Optional;
 
 @Service
-@Transactional
 @RequiredArgsConstructor
 public class OrganisationService {
 
@@ -31,10 +30,12 @@ public class OrganisationService {
 	private final FleetRepository fleetRepository;
 
 
+	@Transactional
 	public List<Organisation> getAll() {
 		return repository.findAll();
 	}
 
+	@Transactional
 	public Organisation getById(Long id) {
 		if (id == null) {
 			return null;
@@ -49,21 +50,12 @@ public class OrganisationService {
 		return organisation.get();
 	}
 
-	public Organisation getByName(String name) {
-		if (name == null ||name.length() <= 0) {
-			return null;
-		}
-		Optional<Organisation> organisation = repository.findOrganisationByName(name);
-		if (organisation.isEmpty()) {
-			return null;
-		}
-		return organisation.get();
-	}
-
+	@Transactional
 	public Organisation save(Organisation organisation) {
 		return repository.save(organisation);
 	}
 
+	@Transactional
 	public void delete(Organisation organisation) {
 		if (organisation == null || organisation.getId() == null) {
 			return;
@@ -96,6 +88,7 @@ public class OrganisationService {
 		repository.delete(organisation);
 	}
 
+	@Transactional
 	public void deleteAll() {
 		List<User> users = userRepository.findAll();
 		users.forEach(user -> {
@@ -123,7 +116,6 @@ public class OrganisationService {
 
 		repository.deleteAll();
 	}
-
 
 
 	public ValidationResponse validate(Organisation organisation, Mapping mapping) {

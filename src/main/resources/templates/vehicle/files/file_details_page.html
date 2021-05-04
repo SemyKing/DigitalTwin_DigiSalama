@@ -18,7 +18,7 @@
 
 			<h1>File Details</h1>
 
-			<table class="table table-hover table-sm table-bordered" th:object="${organisation}">
+			<table class="table table-hover table-sm table-bordered">
 				<tbody th:object="${file}">
 					<tr>
 						<td> ID </td>
@@ -26,12 +26,39 @@
 					</tr>
 					<tr>
 						<td> Name </td>
-						<td> <span th:text="*{file_name}"></span> </td>
+						<td> <span th:text="${file.file_byte_data == null ? 'NO FILE DATA' : file.file_byte_data.file_name}"></span> </td>
 					</tr>
-					<tr>
+					<tr th:if="${file.vehicle != null}">
 						<td> Vehicle </td>
 						<td>
 							<span th:text="${file.vehicle == null ? 'NOT SELECTED' : file.vehicle.registration_number}"></span>
+						</td>
+						<td style="width: 1px;">
+							<form action="#" th:action="${'/api1/vehicles/' + file.vehicle.id}" class="m-0 p-0" method="GET">
+								<button type="submit" class="btn btn-primary btn-sm">View</button>
+							</form>
+						</td>
+					</tr>
+					<tr th:if="${file.refuel != null}">
+						<td> Refuel </td>
+						<td>
+							<span th:text="${file.refuel == null ? 'NOT SELECTED' : file.refuel.short_description}"></span>
+						</td>
+						<td style="width: 1px;">
+							<form action="#" th:action="${'/api1/refuels/' + file.refuel.id}" class="m-0 p-0" method="GET">
+								<button type="submit" class="btn btn-primary btn-sm">View</button>
+							</form>
+						</td>
+					</tr>
+					<tr th:if="${file.vehicle_event != null}">
+						<td> Vehicle Event </td>
+						<td>
+							<span th:text="${file.vehicle_event == null ? 'NOT SELECTED' : file.vehicle_event.name}"></span>
+						</td>
+						<td style="width: 1px;">
+							<form action="#" th:action="${'/api1/vehicle_events/' + file.vehicle_event.id}" class="m-0 p-0" method="GET">
+								<button type="submit" class="btn btn-primary btn-sm">View</button>
+							</form>
 						</td>
 					</tr>
 					<tr>

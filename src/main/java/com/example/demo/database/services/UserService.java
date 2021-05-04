@@ -28,7 +28,6 @@ import java.util.Optional;
 import java.util.UUID;
 
 @Service
-@Transactional
 @RequiredArgsConstructor
 public class UserService implements UserDetailsService {
 
@@ -40,15 +39,17 @@ public class UserService implements UserDetailsService {
 	private final RoleRepository roleRepository;
 	private final OrganisationService organisationService;
 
-
+	@Transactional
 	public List<User> getAll() {
 		return repository.findAll();
 	}
 
+	@Transactional
 	public List<User> getAllByOrganisationId(Long id) {
 		return repository.findAllByOrganisationId(id);
 	}
 
+	@Transactional
 	public User getById(Long id) {
 		User user = null;
 
@@ -75,6 +76,7 @@ public class UserService implements UserDetailsService {
 		return getByUsername(authentication.getName());
 	}
 
+	@Transactional
 	public User getByUsername(String username) {
 		User user = null;
 
@@ -87,6 +89,7 @@ public class UserService implements UserDetailsService {
 		return user;
 	}
 
+	@Transactional
 	public User getByEmail(String email) {
 		User user = null;
 
@@ -99,6 +102,7 @@ public class UserService implements UserDetailsService {
 		return user;
 	}
 
+	@Transactional
 	public User getByPasswordUpdateToken(String token) {
 		User user = null;
 
@@ -111,14 +115,17 @@ public class UserService implements UserDetailsService {
 		return user;
 	}
 
+	@Transactional
 	public User save(User user) {
 		return repository.save(user);
 	}
 
+	@Transactional
 	public void delete(User user) {
 		repository.delete(user);
 	}
 
+	@Transactional
 	public void deleteAll() {
 		repository.deleteAll();
 	}
@@ -152,11 +159,12 @@ public class UserService implements UserDetailsService {
 		return (user != null);
 	}
 
-
+	@Transactional
 	public int getSystemAdminsCount() {
 		return repository.findSystemAdmins().size();
 	}
 
+	@Transactional
 	public boolean systemAdminExists() {
 		List<User> systemAdmins = repository.findSystemAdmins();
 		return (systemAdmins.size() > 0);

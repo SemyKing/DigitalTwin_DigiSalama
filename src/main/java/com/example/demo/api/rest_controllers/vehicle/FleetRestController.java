@@ -79,7 +79,7 @@ public class FleetRestController {
 					restResponse.setHttp_status(HttpStatus.OK);
 					restResponse.setMessage(ENTITY + " saved successfully");
 
-					addLog("create " + ENTITY, ENTITY + " created:\n" + fleetFromDatabase);
+					eventHistoryLogService.addFleetLog("create " + ENTITY, ENTITY + " created:\n" + fleetFromDatabase);
 				}
 			}
 
@@ -120,7 +120,7 @@ public class FleetRestController {
 			restResponse.setHttp_status(HttpStatus.OK);
 			restResponse.setMessage(ENTITY + " saved successfully");
 
-			addLog("create " + ENTITY, ENTITY + " created:\n" + fleetFromDatabase);
+			eventHistoryLogService.addFleetLog("create " + ENTITY, ENTITY + " created:\n" + fleetFromDatabase);
 
 			return ResponseEntity.status(HttpStatus.OK).body(restResponse);
 		}
@@ -187,7 +187,7 @@ public class FleetRestController {
 					restResponse.setHttp_status(HttpStatus.OK);
 					restResponse.setMessage(ENTITY + " saved successfully");
 
-					addLog("update (PUT) " + ENTITY, ENTITY + " updated from:\n" + oldFleetFromDatabase + "\nto:\n" + fleetFromDatabase);
+					eventHistoryLogService.addFleetLog("update (PUT) " + ENTITY, ENTITY + " updated from:\n" + oldFleetFromDatabase + "\nto:\n" + fleetFromDatabase);
 				}
 			}
 
@@ -228,7 +228,7 @@ public class FleetRestController {
 			restResponse.setHttp_status(HttpStatus.OK);
 			restResponse.setMessage(ENTITY + " saved successfully");
 
-			addLog("update (PUT) " + ENTITY, ENTITY + " updated from:\n" + oldFleetFromDatabase + "\nto:\n" + fleetFromDatabase);
+			eventHistoryLogService.addFleetLog("update (PUT) " + ENTITY, ENTITY + " updated from:\n" + oldFleetFromDatabase + "\nto:\n" + fleetFromDatabase);
 
 			return ResponseEntity.status(HttpStatus.OK).body(restResponse);
 		}
@@ -316,7 +316,7 @@ public class FleetRestController {
 							restResponse.setHttp_status(HttpStatus.OK);
 							restResponse.setMessage(ENTITY + "patched successfully");
 
-							addLog("update (PATCH) " + ENTITY, ENTITY + " updated from:\n" + oldFleetFromDatabase + "\nto:\n" + updatedFleetFromDatabase);
+							eventHistoryLogService.addFleetLog("update (PATCH) " + ENTITY, ENTITY + " updated from:\n" + oldFleetFromDatabase + "\nto:\n" + updatedFleetFromDatabase);
 						}
 					}
 
@@ -384,7 +384,7 @@ public class FleetRestController {
 			restResponse.setHttp_status(HttpStatus.OK);
 			restResponse.setMessage(ENTITY + " saved successfully");
 
-			addLog("update (PATCH) " + ENTITY, ENTITY + " updated from:\n" + oldFleetFromDatabase + "\nto:\n" + patchedFleet);
+			eventHistoryLogService.addFleetLog("update (PATCH) " + ENTITY, ENTITY + " updated from:\n" + oldFleetFromDatabase + "\nto:\n" + patchedFleet);
 
 			return ResponseEntity.status(HttpStatus.OK).body(restResponse);
 		}
@@ -421,7 +421,7 @@ public class FleetRestController {
 					restResponse.setHttp_status(HttpStatus.OK);
 					restResponse.setMessage(ENTITY + " deleted successfully");
 
-					addLog("delete " + ENTITY, ENTITY + " deleted:\n" + fleet);
+					eventHistoryLogService.addFleetLog("delete " + ENTITY, ENTITY + " deleted:\n" + fleet);
 				} catch (Exception e) {
 					restResponse.setHttp_status(HttpStatus.INTERNAL_SERVER_ERROR);
 					restResponse.setMessage("failed to delete " + ENTITY + " from database \n" + e.getMessage());
@@ -465,22 +465,11 @@ public class FleetRestController {
 		restResponse.setHttp_status(HttpStatus.OK);
 		restResponse.setMessage(ENTITY + " deleted successfully");
 
-		addLog("delete " + ENTITY, ENTITY + " deleted:\n" + fleetFromDatabase);
+		eventHistoryLogService.addFleetLog("delete " + ENTITY, ENTITY + " deleted:\n" + fleetFromDatabase);
 
 		return ResponseEntity.ok(restResponse);
 	}
 
-
-	private void addLog(String action, String description) {
-		if (eventHistoryLogService.isLoggingEnabledForFleets()) {
-			EventHistoryLog log = new EventHistoryLog();
-			log.setWho_did(eventHistoryLogService.getCurrentUser() == null ? "NULL" : eventHistoryLogService.getCurrentUser().toString());
-			log.setAction(action);
-			log.setDescription(description);
-
-			eventHistoryLogService.save(log);
-		}
-	}
 
 	private Fleet handlePatchChanges(Long id, Map<String, Object> changes) throws JsonParseException {
 		Fleet entity = fleetService.getById(id);
@@ -517,7 +506,7 @@ public class FleetRestController {
 
 							if (field.getType().equals(Organisation.class)) {
 								try {
-									entity.setOrganisation(objectMapper.readValue((String) value, Organisation.class));
+									entity.setOrganisation(objectMapper.readValue(json, Organisation.class));
 								} catch (JsonProcessingException e) {
 									throw new JsonParseException(new Throwable("Organisation json parsing error: " + e.getMessage()));
 								}
@@ -525,7 +514,7 @@ public class FleetRestController {
 
 							if (field.getType().equals(Set.class) && field.getName().equals("vehicles")) {
 								try {
-									Set<Vehicle> vehiclesFromPatch = objectMapper.readValue((String) value, objectMapper.getTypeFactory().constructCollectionType(HashSet.class, Vehicle.class));
+									Set<Vehicle> vehiclesFromPatch = objectMapper.readValue(json, objectMapper.getTypeFactory().constructCollectionType(HashSet.class, Vehicle.class));
 
 									entity.getVehicles().clear();
 

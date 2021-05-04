@@ -3,7 +3,7 @@ package com.example.demo.api.controllers.vehicle;
 import com.example.demo.database.models.EventHistoryLog;
 import com.example.demo.database.models.utils.Mapping;
 import com.example.demo.database.models.utils.ValidationResponse;
-import com.example.demo.database.models.vehicle.FileDB;
+import com.example.demo.database.models.vehicle.FileMetaData;
 import com.example.demo.database.models.vehicle.Refuel;
 import com.example.demo.database.models.vehicle.Vehicle;
 import com.example.demo.database.services.EventHistoryLogService;
@@ -79,7 +79,7 @@ public class RefuelController {
 		model.addAttribute(ENTITY, refuelFromDatabase);
 
 
-		List<FileDB> files = fileService.getAllByRefuelId(id);
+		List<FileMetaData> files = fileService.getAllByRefuelId(id);
 		model.addAttribute("files", files);
 
 		return "vehicle/refuels/refuel_files_list_page";
@@ -93,7 +93,7 @@ public class RefuelController {
 		List<Vehicle> vehicles = vehicleService.getAll();
 		model.addAttribute("vehicles", vehicles);
 
-		List<FileDB> files = fileService.getAll();
+		List<FileMetaData> files = fileService.getAll();
 		model.addAttribute("files", files);
 
 		return "vehicle/refuels/new_refuel_page";
@@ -115,7 +115,7 @@ public class RefuelController {
 		List<Vehicle> vehicles = vehicleService.getAll();
 		model.addAttribute("vehicles", vehicles);
 
-		List<FileDB> files = fileService.getAll();
+		List<FileMetaData> files = fileService.getAll();
 		model.addAttribute("files", files);
 
 		return "vehicle/refuels/edit_refuel_page";
@@ -135,7 +135,7 @@ public class RefuelController {
 			List<Vehicle> vehicles = vehicleService.getAll();
 			model.addAttribute("vehicles", vehicles);
 
-			List<FileDB> files = fileService.getAll();
+			List<FileMetaData> files = fileService.getAll();
 			model.addAttribute("files", files);
 
 			return "vehicle/refuels/new_refuel_page";
@@ -149,9 +149,7 @@ public class RefuelController {
 			return Constants.ERROR_PAGE;
 		} else {
 
-			addLog(
-					"create " + ENTITY,
-					ENTITY + " created:\n" + refuelFromDatabase);
+			eventHistoryLogService.addRefuelLog("create " + ENTITY, ENTITY + " created:\n" + refuelFromDatabase);
 
 			return Constants.REDIRECT + Constants.UI_API + "/refuels";
 		}
@@ -178,7 +176,7 @@ public class RefuelController {
 				List<Vehicle> vehicles = vehicleService.getAll();
 				model.addAttribute("vehicles", vehicles);
 
-				List<FileDB> files = fileService.getAll();
+				List<FileMetaData> files = fileService.getAll();
 				model.addAttribute("files", files);
 
 				return "vehicle/refuels/edit_refuel_page";
@@ -195,9 +193,7 @@ public class RefuelController {
 			return Constants.ERROR_PAGE;
 		} else {
 
-			addLog(
-					"update " + ENTITY,
-					ENTITY + " updated from:\n" + oldRefuelFromDatabase + "\nto:\n" + refuelFromDatabase);
+			eventHistoryLogService.addRefuelLog("update " + ENTITY, ENTITY + " updated from:\n" + oldRefuelFromDatabase + "\nto:\n" + refuelFromDatabase);
 
 			return Constants.REDIRECT + Constants.UI_API + "/refuels/" + refuelFromDatabase.getId();
 		}
@@ -216,21 +212,8 @@ public class RefuelController {
 
 		refuelService.delete(refuelFromDatabase);
 
-		addLog(
-				"delete " + ENTITY,
-				ENTITY + " deleted:\n" + refuelFromDatabase);
+		eventHistoryLogService.addRefuelLog("delete " + ENTITY, ENTITY + " deleted:\n" + refuelFromDatabase);
 
 		return Constants.REDIRECT + Constants.UI_API + "/refuels";
-	}
-
-	private void addLog(String action, String description) {
-		if (eventHistoryLogService.isLoggingEnabledForRefuels()) {
-			EventHistoryLog log = new EventHistoryLog();
-			log.setWho_did(eventHistoryLogService.getCurrentUser() == null ? "NULL" : eventHistoryLogService.getCurrentUser().toString());
-			log.setAction(action);
-			log.setDescription(description);
-
-			eventHistoryLogService.save(log);
-		}
 	}
 }

@@ -2,14 +2,9 @@ package com.example.demo.database.services.vehicle;
 
 import com.example.demo.database.models.utils.Mapping;
 import com.example.demo.database.models.utils.ValidationResponse;
-import com.example.demo.database.models.vehicle.FileDB;
-import com.example.demo.database.models.vehicle.Refuel;
-import com.example.demo.database.models.vehicle.Vehicle;
-import com.example.demo.database.models.vehicle.VehicleEvent;
-import com.example.demo.database.repositories.vehicle.FileRepository;
-import com.example.demo.database.repositories.vehicle.RefuelRepository;
-import com.example.demo.database.repositories.vehicle.VehicleEventRepository;
-import com.example.demo.database.repositories.vehicle.VehicleRepository;
+import com.example.demo.database.models.vehicle.*;
+import com.example.demo.database.repositories.vehicle.*;
+import com.example.demo.utils.DateUtils;
 import com.example.demo.utils.FieldReflectionUtils;
 import lombok.RequiredArgsConstructor;
 import org.apache.tomcat.util.http.fileupload.FileUploadException;
@@ -19,6 +14,8 @@ import org.springframework.web.multipart.MultipartFile;
 
 import javax.transaction.Transactional;
 import java.io.IOException;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Base64;
 import java.util.List;
 import java.util.Objects;
@@ -28,82 +25,131 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class FileService {
 
-	private final FileRepository repository;
+	private final FileMetaDataRepository fileMetaDataRepository;
+	private final FileByteDataRepository fileByteDataRepository;
 
 	private final VehicleRepository vehicleRepository;
 	private final RefuelRepository refuelRepository;
 	private final VehicleEventRepository vehicleEventRepository;
 
 
-	public List<FileDB> getAll() {
-		return repository.findAll();
-	}
-
-	public FileDB getById(Long id) {
-		if (id == null) {
-			return null;
-		}
-
-		Optional<FileDB> image = repository.findById(id);
-		if (image.isEmpty()) {
-			return null;
-		}
-		return image.get();
-	}
-
-	public List<FileDB> getAllByVehicleId(Long id) {
-		if (id == null) {
-			return null;
-		}
-
-		return repository.findAllByVehicleId(id);
-	}
-
-	public List<FileDB> getAllByRefuelId(Long id) {
-		if (id == null) {
-			return null;
-		}
-
-		return repository.findAllByRefuelId(id);
+	@Transactional
+	public List<FileMetaData> getAll() {
+		return fileMetaDataRepository.findAll();
 	}
 
 	@Transactional
-	public FileDB save(FileDB file) {
-		return repository.save(file);
+	public FileMetaData getFileMetaDataById(Long id) {
+		if (id == null) {
+			return null;
+		}
+
+		Optional<FileMetaData> fileMetaData = fileMetaDataRepository.findById(id);
+		if (fileMetaData.isEmpty()) {
+			return null;
+		}
+		return fileMetaData.get();
 	}
 
 	@Transactional
-	public FileDB save(MultipartFile file) throws IOException {
+	public FileByteData getFileByteDataById(Long id) {
+		if (id == null) {
+			return null;
+		}
+
+		Optional<FileByteData> fileByteData = fileByteDataRepository.findById(id);
+		if (fileByteData.isEmpty()) {
+			return null;
+		}
+		return fileByteData.get();
+	}
+
+	@Transactional
+	public List<FileMetaData> getAllByVehicleId(Long id) {
+		if (id == null) {
+			return null;
+		}
+
+		return fileMetaDataRepository.findAllByVehicleId(id);
+	}
+
+	@Transactional
+	public List<FileMetaData> getAllByRefuelId(Long id) {
+		if (id == null) {
+			return null;
+		}
+
+		return fileMetaDataRepository.findAllByRefuelId(id);
+	}
+
+	@Transactional
+	public List<FileMetaData> getAllByVehicleEventId(Long id) {
+		if (id == null) {
+			return null;
+		}
+
+		return fileMetaDataRepository.findAllByVehicleEventId(id);
+	}
+
+	@Transactional
+	public FileMetaData save(FileMetaData file) {
+		return fileMetaDataRepository.save(file);
+	}
+
+	@Transactional
+	public FileByteData save(FileByteData file) {
+		return fileByteDataRepository.save(file);
+	}
+
+	@Transactional
+	public FileByteData save(MultipartFile file) throws IOException {
 		String fileName = StringUtils.cleanPath(Objects.requireNonNull(file.getOriginalFilename()));
 
 		if (fileName.length() <= 0) {
-			throw new FileUploadException("File name cannot be empty");
+			fileName = "temp_file" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm"));
 		}
 
 		if (file.getContentType() == null) {
 			throw new FileUploadException("File content type cannot be NULL");
 		}
 
-		FileDB fileDB = new FileDB(fileName, file.getContentType(), file.getBytes());
+		FileByteData fileByteData = new FileByteData();
+		fileByteData.setData(file.getBytes());
+		fileByteData.setFile_name(fileName);
+		fileByteData.setFile_content_type(file.getContentType());
 
-		return repository.save(fileDB);
+		return fileByteDataRepository.save(fileByteData);
 	}
 
 	@Transactional
-	public void delete(FileDB fileDB) {
-		if (fileDB == null) {
+	public void delete(FileMetaData fileMetaData) {
+		if (fileMetaData == null) {
 			return;
 		}
 
-		if (fileDB.getId() == null) {
+		if (fileMetaData.getId() == null) {
 			return;
 		}
-		repository.delete(fileDB);
+
+		fileMetaDataRepository.delete(fileMetaData);
+	}
+
+	@Transactional
+	public void delete(FileByteData fileByteData) {
+		if (fileByteData == null) {
+			return;
+		}
+
+		if (fileByteData.getId() == null) {
+			return;
+		}
+
+		fileByteDataRepository.delete(fileByteData);
 	}
 
 	@Transactional
 	public void deleteAll() {
-		repository.deleteAll();
+		fileMetaDataRepository.deleteAll();
 	}
 
 
@@ -111,26 +157,22 @@ public class FileService {
 		return Base64.getMimeEncoder().encodeToString(byteData);
 	}
 
-	public ValidationResponse validate(FileDB file, Mapping mapping) {
+	public ValidationResponse validate(FileMetaData file, Mapping mapping) {
 
 		if (file == null) {
 			return new ValidationResponse(false, "provided NULL entity");
 		}
 
-//		if (mapping.equals(Mapping.POST)) {
-//			file.setId(null);
-//
-//			if (file.getMultipart_file() == null) {
-//				return new ValidationResponse(false, "multipart_file is required");
-//			}
-//		}
+		if (mapping.equals(Mapping.POST)) {
+			file.setId(null);
+		}
 
 		if (mapping.equals(Mapping.PUT) || mapping.equals(Mapping.PATCH)) {
 			if (file.getId() == null) {
 				return new ValidationResponse(false, "entity ID parameter is required");
 			}
 
-			FileDB fileFromDatabase = getById(file.getId());
+			FileMetaData fileFromDatabase = getFileMetaDataById(file.getId());
 
 			if (fileFromDatabase == null) {
 				return new ValidationResponse(false, "entity ID parameter is invalid");
@@ -138,6 +180,20 @@ public class FileService {
 		}
 
 		if (mapping.equals(Mapping.POST) || mapping.equals(Mapping.PUT) || mapping.equals(Mapping.PATCH)) {
+
+			if (file.getFile_byte_data() != null) {
+				if (file.getFile_byte_data().getId() == null) {
+					return new ValidationResponse(false, "file_byte_data ID is required");
+				}
+
+				Optional<FileByteData> fileByteData = fileByteDataRepository.findById(file.getFile_byte_data().getId());
+
+				if (fileByteData.isEmpty()) {
+					return new ValidationResponse(false, "file_byte_data with ID: " + file.getFile_byte_data().getId() + " not found");
+				}
+
+				file.setFile_byte_data(fileByteData.get());
+			}
 
 			if (file.getVehicle() != null) {
 				if (file.getVehicle().getId() == null) {
@@ -181,8 +237,7 @@ public class FileService {
 				file.setVehicle_event(vehicleEvent.get());
 			}
 
-
-			ValidationResponse stringFieldsValidation = new FieldReflectionUtils<FileDB>().validateStringFields(file);
+			ValidationResponse stringFieldsValidation = new FieldReflectionUtils<FileMetaData>().validateStringFields(file);
 
 			if (!stringFieldsValidation.isValid()) {
 				return stringFieldsValidation;

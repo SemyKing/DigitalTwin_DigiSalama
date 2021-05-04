@@ -23,10 +23,12 @@ public class TripService {
 	private final VehicleRepository vehicleRepository;
 
 
+	@Transactional
 	public List<Trip> getAll() {
 		return repository.findAll();
 	}
 
+	@Transactional
 	public Trip getById(Long id) {
 		if (id == null) {
 			return null;
@@ -39,6 +41,7 @@ public class TripService {
 		return trip.get();
 	}
 
+	@Transactional
 	public List<Trip> getAllByVehicleId(Long id) {
 		if (id == null) {
 			return null;

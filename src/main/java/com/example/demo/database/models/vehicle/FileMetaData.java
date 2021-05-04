@@ -1,33 +1,28 @@
 package com.example.demo.database.models.vehicle;
 
+import com.example.demo.utils.LocalDateTimeConverter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
+import org.springframework.format.annotation.DateTimeFormat;
 
 import javax.persistence.*;
+import java.time.LocalDateTime;
 
 @Entity
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class FileDB {
+public class FileMetaData {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 
-	@Column
-	private String file_name;
-
-	@Column
-	private String file_type;
-
-	@Lob
-	@Column
-	@ToString.Exclude
-	private byte[] data;
+	@OneToOne(cascade = CascadeType.REMOVE)
+	private FileByteData file_byte_data;
 
 	@Column(columnDefinition="TEXT")
 	private String description;
@@ -52,10 +47,14 @@ public class FileDB {
 	@JoinColumn(name="event_id", referencedColumnName = "id")
 	private VehicleEvent vehicle_event;
 
+	@Column
+	@DateTimeFormat(pattern = "yyyy-MM-dd'T'HH:mm")
+	@Convert(converter = LocalDateTimeConverter.class)
+	private LocalDateTime timestamp = LocalDateTime.now();
 
-	public FileDB(String file_name, String file_type, byte[] data) {
-		this.file_name = file_name;
-		this.file_type = file_type;
-		this.data = data;
-	}
+
+	@Transient
+	@JsonIgnore
+	@ToString.Exclude
+	private Boolean isSelected = false;
 }

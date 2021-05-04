@@ -80,7 +80,7 @@ public class DistanceRestController {
 					restResponse.setHttp_status(HttpStatus.OK);
 					restResponse.setMessage(ENTITY + " saved successfully");
 
-					addLog("create " + ENTITY, ENTITY + " created:\n" + distanceFromDatabase);
+					eventHistoryLogService.addDistanceLog("create " + ENTITY, ENTITY + " created:\n" + distanceFromDatabase);
 				}
 			}
 
@@ -121,7 +121,7 @@ public class DistanceRestController {
 			restResponse.setHttp_status(HttpStatus.OK);
 			restResponse.setMessage(ENTITY + " saved successfully");
 
-			addLog("create " + ENTITY, ENTITY + " created:\n" + distanceFromDatabase);
+			eventHistoryLogService.addDistanceLog("create " + ENTITY, ENTITY + " created:\n" + distanceFromDatabase);
 
 			return ResponseEntity.status(HttpStatus.OK).body(restResponse);
 		}
@@ -188,7 +188,7 @@ public class DistanceRestController {
 					restResponse.setHttp_status(HttpStatus.OK);
 					restResponse.setMessage(ENTITY + " saved successfully");
 
-					addLog("update (PUT) " + ENTITY, ENTITY + " updated from:\n" + oldDistanceFromDatabase + "\nto:\n" + distanceFromDatabase);
+					eventHistoryLogService.addDistanceLog("update (PUT) " + ENTITY, ENTITY + " updated from:\n" + oldDistanceFromDatabase + "\nto:\n" + distanceFromDatabase);
 				}
 			}
 
@@ -230,7 +230,7 @@ public class DistanceRestController {
 			restResponse.setHttp_status(HttpStatus.OK);
 			restResponse.setMessage(ENTITY + " saved successfully");
 
-			addLog("update (PUT) " + ENTITY, ENTITY + " updated from:\n" + oldDistanceFromDatabase + "\nto:\n" + distanceFromDatabase);
+			eventHistoryLogService.addDistanceLog("update (PUT) " + ENTITY, ENTITY + " updated from:\n" + oldDistanceFromDatabase + "\nto:\n" + distanceFromDatabase);
 
 			return ResponseEntity.status(HttpStatus.OK).body(restResponse);
 		}
@@ -317,7 +317,7 @@ public class DistanceRestController {
 							restResponse.setHttp_status(HttpStatus.OK);
 							restResponse.setMessage(ENTITY + "patched successfully");
 
-							addLog("update (PATCH) " + ENTITY, ENTITY + " updated from:\n" + oldDistanceFromDatabase + "\nto:\n" + updatedDistanceFromDatabase);
+							eventHistoryLogService.addDistanceLog("update (PATCH) " + ENTITY, ENTITY + " updated from:\n" + oldDistanceFromDatabase + "\nto:\n" + updatedDistanceFromDatabase);
 						}
 					}
 
@@ -385,7 +385,7 @@ public class DistanceRestController {
 			restResponse.setHttp_status(HttpStatus.OK);
 			restResponse.setMessage(ENTITY + " saved successfully");
 
-			addLog("update (PATCH) " + ENTITY, ENTITY + " updated from:\n" + oldDistanceFromDatabase + "\nto:\n" + patchedDistance);
+			eventHistoryLogService.addDistanceLog("update (PATCH) " + ENTITY, ENTITY + " updated from:\n" + oldDistanceFromDatabase + "\nto:\n" + patchedDistance);
 
 			return ResponseEntity.status(HttpStatus.OK).body(restResponse);
 		}
@@ -422,7 +422,7 @@ public class DistanceRestController {
 					restResponse.setHttp_status(HttpStatus.OK);
 					restResponse.setMessage(ENTITY + " deleted successfully");
 
-					addLog("delete " + ENTITY, ENTITY + " deleted:\n" + distance);
+					eventHistoryLogService.addDistanceLog("delete " + ENTITY, ENTITY + " deleted:\n" + distance);
 				} catch (Exception e) {
 					restResponse.setHttp_status(HttpStatus.INTERNAL_SERVER_ERROR);
 					restResponse.setMessage("failed to delete " + ENTITY + " from database \n" + e.getMessage());
@@ -466,25 +466,14 @@ public class DistanceRestController {
 		restResponse.setHttp_status(HttpStatus.OK);
 		restResponse.setMessage(ENTITY + " deleted successfully");
 
-		addLog("delete " + ENTITY, ENTITY + " deleted:\n" + distanceFromDatabase);
+		eventHistoryLogService.addDistanceLog("delete " + ENTITY, ENTITY + " deleted:\n" + distanceFromDatabase);
 
 		return ResponseEntity.ok(restResponse);
 	}
 
 
-	private void addLog(String action, String description) {
-		if (eventHistoryLogService.isLoggingEnabledForDistances()) {
-			EventHistoryLog log = new EventHistoryLog();
-			log.setWho_did(eventHistoryLogService.getCurrentUser() == null ? "NULL" : eventHistoryLogService.getCurrentUser().toString());
-			log.setAction(action);
-			log.setDescription(description);
-
-			eventHistoryLogService.save(log);
-		}
-	}
-
 	private Distance handlePatchChanges(Long id, Map<String, Object> changes) throws JsonParseException {
-		Distance entity = distanceService.getById(id);
+		Distance entity = new Distance(distanceService.getById(id));
 
 		changes.forEach((key, value) -> {
 			Field field = ReflectionUtils.findField(entity.getClass(), key);
@@ -515,7 +504,7 @@ public class DistanceRestController {
 
 						if (field.getType().equals(Vehicle.class)) {
 							try {
-								Vehicle vehicle = objectMapper.readValue((String) value, Vehicle.class);
+								Vehicle vehicle = objectMapper.readValue(json, Vehicle.class);
 								entity.setVehicle(vehicle);
 							} catch (JsonProcessingException e) {
 								throw new JsonParseException(new Throwable("Vehicle parsing error: " + e.getMessage()));
@@ -524,7 +513,7 @@ public class DistanceRestController {
 
 						if (field.getType().equals(Integer.class)) {
 							try {
-								Integer intValue = Integer.parseInt((String) value);
+								Integer intValue = Integer.parseInt(json);
 								ReflectionUtils.setField(field, entity, intValue);
 							} catch (NumberFormatException e) {
 								throw new JsonParseException(new Throwable("Integer value: '" + value + "' json parsing error: " + e.getMessage()));
