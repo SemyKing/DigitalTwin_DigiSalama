@@ -1,6 +1,5 @@
-package com.example.demo.api.controllers.vehicle;
+package com.example.demo.api.ui_controllers.vehicle;
 
-import com.example.demo.database.models.EventHistoryLog;
 import com.example.demo.database.models.Organisation;
 import com.example.demo.database.models.utils.ListWrapper;
 import com.example.demo.database.models.utils.Mapping;
@@ -74,6 +73,7 @@ public class VehicleController {
 		if (vehicleFromDatabase == null) {
 			model.addAttribute(Constants.ERROR_TITLE_ATTRIBUTE, "No such entity");
 			model.addAttribute(Constants.ERROR_MESSAGE_ATTRIBUTE, ENTITY + " with id: " + id + " not found");
+
 			return Constants.ERROR_PAGE;
 		}
 

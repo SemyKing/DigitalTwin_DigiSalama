@@ -1,6 +1,5 @@
-package com.example.demo.api.controllers.vehicle;
+package com.example.demo.api.ui_controllers.vehicle;
 
-import com.example.demo.database.models.EventHistoryLog;
 import com.example.demo.database.models.utils.Mapping;
 import com.example.demo.database.models.utils.ValidationResponse;
 import com.example.demo.database.models.vehicle.EquipmentType;

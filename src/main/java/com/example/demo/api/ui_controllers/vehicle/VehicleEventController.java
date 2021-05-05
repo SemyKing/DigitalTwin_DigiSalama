@@ -1,14 +1,13 @@
-package com.example.demo.api.controllers.vehicle;
+package com.example.demo.api.ui_controllers.vehicle;
 
-import com.example.demo.database.models.EventHistoryLog;
 import com.example.demo.database.models.utils.Mapping;
 import com.example.demo.database.models.utils.ValidationResponse;
 import com.example.demo.database.models.vehicle.FileMetaData;
-import com.example.demo.database.models.vehicle.Refuel;
 import com.example.demo.database.models.vehicle.Vehicle;
+import com.example.demo.database.models.vehicle.VehicleEvent;
 import com.example.demo.database.services.EventHistoryLogService;
 import com.example.demo.database.services.vehicle.FileService;
-import com.example.demo.database.services.vehicle.RefuelService;
+import com.example.demo.database.services.vehicle.VehicleEventService;
 import com.example.demo.database.services.vehicle.VehicleService;
 import com.example.demo.utils.Constants;
 import com.example.demo.utils.FieldReflectionUtils;
@@ -23,17 +22,17 @@ import java.util.List;
 
 @Controller
 @RequiredArgsConstructor
-@SessionAttributes({"refuel"})
-@RequestMapping(Constants.UI_API + "/refuels")
-public class RefuelController {
+@SessionAttributes({"event"})
+@RequestMapping(Constants.UI_API + "/vehicle_events")
+public class VehicleEventController {
 
-	private final String ENTITY = "refuel";
+	private final String ENTITY = "event";
 
 	@Autowired
 	private final EventHistoryLogService eventHistoryLogService;
 
 	@Autowired
-	private final RefuelService refuelService;
+	private final VehicleEventService vehicleEventService;
 
 	@Autowired
 	private final VehicleService vehicleService;
@@ -44,51 +43,52 @@ public class RefuelController {
 
 	@GetMapping({"", "/"})
 	public String getAll(Model model) {
-		model.addAttribute("refuels", refuelService.getAll());
+		List<VehicleEvent> events = vehicleEventService.getAll();
+		model.addAttribute("events", events);
 
-		return "vehicle/refuels/refuels_list_page";
+		return "vehicle/events/events_list_page";
 	}
 
 
 	@GetMapping("/{id}")
 	public String getById(@PathVariable Long id, Model model) {
-		Refuel refuelFromDatabase = refuelService.getById(id);
+		VehicleEvent eventFromDatabase = vehicleEventService.getById(id);
 
-		if (refuelFromDatabase == null) {
+		if (eventFromDatabase == null) {
 			model.addAttribute(Constants.ERROR_TITLE_ATTRIBUTE, "No such entity");
 			model.addAttribute(Constants.ERROR_MESSAGE_ATTRIBUTE, ENTITY + " with id: " + id + " not found");
 			return Constants.ERROR_PAGE;
 		}
 
-		model.addAttribute(ENTITY, refuelFromDatabase);
+		model.addAttribute(ENTITY, eventFromDatabase);
 
-		return "vehicle/refuels/refuel_details_page";
+		return "vehicle/events/event_details_page";
 	}
 
 
 	@GetMapping("/{id}/files")
-	public String getFilesByRefuelId(@PathVariable Long id, Model model) {
-		Refuel refuelFromDatabase = refuelService.getById(id);
+	public String getFilesByVehicleEventId(@PathVariable Long id, Model model) {
+		VehicleEvent vehicleEventFromDatabase = vehicleEventService.getById(id);
 
-		if (refuelFromDatabase == null) {
+		if (vehicleEventFromDatabase == null) {
 			model.addAttribute(Constants.ERROR_TITLE_ATTRIBUTE, "No such entity");
 			model.addAttribute(Constants.ERROR_MESSAGE_ATTRIBUTE, ENTITY + " with id: " + id + " not found");
 			return Constants.ERROR_PAGE;
 		}
 
-		model.addAttribute(ENTITY, refuelFromDatabase);
+		System.out.println("vehicleEventFromDatabase.getFiles(): \n");
+		vehicleEventFromDatabase.getFiles().forEach(System.out::println);
 
+		model.addAttribute(ENTITY, vehicleEventFromDatabase);
+		model.addAttribute("files", vehicleEventFromDatabase.getFiles());
 
-		List<FileMetaData> files = fileService.getAllByRefuelId(id);
-		model.addAttribute("files", files);
-
-		return "vehicle/refuels/refuel_files_list_page";
+		return "vehicle/events/event_files_list_page";
 	}
 
 
 	@GetMapping("/new")
 	public String newForm(Model model) {
-		model.addAttribute(ENTITY, new Refuel());
+		model.addAttribute(ENTITY, new VehicleEvent());
 
 		List<Vehicle> vehicles = vehicleService.getAll();
 		model.addAttribute("vehicles", vehicles);
@@ -96,21 +96,21 @@ public class RefuelController {
 		List<FileMetaData> files = fileService.getAll();
 		model.addAttribute("files", files);
 
-		return "vehicle/refuels/new_refuel_page";
+		return "vehicle/events/new_event_page";
 	}
 
 
 	@GetMapping("/{id}/edit")
 	public String editForm(@PathVariable Long id, Model model) {
-		Refuel refuelFromDatabase = refuelService.getById(id);
+		VehicleEvent eventFromDatabase = vehicleEventService.getById(id);
 
-		if (refuelFromDatabase == null) {
+		if (eventFromDatabase == null) {
 			model.addAttribute(Constants.ERROR_TITLE_ATTRIBUTE, "No such entity");
 			model.addAttribute(Constants.ERROR_MESSAGE_ATTRIBUTE, ENTITY + " with id: " + id + " not found");
 			return Constants.ERROR_PAGE;
 		}
 
-		model.addAttribute(ENTITY, refuelFromDatabase);
+		model.addAttribute(ENTITY, eventFromDatabase);
 
 		List<Vehicle> vehicles = vehicleService.getAll();
 		model.addAttribute("vehicles", vehicles);
@@ -118,18 +118,18 @@ public class RefuelController {
 		List<FileMetaData> files = fileService.getAll();
 		model.addAttribute("files", files);
 
-		return "vehicle/refuels/edit_refuel_page";
+		return "vehicle/events/edit_event_page";
 	}
 
 
 	@PostMapping({"", "/"})
-	public String post(@ModelAttribute Refuel refuel, Model model) {
-		refuel = new FieldReflectionUtils<Refuel>().getEntityWithEmptyStringValuesAsNull(refuel);
+	public String post(@ModelAttribute VehicleEvent event, Model model) {
+		event = new FieldReflectionUtils<VehicleEvent>().getEntityWithEmptyStringValuesAsNull(event);
 
-		ValidationResponse response = refuelService.validate(refuel, Mapping.POST);
+		ValidationResponse response = vehicleEventService.validate(event, Mapping.POST);
 
 		if (!response.isValid()) {
-			model.addAttribute(ENTITY, refuel);
+			model.addAttribute(ENTITY, event);
 			model.addAttribute(Constants.ERROR_MESSAGE_ATTRIBUTE, response.getMessage());
 
 			List<Vehicle> vehicles = vehicleService.getAll();
@@ -138,31 +138,31 @@ public class RefuelController {
 			List<FileMetaData> files = fileService.getAll();
 			model.addAttribute("files", files);
 
-			return "vehicle/refuels/new_refuel_page";
+			return "vehicle/events/new_event_page";
 		}
 
-		Refuel refuelFromDatabase = refuelService.save(refuel);
+		VehicleEvent eventFromDatabase = vehicleEventService.save(event);
 
-		if (refuelFromDatabase == null) {
+		if (eventFromDatabase == null) {
 			model.addAttribute(Constants.ERROR_TITLE_ATTRIBUTE, "Database error");
 			model.addAttribute(Constants.ERROR_MESSAGE_ATTRIBUTE,"failed to save " + ENTITY + " in database");
 			return Constants.ERROR_PAGE;
 		} else {
 
-			eventHistoryLogService.addRefuelLog("create " + ENTITY, ENTITY + " created:\n" + refuelFromDatabase);
+			eventHistoryLogService.addVehicleEventLog("create " + ENTITY, ENTITY + " created:\n" + eventFromDatabase);
 
-			return Constants.REDIRECT + Constants.UI_API + "/refuels";
+			return Constants.REDIRECT + Constants.UI_API + "/vehicle_events";
 		}
 	}
 
 
 	@PostMapping("/update")
-	public String put(@ModelAttribute Refuel refuel, Model model, HttpServletRequest request) {
-		String oldRefuelFromDatabase = refuelService.getById(refuel.getId()).toString();
+	public String put(@ModelAttribute VehicleEvent event, Model model, HttpServletRequest request) {
+		String oldEventFromDatabase = vehicleEventService.getById(event.getId()).toString();
 
-		refuel = new FieldReflectionUtils<Refuel>().getEntityWithEmptyStringValuesAsNull(refuel);
+		event = new FieldReflectionUtils<VehicleEvent>().getEntityWithEmptyStringValuesAsNull(event);
 
-		ValidationResponse response = refuelService.validate(refuel, Mapping.PUT);
+		ValidationResponse response = vehicleEventService.validate(event, Mapping.PUT);
 
 		if (!response.isValid()) {
 			model.addAttribute(Constants.ERROR_TITLE_ATTRIBUTE, "Validation error");
@@ -171,7 +171,7 @@ public class RefuelController {
 			String referer = request.getHeader("Referer");
 
 			if (referer.contains("/edit")) {
-				model.addAttribute(ENTITY, refuel);
+				model.addAttribute(ENTITY, event);
 
 				List<Vehicle> vehicles = vehicleService.getAll();
 				model.addAttribute("vehicles", vehicles);
@@ -179,41 +179,41 @@ public class RefuelController {
 				List<FileMetaData> files = fileService.getAll();
 				model.addAttribute("files", files);
 
-				return "vehicle/refuels/edit_refuel_page";
+				return referer;
 			}
 
 			return Constants.ERROR_PAGE;
 		}
 
-		Refuel refuelFromDatabase = refuelService.save(refuel);
+		VehicleEvent eventFromDatabase = vehicleEventService.save(event);
 
-		if (refuelFromDatabase == null) {
+		if (eventFromDatabase == null) {
 			model.addAttribute(Constants.ERROR_TITLE_ATTRIBUTE, "Database error");
 			model.addAttribute(Constants.ERROR_MESSAGE_ATTRIBUTE,"failed to save " + ENTITY + " in database");
 			return Constants.ERROR_PAGE;
 		} else {
 
-			eventHistoryLogService.addRefuelLog("update " + ENTITY, ENTITY + " updated from:\n" + oldRefuelFromDatabase + "\nto:\n" + refuelFromDatabase);
+			eventHistoryLogService.addVehicleEventLog("update " + ENTITY, ENTITY + " updated from:\n" + oldEventFromDatabase + "\nto:\n" + eventFromDatabase);
 
-			return Constants.REDIRECT + Constants.UI_API + "/refuels/" + refuelFromDatabase.getId();
+			return Constants.REDIRECT + Constants.UI_API + "/vehicle_events/" + eventFromDatabase.getId();
 		}
 	}
 
 
 	@PostMapping("/{id}/delete")
 	public String delete(@PathVariable Long id, Model model) {
-		Refuel refuelFromDatabase = refuelService.getById(id);
+		VehicleEvent eventFromDatabase = vehicleEventService.getById(id);
 
-		if (refuelFromDatabase == null) {
+		if (eventFromDatabase == null) {
 			model.addAttribute(Constants.ERROR_TITLE_ATTRIBUTE, "Not found");
 			model.addAttribute(Constants.ERROR_MESSAGE_ATTRIBUTE, ENTITY + " with ID " + id + " not found");
 			return Constants.ERROR_PAGE;
 		}
 
-		refuelService.delete(refuelFromDatabase);
+		vehicleEventService.delete(eventFromDatabase);
 
-		eventHistoryLogService.addRefuelLog("delete " + ENTITY, ENTITY + " deleted:\n" + refuelFromDatabase);
+		eventHistoryLogService.addVehicleEventLog("delete " + ENTITY, ENTITY + " deleted:\n" + eventFromDatabase);
 
-		return Constants.REDIRECT + Constants.UI_API + "/refuels";
+		return Constants.REDIRECT + Constants.UI_API + "/vehicle_events";
 	}
 }

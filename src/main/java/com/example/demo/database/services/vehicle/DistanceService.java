@@ -145,6 +145,10 @@ public class DistanceService {
 
 		if (mapping.equals(Mapping.POST)) {
 			distance.setId(null);
+
+			if (distanceWithSameTimestampAlreadyExists(distance)) {
+				return new ValidationResponse(false, "distance with the same timestamp already exists");
+			}
 		}
 
 		if (mapping.equals(Mapping.PUT) || mapping.equals(Mapping.PATCH)) {
@@ -190,12 +194,6 @@ public class DistanceService {
 				return new ValidationResponse(false, "timestamp value is required");
 			}
 
-			System.out.println("VALIDATION DISTANCE: \n" + distance);
-
-
-			if (distanceWithSameTimestampAlreadyExists(distance)) {
-				return new ValidationResponse(false, "distance with the same timestamp already exists");
-			}
 
 			ValidationResponse distanceValidation = checkDistanceDateAndKilometres(distance);
 

@@ -1,4 +1,4 @@
-package com.example.demo.api.controllers;
+package com.example.demo.api.ui_controllers;
 
 import com.example.demo.database.models.user.User;
 import com.example.demo.database.models.utils.JwtResponse;
@@ -14,7 +14,6 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
-import static org.junit.jupiter.api.Assertions.*;
 import static org.hamcrest.Matchers.containsString;
 import static org.junit.jupiter.api.TestInstance.Lifecycle.PER_CLASS;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;

@@ -1,6 +1,5 @@
-package com.example.demo.api.controllers.vehicle;
+package com.example.demo.api.ui_controllers.vehicle;
 
-import com.example.demo.database.models.EventHistoryLog;
 import com.example.demo.database.models.Organisation;
 import com.example.demo.database.models.utils.ListWrapper;
 import com.example.demo.database.models.utils.Mapping;
@@ -19,7 +18,6 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;

@@ -1,4 +1,4 @@
-package com.example.demo.api.controllers;
+package com.example.demo.api.ui_controllers;
 
 import com.example.demo.database.models.ApplicationSettings;
 import com.example.demo.database.services.ApplicationSettingsService;
