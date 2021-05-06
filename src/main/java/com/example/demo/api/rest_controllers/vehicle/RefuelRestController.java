@@ -503,6 +503,15 @@ public class RefuelRestController {
 								ReflectionUtils.setField(field, entity, localDateTime);
 							}
 
+							if (field.getType().equals(Float.class)) {
+								try {
+									Float floatValue = Float.parseFloat(json.replaceAll(",", ".").replaceAll(" ", ""));
+									ReflectionUtils.setField(field, entity, floatValue);
+								} catch (NumberFormatException e) {
+									throw new JsonParseException(new Throwable("Float value: '" + json + "' json parsing error: " + e.getMessage()));
+								}
+							}
+
 							if (field.getType().equals(Vehicle.class)) {
 								try {
 									entity.setVehicle(objectMapper.readValue(json, Vehicle.class));

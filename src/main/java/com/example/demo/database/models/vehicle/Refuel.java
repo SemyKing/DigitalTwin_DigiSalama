@@ -50,9 +50,8 @@ public class Refuel {
 	@Convert(converter = LocalDateTimeConverter.class)
 	private LocalDateTime timestamp = LocalDateTime.now();
 
-	@Transient
-	private FileMetaData file;
 
+	// USED IN UI (THYMELEAF HTML)
 	@Transient
 	@JsonIgnore
 	@ToString.Exclude

@@ -536,7 +536,7 @@ public class VehicleRestController {
 //										entity.getFleets().add(fleet);
 //									});
 								} catch (JsonProcessingException e) {
-									throw new JsonParseException(new Throwable("Fleets Set: '" + value + "' json parsing error: " + e.getMessage()));
+									throw new JsonParseException(new Throwable("Fleets Set: '" + json + "' json parsing error: " + e.getMessage()));
 								}
 							}
 

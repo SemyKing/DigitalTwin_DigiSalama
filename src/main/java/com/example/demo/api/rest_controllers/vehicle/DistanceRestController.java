@@ -516,7 +516,7 @@ public class DistanceRestController {
 								Integer intValue = Integer.parseInt(json);
 								ReflectionUtils.setField(field, entity, intValue);
 							} catch (NumberFormatException e) {
-								throw new JsonParseException(new Throwable("Integer value: '" + value + "' json parsing error: " + e.getMessage()));
+								throw new JsonParseException(new Throwable("Integer value: '" + json + "' json parsing error: " + e.getMessage()));
 							}
 						}
 

@@ -515,12 +515,9 @@ public class FleetRestController {
 							if (field.getType().equals(Set.class) && field.getName().equals("vehicles")) {
 								try {
 									Set<Vehicle> vehiclesFromPatch = objectMapper.readValue(json, objectMapper.getTypeFactory().constructCollectionType(HashSet.class, Vehicle.class));
-
-									entity.getVehicles().clear();
-
-									vehiclesFromPatch.forEach(vehicle -> entity.getVehicles().add(vehicle));
+									entity.setVehicles(vehiclesFromPatch);
 								} catch (JsonProcessingException e) {
-									throw new JsonParseException(new Throwable("Vehicles Set: '" + value + "' json parsing error: " + e.getMessage()));
+									throw new JsonParseException(new Throwable("Vehicles Set: '" + json + "' json parsing error: " + e.getMessage()));
 								}
 							}
 
