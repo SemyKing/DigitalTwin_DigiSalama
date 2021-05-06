@@ -16,6 +16,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -299,9 +300,9 @@ public class VehicleController {
 		if (vehicleFromDatabase == null) {
 			model.addAttribute(Constants.ERROR_TITLE_ATTRIBUTE, "Database error");
 			model.addAttribute(Constants.ERROR_MESSAGE_ATTRIBUTE,"failed to save " + ENTITY + " in database");
+
 			return Constants.ERROR_PAGE;
 		} else {
-
 			eventHistoryLogService.addVehicleLog("create " + ENTITY, ENTITY + " created:\n" + vehicleFromDatabase);
 
 			return Constants.REDIRECT + Constants.UI_API + "/vehicles";

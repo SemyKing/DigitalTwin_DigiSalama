@@ -32,7 +32,7 @@
 								<span th:text="${file.id}"></span>
 							</td>
 							<td>
-								<span th:text="${file.file_name}"></span>
+								<span th:text="${file.file_byte_data == null ? 'NO FILE DATA' : file.file_byte_data.file_name}"></span>
 							</td>
 							<td style="width: 1px;">
 								<form action="#" th:action="${'/api1/files/' + file.id}" class="m-0 p-0" method="get">
